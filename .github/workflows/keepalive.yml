@@ -1,0 +1,74 @@
+name: keepalive
+
+# WHY: Supabase free-tier projects pause after 7 days of low activity, and
+# judging runs 9-23 Sep unattended. ISR keeps the site serving from the CDN even
+# if the database pauses, but a paused project cannot be revalidated and new
+# pages cannot render. This workflow generates the real database activity that
+# prevents the pause, and fails loudly if the project is already down.
+#
+# /api/revalidate alone is NOT enough: it only marks paths stale and issues no
+# database query. /api/health is the step that actually touches Postgres.
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'   # every 6 hours
+  workflow_dispatch:         # and on demand
+
+concurrency:
+  group: keepalive
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      BASE: https://agensea-navy.vercel.app
+    steps:
+      - name: Health check (real Postgres read)
+        id: health
+        run: |
+          set -o pipefail
+          echo "GET $BASE/api/health"
+          CODE=$(curl -sS --max-time 30 -o /tmp/health.json -w '%{http_code}' "$BASE/api/health" || echo 000)
+          echo "HTTP $CODE"
+          cat /tmp/health.json | head -c 600; echo
+          if [ "$CODE" != "200" ]; then
+            echo "::error title=Supabase unreachable::/api/health returned $CODE — the project may be PAUSED. Restore it at https://supabase.com/dashboard"
+            exit 1
+          fi
+          if ! grep -q '"ok":true' /tmp/health.json; then
+            echo "::error title=Health payload not ok::/api/health returned 200 but ok!=true"
+            exit 1
+          fi
+          echo "::notice title=Database reachable::$(head -c 200 /tmp/health.json)"
+
+      - name: Revalidate ISR paths
+        env:
+          REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET }}
+        run: |
+          set -o pipefail
+          if [ -z "$REVALIDATE_SECRET" ]; then
+            echo "::error title=Missing secret::REVALIDATE_SECRET is not set in repository secrets"
+            exit 1
+          fi
+          CODE=$(curl -sS --max-time 30 -X POST \
+            -H "Authorization: Bearer $REVALIDATE_SECRET" \
+            -o /tmp/reval.json -w '%{http_code}' "$BASE/api/revalidate" || echo 000)
+          echo "HTTP $CODE"; cat /tmp/reval.json | head -c 400; echo
+          [ "$CODE" = "200" ] || { echo "::error title=Revalidation failed::HTTP $CODE"; exit 1; }
+
+      - name: Warm the cache
+        run: |
+          FAIL=0
+          for P in / /bazaar /marketplace /agents/2658 /agents/127417; do
+            CODE=$(curl -sS --max-time 45 -o /dev/null -w '%{http_code}' "$BASE$P" || echo 000)
+            printf '  %-22s %s\n' "$P" "$CODE"
+            # /marketplace may 404 until it ships; warn rather than fail on it.
+            case "$P:$CODE" in
+              /marketplace:404) echo "::warning title=Not built yet::/marketplace returned 404" ;;
+              *:200) ;;
+              *) echo "::error title=Warm failed::$P returned $CODE"; FAIL=1 ;;
+            esac
+          done
+          exit $FAIL
