@@ -15,19 +15,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${display.variable} ${mono.variable}`}>
       <body>
-        <header style={{
-          display: 'flex', alignItems: 'center', gap: 14, padding: '18px 32px',
-          borderBottom: '1px solid var(--border)',
-        }}>
-          <MarkSparse size={20} />
-          <Wordmark height={18} />
-          <nav style={{ marginLeft: 'auto', display: 'flex', gap: 24, font: "500 11px/1 var(--mono)", letterSpacing: '0.14em', textTransform: 'uppercase' }}>
-            <a href="/marketplace" style={{ color: 'var(--text-muted)' }}>Marketplace</a>
-            <a href="/agents" style={{ color: 'var(--text-muted)' }}>Registry</a>
-            <a href="/bazaar" style={{ color: 'var(--text-muted)' }}>Bazaar</a>
-          </nav>
+        <header style={{ borderBottom: '1px solid var(--border)' }}>
+          <div className="container" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 32px' }}>
+            <MarkSparse size={20} />
+            <Wordmark height={18} />
+            <nav style={{ marginLeft: 'auto', display: 'flex', gap: 24 }}>
+              <a className="label" href="/marketplace">Marketplace</a>
+              <a className="label" href="/agents">Registry</a>
+              <a className="label" href="/bazaar">Bazaar</a>
+            </nav>
+          </div>
         </header>
-        <main style={{ maxWidth: 1180, margin: '0 auto', padding: '0 32px' }}>{children}</main>
+        <main className="container">{children}</main>
       </body>
     </html>
   );

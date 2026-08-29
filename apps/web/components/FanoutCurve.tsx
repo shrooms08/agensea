@@ -25,6 +25,10 @@ export function FanoutCurve({ curve, index }: { curve: CurvePoint[]; index: numb
   const y = (v: number) => H - PAD_B - (v / maxY) * (H - PAD_T - PAD_B);
 
   const path = pts.map((p, i) => `${i ? 'L' : 'M'}${x(p.threshold).toFixed(1)},${y(p.qualifying_agents).toFixed(1)}`).join('');
+  // Same path, closed to the baseline. The cliff between 924 and 1800 is a
+  // jump from 1,561 to 4,348 agents; as a line it reads as a stroke, as an
+  // area it reads as the mass it actually is.
+  const area = `${path}L${x(pts[pts.length - 1]!.threshold).toFixed(1)},${(H - PAD_B).toFixed(1)}L${x(pts[0]!.threshold).toFixed(1)},${(H - PAD_B).toFixed(1)}Z`;
   const cur = pts[Math.max(0, Math.min(index, pts.length - 1))]!;
   const ticks = [1, 10, 100, 1000];
 
@@ -46,6 +50,7 @@ export function FanoutCurve({ curve, index }: { curve: CurvePoint[]; index: numb
               style={{ font: "400 9px var(--mono)", fill: 'var(--text-faint)' }}>{t}</text>
       ))}
 
+      <path d={area} fill="var(--live)" fillOpacity="0.10" stroke="none" />
       <path d={path} fill="none" stroke="var(--live-dim)" strokeWidth="1.5" />
       {pts.map((p) => (
         <rect key={p.threshold} x={x(p.threshold) - 1.5} y={y(p.qualifying_agents) - 1.5}

@@ -193,7 +193,9 @@ export const TYPICAL_TTD_RANGE_MS = { min: 8030, max: 11751 } as const;
 /** Measured, zero platform fee: the provider received exactly the budget. */
 export const ECONOMICS = {
   pricePerJob: '1 $U',
-  platformFee: '0 (measured — provider received exactly 1.0 $U)',
+  platformFee: '$0',
+  /** Sub-label for the fee card. Kept OUT of the value so it cannot truncate. */
+  platformFeeNote: 'measured across 5 jobs — provider received exactly 1.0 $U',
   submitFeeTBnb: '~0.000047',
   hireFeeTBnb: '~0.000957',
   settleFeeTBnb: '~0.000029',

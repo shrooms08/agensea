@@ -49,10 +49,8 @@ export default async function AgentDetail({ params }: { params: Promise<{ id: st
 
   return (
     <>
-      <section style={{ padding: '56px 0 28px' }}>
-        <div style={{ font: "500 11px/1 var(--mono)", letterSpacing: '0.14em', color: 'var(--text-faint)', textTransform: 'uppercase' }}>
-          ERC-8004 registry · BNB Smart Chain mainnet (56)
-        </div>
+      <section className="sec-lead">
+        <div className="label">ERC-8004 registry · BNB Smart Chain mainnet (56)</div>
         <h1 style={{ font: "500 34px/1.15 var(--display)", marginTop: 14 }}>Agent #{a.agent_id}</h1>
 
         {isOverlap && (
@@ -60,24 +58,24 @@ export default async function AgentDetail({ params }: { params: Promise<{ id: st
             <div style={{ font: "500 10px/1 var(--mono)", letterSpacing: '0.12em', color: 'var(--warn)', textTransform: 'uppercase' }}>
               Not in the liveness set
             </div>
-            <div style={{ font: "400 12px/1.6 var(--mono)", color: 'var(--text-muted)', marginTop: 8 }}>
+            <p className="prose-sm prose-muted" style={{ marginTop: 8, fontSize: 13 }}>
               This agent has zero clients, so it is absent from the fan-out curve and from every
               agent count on this site. It is here because it is the only B402 Bazaar payee that
               also holds an ERC-8004 identity — revenue without reputation.
-            </div>
+            </p>
           </div>
         )}
       </section>
 
-      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 24, padding: '24px 0', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
+      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 20, padding: '20px 0', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
         <Field k="clients" v={int(a.client_count)} tone={tone} />
         <Field k="feedback entries" v={a.feedback_count ? int(a.feedback_count) : '0'} />
         <Field k="owner" v={shortAddr(a.owner)} />
         <Field k="agent wallet" v={shortAddr(a.agent_wallet)} />
       </section>
 
-      <section style={{ padding: '32px 0' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
+      <section className="sec">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 24 }}>
           <Field k="tokenURI kind" v={a.token_uri_kind ?? '—'} />
           <Field k="metadata host" v={a.token_uri_host ?? (a.token_uri_kind === 'data' ? 'inline data: URI' : '—')} />
         </div>
@@ -87,21 +85,19 @@ export default async function AgentDetail({ params }: { params: Promise<{ id: st
           </div>
         )}
         {overlap && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, marginTop: 24 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 24, marginTop: 24 }}>
             <Field k="B402 resources" v={int(overlap.bazaar_resources)} />
             <Field k="share of catalogue" v={`${overlap.bazaar_pct}%`} />
           </div>
         )}
-        <div style={{ font: "400 10px/1.4 var(--mono)", color: 'var(--text-muted)', marginTop: 28 }}>
-          measured {measuredOn(a.checked_at)}
-        </div>
+        <div className="meta" style={{ marginTop: 22 }}>measured {measuredOn(a.checked_at)}</div>
       </section>
 
-      <section style={{ padding: '24px 0 72px', borderTop: '1px solid var(--border)' }}>
-        <div style={{ font: "400 12px/1.6 var(--mono)", color: 'var(--text-muted)', maxWidth: 620 }}>
+      <section className="sec sec-rule">
+        <p className="prose-sm prose-muted" style={{ fontSize: 13 }}>
           Registry agents are indexed from chain 56 and are not hireable here. AgenSea&apos;s own
           hireable agents run on testnet 97 — see <a href="/marketplace" style={{ color: 'var(--live)' }}>the marketplace</a>.
-        </div>
+        </p>
       </section>
     </>
   );

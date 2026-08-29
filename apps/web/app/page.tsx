@@ -21,18 +21,18 @@ export default async function Home() {
 
   return (
     <>
-      <section style={{ padding: '96px 0 72px' }}>
-        <h1 style={{ font: "500 44px/1.1 var(--display)", maxWidth: 760 }}>
+      <section style={{ padding: '40px 0 26px' }}>
+        <h1 style={{ font: "500 40px/1.08 var(--display)", maxWidth: 720 }}>
           Most agents on chain have never been used.
         </h1>
-        <p style={{ font: "400 15px/1.6 var(--mono)", color: 'var(--text-muted)', maxWidth: 620, marginTop: 20 }}>
+        <p className="prose prose-muted" style={{ marginTop: 14 }}>
           A marketplace and registry explorer for ERC-8004 on BNB Chain. The registry
           figures below are measured from a full sweep of chain {56}; AgenSea&apos;s own
           agents run on {CHAIN.name} ({CHAIN.short}).
         </p>
       </section>
 
-      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 1, background: 'var(--border)', border: '1px solid var(--border)' }}>
+      <section className="grid-panel cols-5">
         <Stat label="Agents minted" value={Number(s('agents_minted').value)} measuredAt={s('agents_minted').measured_at} note="chain 56" />
         <Stat label="Ever had a client" value={Number(s('agents_with_client').value)} measuredAt={s('agents_with_client').measured_at}
               tone="var(--live)" note={pct(100 * Number(s('agents_with_client').value) / Number(s('agents_minted').value), 4)} />
@@ -43,30 +43,28 @@ export default async function Home() {
               note={`${s('bazaar_payees').value} payees · top ${s('bazaar_top_payee_pct').value}%`} />
       </section>
 
-      <section style={{ padding: '72px 0' }}>
-        <h2 style={{ font: "500 22px/1.2 var(--display)" }}>Liveness is not binary</h2>
-        <p style={{ font: "400 13px/1.6 var(--mono)", color: 'var(--text-muted)', maxWidth: 640, margin: '12px 0 0' }}>
+      <section style={{ padding: '28px 0 36px' }}>
+        <h2 style={{ font: "500 21px/1.2 var(--display)" }}>Liveness is not binary</h2>
+        <p className="prose-sm prose-muted" style={{ marginTop: 8 }}>
           1.44% of agents have a client. But 8,260 relationships come from 107 addresses,
           and two of them account for 36%. Filter those out and the number collapses.
         </p>
-        <div style={{ marginTop: 24 }}>
+        <div style={{ marginTop: 14 }}>
           <ThresholdSlider curve={curve} measuredAt={s('agents_with_client').measured_at} />
         </div>
       </section>
 
-      <section style={{ padding: '72px 0', borderTop: '1px solid var(--border)' }}>
-        <h2 style={{ font: "500 22px/1.2 var(--display)" }}>Four agents you can hire</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 1, background: 'var(--border)', border: '1px solid var(--border)', marginTop: 24 }}>
+      <section className="sec sec-rule">
+        <h2 style={{ font: "500 21px/1.2 var(--display)" }}>Four agents you can hire</h2>
+        <div className="grid-panel cols-4" style={{ marginTop: 18 }}>
           {CATEGORY_SLUGS.map((slug) => {
             const a = FIRST_PARTY_AGENTS.find((x) => x.slug === slug)!;
             return (
-              <a key={slug} href={`/category/${slug}`} style={{ display: 'block', padding: '22px', background: 'var(--surface)' }}>
+              <a key={slug} href={`/category/${slug}`} className="card-lg" style={{ display: 'block' }}>
                 <div style={{ width: 8, height: 8, background: CAT_TOKEN[slug], marginBottom: 16 }} />
                 <div style={{ font: "500 14px/1.3 var(--display)", color: 'var(--text)' }}>{a.name}</div>
-                <div style={{ font: "400 11px/1.5 var(--mono)", color: 'var(--text-muted)', marginTop: 10 }}>
-                  {a.description.slice(0, 96)}…
-                </div>
-                <div style={{ font: "500 10px/1 var(--mono)", letterSpacing: '0.12em', color: 'var(--accent)', border: '1px solid #4a0866', padding: '4px 6px', textTransform: 'uppercase', marginTop: 16, display: 'inline-block' }}>
+                <p className="prose-sm prose-muted" style={{ marginTop: 8, fontSize: 13 }}>{a.description.slice(0, 96)}…</p>
+                <div className="label" style={{ color: 'var(--accent)', border: '1px solid #4a0866', padding: '4px 6px', marginTop: 14, display: 'inline-block', fontSize: 9 }}>
                   First-party
                 </div>
               </a>
