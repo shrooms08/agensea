@@ -10,7 +10,7 @@ import { getBazaarResources, getPayees, getRegistryStats, getAllOverlapAgents, h
 import { Stat } from '@/components/Stat';
 import { int, pct, shortAddr, measuredOn } from '@/lib/format';
 
-export const revalidate = 3600;
+export const revalidate = 86400;   // see lib/queries.ts: long by design, free-tier Supabase pauses
 
 export default async function Bazaar() {
   const [resources, payees, stats, overlaps] = await Promise.all([

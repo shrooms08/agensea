@@ -1,0 +1,108 @@
+/**
+ * /agents/[id] — REGISTRY agent detail, BSC MAINNET (chain 56).
+ *
+ * This namespace is the indexed registry only. AgenSea's own four agents live
+ * on TESTNET 97 and are at /marketplace/[id]; the numeric ids overlap (mainnet
+ * agent 2012 is a different entity from our chain-97 agent 2012), so the two
+ * are deliberately not merged under one route.
+ *
+ * Rendering: ISR, not dynamic. Supabase is on the free plan and pauses after 7
+ * days of low activity; a static page keeps serving from the CDN while the
+ * database is down, whereas a dynamic one would 500.
+ */
+import { notFound } from 'next/navigation';
+import { getAgent, getOverlapAgent } from '@/lib/queries';
+import { int, shortAddr, measuredOn, livenessToken } from '@/lib/format';
+
+export const revalidate = 86400;   // 24h; push updates via POST /api/revalidate
+export const dynamicParams = true; // ids outside the prerendered set render on demand
+
+/** A bounded, interesting subset — NOT all 4,348. The rest are ISR on first hit. */
+export async function generateStaticParams() {
+  const TOP_BY_FANOUT = [
+    2658, 2862, 2140, 2517, 2532, 2536, 2554, 2586, 2385, 2410, 2430, 2432,
+    2522, 2531, 2540, 2877, 2397, 2418, 2543, 2882, 2394, 2416, 2417, 2520,
+  ];
+  const OVERLAP = [127417];
+  return [...TOP_BY_FANOUT, ...OVERLAP].map((id) => ({ id: String(id) }));
+}
+
+const Field = ({ k, v, tone }: { k: string; v: string; tone?: string }) => (
+  <div>
+    <div style={{ font: "500 9px/1 var(--mono)", letterSpacing: '0.12em', color: 'var(--text-faint)', textTransform: 'uppercase' }}>{k}</div>
+    <div style={{ font: "400 12px/1.4 var(--mono)", color: tone ?? 'var(--text)', marginTop: 6, wordBreak: 'break-all' }}>{v}</div>
+  </div>
+);
+
+export default async function AgentDetail({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  const agentId = Number(id);
+  if (!Number.isInteger(agentId) || agentId < 1) notFound();
+
+  const agent = await getAgent(agentId);
+  const overlap = agent ? null : await getOverlapAgent(agentId);
+  if (!agent && !overlap) notFound();
+
+  const a = (agent ?? overlap)!;
+  const isOverlap = !agent;
+  const tone = `var(${livenessToken(a.client_count)})`;
+
+  return (
+    <>
+      <section style={{ padding: '56px 0 28px' }}>
+        <div style={{ font: "500 11px/1 var(--mono)", letterSpacing: '0.14em', color: 'var(--text-faint)', textTransform: 'uppercase' }}>
+          ERC-8004 registry · BNB Smart Chain mainnet (56)
+        </div>
+        <h1 style={{ font: "500 34px/1.15 var(--display)", marginTop: 14 }}>Agent #{a.agent_id}</h1>
+
+        {isOverlap && (
+          <div style={{ marginTop: 18, padding: '14px 18px', background: 'var(--surface-raised)', boxShadow: 'inset 2px 0 0 var(--warn)' }}>
+            <div style={{ font: "500 10px/1 var(--mono)", letterSpacing: '0.12em', color: 'var(--warn)', textTransform: 'uppercase' }}>
+              Not in the liveness set
+            </div>
+            <div style={{ font: "400 12px/1.6 var(--mono)", color: 'var(--text-muted)', marginTop: 8 }}>
+              This agent has zero clients, so it is absent from the fan-out curve and from every
+              agent count on this site. It is here because it is the only B402 Bazaar payee that
+              also holds an ERC-8004 identity — revenue without reputation.
+            </div>
+          </div>
+        )}
+      </section>
+
+      <section style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 24, padding: '24px 0', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
+        <Field k="clients" v={int(a.client_count)} tone={tone} />
+        <Field k="feedback entries" v={a.feedback_count ? int(a.feedback_count) : '0'} />
+        <Field k="owner" v={shortAddr(a.owner)} />
+        <Field k="agent wallet" v={shortAddr(a.agent_wallet)} />
+      </section>
+
+      <section style={{ padding: '32px 0' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
+          <Field k="tokenURI kind" v={a.token_uri_kind ?? '—'} />
+          <Field k="metadata host" v={a.token_uri_host ?? (a.token_uri_kind === 'data' ? 'inline data: URI' : '—')} />
+        </div>
+        {a.token_uri && (
+          <div style={{ marginTop: 24 }}>
+            <Field k="tokenURI" v={a.token_uri.length > 160 ? a.token_uri.slice(0, 160) + '…' : a.token_uri} />
+          </div>
+        )}
+        {overlap && (
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32, marginTop: 24 }}>
+            <Field k="B402 resources" v={int(overlap.bazaar_resources)} />
+            <Field k="share of catalogue" v={`${overlap.bazaar_pct}%`} />
+          </div>
+        )}
+        <div style={{ font: "400 10px/1.4 var(--mono)", color: 'var(--text-muted)', marginTop: 28 }}>
+          measured {measuredOn(a.checked_at)}
+        </div>
+      </section>
+
+      <section style={{ padding: '24px 0 72px', borderTop: '1px solid var(--border)' }}>
+        <div style={{ font: "400 12px/1.6 var(--mono)", color: 'var(--text-muted)', maxWidth: 620 }}>
+          Registry agents are indexed from chain 56 and are not hireable here. AgenSea&apos;s own
+          hireable agents run on testnet 97 — see <a href="/marketplace" style={{ color: 'var(--live)' }}>the marketplace</a>.
+        </div>
+      </section>
+    </>
+  );
+}

@@ -5,6 +5,20 @@
  */
 import { sbSelect } from './supabase';
 
+/**
+ * ISR window for every read. Long by design.
+ *
+ * The Supabase project is on the FREE plan, which pauses after 7 days of low
+ * activity, and judging runs 9-23 Sep unattended. A short revalidate means more
+ * chances to re-query a database that may be paused; a long one means pages keep
+ * serving the last good render from the CDN. Push fresh data deliberately with
+ * POST /api/revalidate after a sweep instead of waiting for a window to lapse.
+ *
+ * NOTE: the fetch-level value wins over a page's `export const revalidate` when
+ * it is shorter, so these must not be left small "just in case".
+ */
+const DAY = 86400;
+
 export interface CurvePoint { threshold: number; qualifying_agents: number }
 export interface RegistryStat { key: string; value: string; measured_at: string; note: string | null }
 
@@ -12,7 +26,7 @@ export interface RegistryStat { key: string; value: string; measured_at: string;
 export async function getFanoutCurve(): Promise<CurvePoint[]> {
   const { rows } = await sbSelect<CurvePoint>('agent_fanout_curve', {
     query: 'select=threshold,qualifying_agents&order=threshold.asc',
-    revalidate: 3600,
+    revalidate: DAY,
   });
   return rows;
 }
@@ -21,7 +35,7 @@ export async function getFanoutCurve(): Promise<CurvePoint[]> {
 export async function getRegistryStats(): Promise<Record<string, RegistryStat>> {
   const { rows } = await sbSelect<RegistryStat>('registry_stats', {
     query: 'select=key,value,measured_at,note&order=key.asc',
-    revalidate: 3600,
+    revalidate: DAY,
   });
   return Object.fromEntries(rows.map((r) => [r.key, r]));
 }
@@ -41,13 +55,13 @@ export async function getLiveAgents(opts: { page: number; perPage: number; minFa
     query: 'select=agent_id,owner,client_count,checked_at,token_uri_kind,token_uri_host,feedback_count,summary_value&order=client_count.desc,agent_id.asc',
     count: true,
     range: [from, from + opts.perPage - 1],
-    revalidate: 300,
+    revalidate: DAY,
   });
 }
 
 export async function getAgent(agentId: number): Promise<LiveAgent | null> {
   const { rows } = await sbSelect<LiveAgent>('agent_liveness_with_clients', {
-    query: `select=agent_id,owner,client_count,clients,checked_at,agent_wallet,token_uri,token_uri_kind,token_uri_host,metadata,feedback_count,summary_value,summary_decimals&agent_id=eq.${agentId}`, revalidate: 300,
+    query: `select=agent_id,owner,client_count,clients,checked_at,agent_wallet,token_uri,token_uri_kind,token_uri_host,metadata,feedback_count,summary_value,summary_decimals&agent_id=eq.${agentId}`, revalidate: DAY,
   });
   return rows[0] ?? null;
 }
@@ -58,14 +72,14 @@ export interface OverlapAgent extends LiveAgent { bazaar_resources: number; baza
  *  Deliberately a separate surface so it never enters a counted set. */
 export async function getOverlapAgent(agentId: number): Promise<OverlapAgent | null> {
   const { rows } = await sbSelect<OverlapAgent>('agent_overlap_detail', {
-    query: `select=agent_id,owner,agent_wallet,token_uri,token_uri_kind,token_uri_host,metadata,client_count,feedback_count,summary_value,summary_decimals,checked_at,bazaar_resources,bazaar_pct&agent_id=eq.${agentId}`, revalidate: 300,
+    query: `select=agent_id,owner,agent_wallet,token_uri,token_uri_kind,token_uri_host,metadata,client_count,feedback_count,summary_value,summary_decimals,checked_at,bazaar_resources,bazaar_pct&agent_id=eq.${agentId}`, revalidate: DAY,
   });
   return rows[0] ?? null;
 }
 
 export async function getAllOverlapAgents(): Promise<OverlapAgent[]> {
   const { rows } = await sbSelect<OverlapAgent>('agent_overlap_detail', {
-    query: 'select=agent_id,owner,agent_wallet,token_uri,token_uri_kind,token_uri_host,metadata,client_count,feedback_count,summary_value,summary_decimals,checked_at,bazaar_resources,bazaar_pct&order=bazaar_resources.desc', revalidate: 3600,
+    query: 'select=agent_id,owner,agent_wallet,token_uri,token_uri_kind,token_uri_host,metadata,client_count,feedback_count,summary_value,summary_decimals,checked_at,bazaar_resources,bazaar_pct&order=bazaar_resources.desc', revalidate: DAY,
   });
   return rows;
 }
@@ -78,7 +92,7 @@ export interface Payee { pay_to: string; resources: number; pct_of_catalogue: nu
 export async function getBazaarResources(): Promise<BazaarResource[]> {
   const { rows } = await sbSelect<BazaarResource>('bazaar_resources', {
     query: 'select=resource_url,resource_type,last_updated&order=resource_url.asc',
-    revalidate: 3600,
+    revalidate: DAY,
   });
   return rows;
 }
@@ -86,7 +100,7 @@ export async function getBazaarResources(): Promise<BazaarResource[]> {
 export async function getPayees(): Promise<Payee[]> {
   const { rows } = await sbSelect<Payee>('bazaar_payee_concentration', {
     query: 'select=pay_to,resources,pct_of_catalogue&order=resources.desc',
-    revalidate: 3600,
+    revalidate: DAY,
   });
   return rows;
 }

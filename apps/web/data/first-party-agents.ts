@@ -55,9 +55,6 @@ export interface CompletedJob {
   /** True when timeToDeliverableMs is dominated by relay transport failure
    *  rather than agent work — must be disclosed wherever the number is shown. */
   transportAnomaly?: string;
-  /** Pre-fix manifests were hashed without \uXXXX escaping and need
-   *  ensure_ascii=False to reproduce. */
-  legacyCanonicalisation: boolean;
 }
 
 export interface FirstPartyAgent {
@@ -105,7 +102,7 @@ export const FIRST_PARTY_AGENTS: FirstPartyAgent[] = [
     jobs: [{
       jobId: '748', status: 'COMPLETED',
       deliverableHash: '0xac4c18558a1c73251ecde27d77395bf4ed499a417980f15e984b31253fc43974',
-      timeToDeliverableMs: 73444, analysisMs: 12787, legacyCanonicalisation: true,
+      timeToDeliverableMs: 73444, analysisMs: 12787,
     }],
     analysisChainId: 56,
   },
@@ -128,7 +125,7 @@ export const FIRST_PARTY_AGENTS: FirstPartyAgent[] = [
     jobs: [{
       jobId: '757', status: 'COMPLETED',
       deliverableHash: '0x9265db4ab38322fd1b76bd704b1cbfcd023356f0d154bc6ca909c0c9bd4bd5e9',
-      timeToDeliverableMs: 248354, analysisMs: 3816, legacyCanonicalisation: true,
+      timeToDeliverableMs: 248354, analysisMs: 3816,
       transportAnomaly:
         'Two relay timeouts of ~245s preceded the successful submit. Analysis itself took 3.8s. ' +
         'The 248s figure is transport, not agent latency.',
@@ -154,7 +151,7 @@ export const FIRST_PARTY_AGENTS: FirstPartyAgent[] = [
     jobs: [{
       jobId: '754', status: 'COMPLETED',
       deliverableHash: '0x7923d665c028295136f83593a8afef43b420ad81d8e69c3bef6eaaa9c1af9600',
-      timeToDeliverableMs: 11751, analysisMs: 5227, legacyCanonicalisation: true,
+      timeToDeliverableMs: 11751, analysisMs: 5227,
     }],
     analysisChainId: 56,
   },
@@ -178,12 +175,12 @@ export const FIRST_PARTY_AGENTS: FirstPartyAgent[] = [
       {
         jobId: '753', status: 'COMPLETED',
         deliverableHash: '0x58bb1271cb01d9a061d23caacf5064c621c88f77fed2c634a2ce199d31195c97',
-        timeToDeliverableMs: 8030, analysisMs: 2404, legacyCanonicalisation: true,
+        timeToDeliverableMs: 8030, analysisMs: 2404,
       },
       {
         jobId: '765', status: 'SUBMITTED',
         deliverableHash: '0xe5d51d1201cffcde729f931ac8f6680bcc4116618c3c21c421d71b2d5a4818bc',
-        timeToDeliverableMs: 9532, analysisMs: 2404, legacyCanonicalisation: false,
+        timeToDeliverableMs: 9532, analysisMs: 2404,
       },
     ],
     analysisChainId: 56,
