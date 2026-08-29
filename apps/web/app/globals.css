@@ -1,0 +1,15 @@
+@import '../styles/tokens.css';
+
+/* Literal values below are transcribed from the reference design system.
+ * No spacing/radius/type scale is invented — the reference uses literals. */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font: 400 14px/1.5 var(--mono);
+  -webkit-font-smoothing: antialiased;
+}
+a { color: inherit; text-decoration: none; }
+h1, h2, h3 { font-family: var(--display); font-weight: 500; letter-spacing: -0.02em; margin: 0; }
+:focus-visible { outline: 1px solid var(--live); outline-offset: 2px; }
