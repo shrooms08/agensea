@@ -47,7 +47,7 @@ export async function getLiveAgents(opts: { page: number; perPage: number; minFa
 
 export async function getAgent(agentId: number): Promise<LiveAgent | null> {
   const { rows } = await sbSelect<LiveAgent>('agent_liveness_with_clients', {
-    query: `select=*&agent_id=eq.${agentId}`, revalidate: 300,
+    query: `select=agent_id,owner,client_count,clients,checked_at,agent_wallet,token_uri,token_uri_kind,token_uri_host,metadata,feedback_count,summary_value,summary_decimals&agent_id=eq.${agentId}`, revalidate: 300,
   });
   return rows[0] ?? null;
 }
@@ -58,14 +58,14 @@ export interface OverlapAgent extends LiveAgent { bazaar_resources: number; baza
  *  Deliberately a separate surface so it never enters a counted set. */
 export async function getOverlapAgent(agentId: number): Promise<OverlapAgent | null> {
   const { rows } = await sbSelect<OverlapAgent>('agent_overlap_detail', {
-    query: `select=*&agent_id=eq.${agentId}`, revalidate: 300,
+    query: `select=agent_id,owner,agent_wallet,token_uri,token_uri_kind,token_uri_host,metadata,client_count,feedback_count,summary_value,summary_decimals,checked_at,bazaar_resources,bazaar_pct&agent_id=eq.${agentId}`, revalidate: 300,
   });
   return rows[0] ?? null;
 }
 
 export async function getAllOverlapAgents(): Promise<OverlapAgent[]> {
   const { rows } = await sbSelect<OverlapAgent>('agent_overlap_detail', {
-    query: 'select=*&order=bazaar_resources.desc', revalidate: 3600,
+    query: 'select=agent_id,owner,agent_wallet,token_uri,token_uri_kind,token_uri_host,metadata,client_count,feedback_count,summary_value,summary_decimals,checked_at,bazaar_resources,bazaar_pct&order=bazaar_resources.desc', revalidate: 3600,
   });
   return rows;
 }

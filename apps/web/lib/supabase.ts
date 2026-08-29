@@ -61,3 +61,24 @@ export async function sbProbe(table: string, query: string) {
   const body = await res.text();
   return { status: res.status, ok: res.ok, body: body.slice(0, 200) };
 }
+
+/**
+ * Exact row count for a relation. STANDING RULE: rows.length is never a count.
+ * PostgREST caps an unpaged select (default 1000 rows), so .length silently
+ * understates any relation larger than the cap. This asks for count=exact and
+ * reads Content-Range, which is authoritative regardless of page size.
+ */
+export async function sbCount(table: string, filter = ''): Promise<number> {
+  const q = filter ? `select=${filter.split('&')[0]?.includes('=') ? 'id' : 'id'}&${filter}` : 'select=*';
+  const res = await fetch(`${BASE}/rest/v1/${table}?${filter || 'select=*'}`, {
+    headers: { apikey: ANON!, Authorization: `Bearer ${ANON}`, Prefer: 'count=exact', Range: '0-0' },
+    cache: 'no-store',
+  });
+  const cr = res.headers.get('content-range');
+  if (!res.ok || !cr || !cr.includes('/')) {
+    throw new Error(`sbCount ${table} -> ${res.status} ${cr ?? '(no content-range)'}`);
+  }
+  const n = Number(cr.split('/')[1]);
+  if (!Number.isFinite(n)) throw new Error(`sbCount ${table}: unparseable Content-Range ${cr}`);
+  return n;
+}

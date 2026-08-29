@@ -98,10 +98,18 @@ async function main(): Promise<void> {
   log('');
 
   // --- target set -----------------------------------------------------------
-  const { data: payRows, error: pErr } = await withRetry('read payees', () =>
-    db.from('bazaar_accepts').select('pay_to'),
-  );
-  if (pErr) throw new Error(`read payees failed: ${pErr.message}`);
+  // Paged: PostgREST caps an unpaged select at 1000 rows. bazaar_accepts is
+  // currently 986, so this was 14 rows from silently truncating the payee set.
+  const payRows: { pay_to: string }[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await withRetry(`read payees ${from}`, () =>
+      db.from('bazaar_accepts').select('pay_to').range(from, from + 999),
+    );
+    if (error) throw new Error(`read payees failed: ${error.message}`);
+    if (!data || data.length === 0) break;
+    payRows.push(...(data as { pay_to: string }[]));
+    if (data.length < 1000) break;
+  }
   const payees = [...new Set((payRows ?? []).map((r) => String((r as { pay_to: string }).pay_to).toLowerCase()))]
     .filter((p) => /^0x[0-9a-f]{40}$/.test(p));
   log(`  B402 payees: ${payees.length}`);

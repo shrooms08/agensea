@@ -83,6 +83,9 @@ for (const a of [...distinctAgents].sort((x, y) => y.client_count - x.client_cou
 log('');
 
 // --- overlap ----------------------------------------------------------------
-const { data: ov } = await withRetry('overlap view', () => db.from('agent_bazaar_overlap').select('*'));
-log(`agent_bazaar_overlap rows: ${(ov ?? []).length}`);
+// count=exact, not rows.length: an unpaged select is capped at 1000 rows and
+// .length would understate any larger relation.
+const { data: ov, count: ovCount } = await withRetry('overlap view', () =>
+  db.from('agent_bazaar_overlap').select('*', { count: 'exact' }));
+log(`agent_bazaar_overlap rows: ${ovCount ?? 'UNKNOWN'} (fetched ${(ov ?? []).length})`);
 for (const r of ov ?? []) log('  ' + JSON.stringify(r));
