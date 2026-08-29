@@ -1,0 +1,24 @@
+{
+  "name": "@agensea/agents",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "dependencies": {
+    "@altananetwork/sdk": "^0.8.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.4.0",
+    "tsx": "^4.23.12",
+    "typescript": "^7.0.2"
+  },
+  "scripts": {
+    "spike": "tsx src/spike/altana_spike.ts",
+    "retry": "tsx src/spike/altana_retry.ts",
+    "session3": "tsx src/spike/altana_session3.ts",
+    "revoke-all": "tsx src/spike/revoke_all.ts",
+    "typecheck": "tsc --noEmit"
+  }
+}

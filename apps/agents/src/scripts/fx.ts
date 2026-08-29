@@ -1,0 +1,14 @@
+import process from 'node:process';
+import { resolve } from 'node:path';
+import { createClient, signerFromPrivateKey, BNB_TESTNET } from '@altananetwork/sdk';
+import { analyze } from '../venus/analyze.ts';
+import { updateState, ROOT } from '../agent/state.ts';
+process.loadEnvFile(resolve(ROOT, '.env'));
+const c = createClient({ chains: [BNB_TESTNET] });
+const w = await c.createWallet({ signer: signerFromPrivateKey(process.env.AGENT_KEY!.trim() as `0x${string}`) });
+const q = await analyze(97, w.address);
+console.log(`fixture now: HF=${q.healthFactor} (${q.riskLevel})`);
+console.log(`  collateral $${q.collateralUsd.toFixed(4)} weighted $${q.weightedCollateralUsd.toFixed(4)} borrowed $${q.borrowedUsd.toFixed(4)}`);
+console.log(`  drop to liquidation ${(q.priceDropToLiquidation!*100).toFixed(2)}%`);
+console.log(`  ${q.recommendation}`);
+await updateState({ fixtureFinal: q });

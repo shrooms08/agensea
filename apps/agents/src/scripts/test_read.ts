@@ -1,0 +1,12 @@
+import { readVenusPosition, usd } from '../venus/client.ts';
+process.loadEnvFile(new URL('../../../../.env', import.meta.url).pathname);
+const p = await readVenusPosition(56, '0xb76b35db3f2a7d8346013d9b02edbf756cf27c72');
+console.log(`chain ${p.chainId} block ${p.blockNumber} account ${p.account}`);
+console.log(`  collateral (unweighted) $${usd(p.collateralUsd).toFixed(2)}`);
+console.log(`  collateral (weighted)   $${usd(p.weightedCollateralUsd).toFixed(2)}`);
+console.log(`  borrowed                $${usd(p.borrowedUsd).toFixed(2)}`);
+console.log(`  HEALTH FACTOR           ${p.healthFactor}`);
+console.log(`  avg liq threshold       ${p.avgLiquidationThreshold}`);
+console.log(`  comptroller liquidity   $${usd(p.liquidity).toFixed(2)}  shortfall $${usd(p.shortfall).toFixed(2)}`);
+console.log(`  cross-check HF from liquidity: ${Number((p.borrowedUsd + p.liquidity - p.shortfall) * 10000n / p.borrowedUsd) / 10000}`);
+for (const m of p.markets) console.log(`    ${m.symbol.padEnd(8)} supply $${usd(m.supplyUsd).toFixed(2).padStart(12)}  borrow $${usd(m.borrowUsd).toFixed(2).padStart(12)}  cf ${Number(m.collateralFactor)/1e18}`);

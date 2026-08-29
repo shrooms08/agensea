@@ -1,0 +1,10 @@
+import process from 'node:process';
+process.loadEnvFile(new URL('../../../../.env', import.meta.url).pathname);
+const { compareYields } = await import('../yield/compare.ts');
+const r = await compareYields();
+console.log(`asset ${r.asset} @ block ${r.blockNumber}`);
+for (const v of r.venues) console.log(`  ${v.venue.padEnd(9)} ${v.supplyAprPct.toFixed(6)}%  ${v.spot ? 'spot   ' : 'trailing'}  ${v.method.slice(0,60)}`);
+console.log(`\ngas to switch: ${r.gasCostToSwitchTBnb.toFixed(8)} BNB ($${r.gasCostUsd.toFixed(2)})`);
+console.log(`break-even: ${r.breakEvenDays?.toFixed(1)} days on $${r.positionSizeUsd}`);
+console.log(`\n${r.recommendation}`);
+console.log('\nassumptions:'); for (const a of r.assumptions) console.log(`  - ${a}`);
