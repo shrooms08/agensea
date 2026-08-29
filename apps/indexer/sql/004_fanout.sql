@@ -70,6 +70,13 @@ begin
            where f.agent_count <= b.threshold)
     from (select distinct agent_count as threshold from public.client_fanout) b;
 
+  -- Sentinel for the slider's lower bound. The smallest real breakpoint is 1,
+  -- so a "largest breakpoint <= t" lookup at t=0 would otherwise find no row
+  -- and return undefined where the correct answer is 0.
+  insert into public.agent_fanout_curve (threshold, qualifying_agents)
+  values (0, 0)
+  on conflict (threshold) do nothing;
+
   return query
     select (select count(*)::integer from public.client_fanout),
            (select count(*)::integer from public.agent_fanout_curve);
@@ -132,6 +139,21 @@ commit;
 -- ---------------------------------------------------------------------------
 -- Expected after apply (these are the numbers to check against):
 --   client_fanout       107 rows
---   agent_fanout_curve   30 rows
---   curve: threshold 1800 -> 4348 · 924 -> 1561 · 442 -> 656 · 62 -> 173
+--   agent_fanout_curve   31 rows  (30 distinct fan-out values + the 0 sentinel)
+--
+--   Every threshold below is an ACTUAL ROW in the table. Do not assert on
+--   arbitrary t: `where threshold = 442` returns zero rows even though the
+--   curve evaluated at t=442 is 656. The row is 254.
+--     threshold    0 ->    0   (sentinel, slider lower bound)
+--     threshold    1 ->   29   (smallest real breakpoint)
+--     threshold   96 ->  173   (covers the "<=100" figure)
+--     threshold  254 ->  656   (covers the "<=500" figure)
+--     threshold  924 -> 1561   (covers the "<=1000" figure)
+--     threshold 1800 -> 4348   (max fan-out; equals the unrestricted total)
+--
+--   Check with:
+--     select count(*) from public.agent_fanout_curve;              -- 31
+--     select * from public.agent_fanout_curve order by threshold;
+--     select max(qualifying_agents) from public.agent_fanout_curve -- 4348
+--       = (select count(*) from public.agent_liveness where client_count > 0);
 -- ---------------------------------------------------------------------------
