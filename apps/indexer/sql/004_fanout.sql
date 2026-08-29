@@ -45,6 +45,11 @@ create table if not exists public.registry_stats (
 create or replace function public.refresh_fanout()
 returns table (clients_out integer, breakpoints_out integer)
 language plpgsql
+-- Not SECURITY DEFINER (runs as the caller, i.e. service_role only). The empty
+-- search_path is belt-and-braces: every object below is schema-qualified, so a
+-- hostile search_path cannot redirect a lookup. Also clears Supabase's
+-- function_search_path_mutable lint.
+set search_path = ''
 as $$
 begin
   delete from public.client_fanout;
