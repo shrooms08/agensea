@@ -12,7 +12,7 @@
 export function MarkSparse({ size = 20, className }: { size?: number; className?: string }) {
   return (
     <svg width={size} height={size} viewBox="0 0 8 8" className={className} role="img" aria-label="AgenSea">
-      <g fill="currentColor" shapeRendering="crispEdges"><rect x="6" y="0" width="1" height="1" /><rect x="3" y="2" width="1" height="1" /><rect x="5" y="3" width="1" height="1" /><rect x="2" y="4" width="1" height="1" /><rect x="4" y="5" width="1" height="1" /><rect x="1" y="6" width="1" height="1" /><rect x="6" y="6" width="1" height="1" /></g>
+      <g fill="currentColor" shapeRendering="crispEdges"><rect className="mark-cell" x="6" y="0" width="1" height="1" /><rect className="mark-cell" x="3" y="2" width="1" height="1" /><rect className="mark-cell" x="5" y="3" width="1" height="1" /><rect className="mark-cell" x="2" y="4" width="1" height="1" /><rect className="mark-cell" x="4" y="5" width="1" height="1" /><rect className="mark-cell" x="1" y="6" width="1" height="1" /><rect className="mark-cell" x="6" y="6" width="1" height="1" /></g>
     </svg>
   );
 }

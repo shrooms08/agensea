@@ -11,11 +11,41 @@
  * threshold 0 is the sentinel (0 agents). log(0) is undefined, so it is pinned
  * to the left edge rather than fed to the scale.
  */
+import { useEffect, useRef, useState } from 'react';
 import type { CurvePoint } from '@/lib/queries';
+import { prefersReducedMotion } from '@/lib/motion';
 
 const W = 640, H = 200, PAD_L = 46, PAD_R = 12, PAD_T = 12, PAD_B = 26;
 
-export function FanoutCurve({ curve, index }: { curve: CurvePoint[]; index: number }) {
+export function FanoutCurve({ curve, index, onRevealed }: {
+  curve: CurvePoint[]; index: number; onRevealed?: () => void;
+}) {
+  // (b) Draw left to right on FIRST view only, then fade the area in.
+  // Reduced motion: `armed` stays false, no animation classes are applied, and
+  // the static path renders complete.
+  const wrap = useRef<SVGSVGElement>(null);
+  const lineRef = useRef<SVGPathElement>(null);
+  const [armed, setArmed] = useState(false);
+  const fired = useRef(false);
+
+  useEffect(() => {
+    if (fired.current) return;
+    if (prefersReducedMotion()) { fired.current = true; onRevealed?.(); return; }
+    const el = wrap.current;
+    if (!el) return;
+    const io = new IntersectionObserver((es) => {
+      if (!es[0]?.isIntersecting || fired.current) return;
+      fired.current = true;
+      io.disconnect();
+      const len = lineRef.current?.getTotalLength?.() ?? 1200;
+      lineRef.current?.style.setProperty('--len', String(len));
+      setArmed(true);
+      window.setTimeout(() => onRevealed?.(), 1040);
+    }, { threshold: 0.25 });
+    io.observe(el);
+    return () => io.disconnect();
+  }, [onRevealed]);
+
   const pts = [...curve].sort((a, b) => a.threshold - b.threshold);
   const maxY = Math.max(...pts.map((p) => p.qualifying_agents), 1);
   const logMax = Math.log10(Math.max(...pts.map((p) => p.threshold), 10));
@@ -33,7 +63,7 @@ export function FanoutCurve({ curve, index }: { curve: CurvePoint[]; index: numb
   const ticks = [1, 10, 100, 1000];
 
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img"
+    <svg ref={wrap} viewBox={`0 0 ${W} ${H}`} width="100%" role="img"
          aria-label={`Fan-out curve. At threshold ${cur.threshold}, ${cur.qualifying_agents} agents qualify.`}>
       {[0, 0.25, 0.5, 0.75, 1].map((f) => (
         <line key={f} x1={PAD_L} x2={W - PAD_R} y1={y(maxY * f)} y2={y(maxY * f)}
@@ -50,18 +80,20 @@ export function FanoutCurve({ curve, index }: { curve: CurvePoint[]; index: numb
               style={{ font: "400 9px var(--mono)", fill: 'var(--text-faint)' }}>{t}</text>
       ))}
 
-      <path d={area} fill="var(--live)" fillOpacity="0.10" stroke="none" />
-      <path d={path} fill="none" stroke="var(--live-dim)" strokeWidth="1.5" />
+      <path className={armed ? 'curve-area' : undefined} d={area} fill="var(--live)" fillOpacity="0.10" stroke="none" />
+      <path ref={lineRef} className={armed ? 'curve-line' : undefined} d={path} fill="none" stroke="var(--live-dim)" strokeWidth="1.5" />
       {pts.map((p) => (
-        <rect key={p.threshold} x={x(p.threshold) - 1.5} y={y(p.qualifying_agents) - 1.5}
+        <rect className={armed ? 'curve-dot' : undefined} key={p.threshold} x={x(p.threshold) - 1.5} y={y(p.qualifying_agents) - 1.5}
               width="3" height="3" fill="var(--live)" shapeRendering="crispEdges" />
       ))}
 
       {/* Position marker: --text, filled dot, no accent (accent means selected
           or first-party in the reference, neither of which applies here). */}
-      <line x1={x(cur.threshold)} x2={x(cur.threshold)} y1={PAD_T} y2={H - PAD_B}
-            stroke="var(--text)" strokeWidth="1" shapeRendering="crispEdges" />
-      <circle cx={x(cur.threshold)} cy={y(cur.qualifying_agents)} r="3.5" fill="var(--text)" />
+      <g className={armed ? 'curve-reveal' : undefined}>
+        <line x1={x(cur.threshold)} x2={x(cur.threshold)} y1={PAD_T} y2={H - PAD_B}
+              stroke="var(--text)" strokeWidth="1" shapeRendering="crispEdges" />
+        <circle cx={x(cur.threshold)} cy={y(cur.qualifying_agents)} r="3.5" fill="var(--text)" />
+      </g>
     </svg>
   );
 }

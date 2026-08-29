@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Space_Grotesk, JetBrains_Mono } from 'next/font/google';
 import { MarkSparse, Wordmark } from '@/components/Logo';
+import { Nav } from '@/components/Nav';
 import './globals.css';
 
 const display = Space_Grotesk({ subsets: ['latin'], weight: ['400','500','700'], variable: '--font-display', display: 'swap' });
@@ -17,13 +18,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <header style={{ borderBottom: '1px solid var(--border)' }}>
           <div className="container" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 32px' }}>
-            <MarkSparse size={20} />
-            <Wordmark height={18} />
-            <nav style={{ marginLeft: 'auto', display: 'flex', gap: 24 }}>
-              <a className="label" href="/marketplace">Marketplace</a>
-              <a className="label" href="/agents">Registry</a>
-              <a className="label" href="/bazaar">Bazaar</a>
-            </nav>
+            <a href="/" className="brand" aria-label="AgenSea home">
+              <MarkSparse size={20} />
+              <Wordmark height={18} />
+            </a>
+            <Nav />
           </div>
         </header>
         <main className="container">{children}</main>

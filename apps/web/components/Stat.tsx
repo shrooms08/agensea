@@ -9,6 +9,7 @@
  * "0 (measured" on /marketplace, printing an unclosed parenthesis.
  */
 import { measuredOn, int } from '@/lib/format';
+import { CountUp } from './CountUp';
 
 export function Stat({ label, value, measuredAt, note, tone = 'var(--text)' }: {
   label: string; value: number | string; measuredAt: string; note?: string | null; tone?: string;
@@ -17,7 +18,9 @@ export function Stat({ label, value, measuredAt, note, tone = 'var(--text)' }: {
     <div className="card">
       <div className="label">{label}</div>
       <div className="num stat-value" style={{ color: tone, marginTop: 10 }}>
-        {typeof value === 'number' ? int(value) : value}
+        {typeof value === 'number'
+          ? <CountUp value={value} />
+          : value}
       </div>
       <div className="meta" style={{ marginTop: 9 }}>measured {measuredOn(measuredAt)}</div>
       {note && <div className="meta" style={{ marginTop: 3 }}>{note}</div>}

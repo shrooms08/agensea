@@ -133,3 +133,64 @@ header nav .label { overflow-wrap: normal; white-space: nowrap; }
   header nav { gap: 14px !important; }
   header .container { flex-wrap: wrap; row-gap: 10px; }
 }
+
+/* ===========================================================================
+   MOTION
+   Every rule below sits inside prefers-reduced-motion: no-preference. The
+   static styles above are the complete fallback — with motion suppressed the
+   page renders at its final values immediately, nothing is hidden waiting for
+   an animation that will not run.
+   Nothing loops. Nothing moves after its initial reveal except in response to
+   input. No scroll-linked effects.
+=========================================================================== */
+
+/* Nav + logo: interactive affordances (not motion-gated for the cursor). */
+.brand { display: inline-flex; align-items: center; gap: 14px; cursor: pointer; }
+header nav .label { color: var(--text-muted); cursor: pointer; }
+header nav .label[data-active='true'] { color: var(--text); }
+header nav .navlink { position: relative; padding-bottom: 5px; }
+header nav .navlink[data-active='true']::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0;
+  height: 1px; background: var(--live);
+}
+
+.card, .card-lg { border: 1px solid transparent; }
+
+@media (prefers-reduced-motion: no-preference) {
+  header nav .label { transition: color 120ms ease-out; }
+  header nav .label:hover { color: var(--text); }
+  .brand { transition: opacity 120ms ease-out; }
+  .brand:hover { opacity: 0.82; }
+
+  /* (d) Cards: 1px lift and a border step. No shadow, no scale. */
+  .card, .card-lg {
+    transition: transform 120ms ease-out, border-color 120ms ease-out;
+  }
+  .card:hover, .card-lg:hover {
+    transform: translateY(-1px);
+    border-color: var(--border-strong);
+  }
+
+  /* (b) Curve draws left to right, then the area fades in. */
+  .curve-line { stroke-dasharray: var(--len); stroke-dashoffset: var(--len); animation: draw 1000ms ease-out forwards; }
+  .curve-area { opacity: 0; animation: fade 320ms ease-out 900ms forwards; }
+  .curve-dot  { opacity: 0; animation: fade 240ms ease-out 1000ms forwards; }
+  /* Thumb and readout arrive only once the line has finished drawing. */
+  .curve-reveal { opacity: 0; animation: fade 240ms ease-out 1040ms forwards; }
+
+  /* (e) Sparse-grid mark: 7 cells in sequence, ~400ms total, once. */
+  .mark-cell { opacity: 0; animation: fade 150ms ease-out forwards; }
+  .mark-cell:nth-child(1) { animation-delay: 0ms; }
+  .mark-cell:nth-child(2) { animation-delay: 42ms; }
+  .mark-cell:nth-child(3) { animation-delay: 84ms; }
+  .mark-cell:nth-child(4) { animation-delay: 126ms; }
+  .mark-cell:nth-child(5) { animation-delay: 168ms; }
+  .mark-cell:nth-child(6) { animation-delay: 210ms; }
+  .mark-cell:nth-child(7) { animation-delay: 252ms; }
+}
+
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@keyframes fade { to { opacity: 1; } }
+
+/* Counting figures must not jitter as digits change width. */
+.num, .tnum { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum' 1; }
