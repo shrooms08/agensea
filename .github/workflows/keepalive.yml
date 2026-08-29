@@ -64,10 +64,10 @@ jobs:
           for P in / /bazaar /marketplace /agents/2658 /agents/127417; do
             CODE=$(curl -sS --max-time 45 -o /dev/null -w '%{http_code}' "$BASE$P" || echo 000)
             printf '  %-22s %s\n' "$P" "$CODE"
-            # /marketplace may 404 until it ships; warn rather than fail on it.
-            case "$P:$CODE" in
-              /marketplace:404) echo "::warning title=Not built yet::/marketplace returned 404" ;;
-              *:200) ;;
+            # /marketplace has shipped: every path is a hard failure now.
+            # A warn on a live route hides a real outage.
+            case "$CODE" in
+              200) ;;
               *) echo "::error title=Warm failed::$P returned $CODE"; FAIL=1 ;;
             esac
           done

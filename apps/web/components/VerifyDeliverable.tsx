@@ -61,6 +61,20 @@ export function VerifyDeliverable({ jobId, manifest }: { jobId: string; manifest
         </button>
       </div>
 
+      <details style={{ marginTop: 14 }}>
+        <summary style={{ ...MONO9, color: 'var(--text-muted)', cursor: 'pointer' }}>Reproduce this yourself</summary>
+        <pre style={{ font: "400 10px/1.5 var(--mono)", color: 'var(--text-muted)', background: 'var(--bg)', padding: 12, marginTop: 10, overflowX: 'auto' }}>
+{`# on-chain deliverable (word 11 of the getJob struct)
+cast call ${'0xa206c0517B6371C6638CD9e4a42Cc9f02A33B0DE'} \\
+  "getJob(uint256)" ${jobId} \\
+  --rpc-url https://bsc-testnet-rpc.publicnode.com
+
+# recompute from the manifest
+python3 -c "import json,sys;print(json.dumps(json.load(sys.stdin),sort_keys=True,separators=(',',':'),ensure_ascii=False),end='')" \\
+  < manifest.json | cast keccak`}
+        </pre>
+      </details>
+
       {state.kind !== 'idle' && state.kind !== 'checking' && (
         <div style={{ marginTop: 16, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
           <div style={{ ...MONO9, color: tone }}>
@@ -95,19 +109,6 @@ export function VerifyDeliverable({ jobId, manifest }: { jobId: string; manifest
             </div>
           )}
 
-          <details style={{ marginTop: 14 }}>
-            <summary style={{ ...MONO9, color: 'var(--text-muted)', cursor: 'pointer' }}>Reproduce this yourself</summary>
-            <pre style={{ font: "400 10px/1.5 var(--mono)", color: 'var(--text-muted)', background: 'var(--bg)', padding: 12, marginTop: 10, overflowX: 'auto' }}>
-{`# on-chain deliverable (word 11 of the getJob struct)
-cast call ${'0xa206c0517B6371C6638CD9e4a42Cc9f02A33B0DE'} \\
-  "getJob(uint256)" ${jobId} \\
-  --rpc-url https://bsc-testnet-rpc.publicnode.com
-
-# recompute from the manifest
-python3 -c "import json,sys;print(json.dumps(json.load(sys.stdin),sort_keys=True,separators=(',',':'),ensure_ascii=False),end='')" \\
-  < manifest.json | cast keccak`}
-            </pre>
-          </details>
         </div>
       )}
     </div>
