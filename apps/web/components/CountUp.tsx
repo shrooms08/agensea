@@ -48,7 +48,14 @@ export function CountUp({ value, className, style }: {
         else setShown(value);
       };
       requestAnimationFrame(step);
-    }, { threshold: 0.35 });
+    }, {
+      // The sticky header removes ~53px of usable viewport, so a card scrolled
+      // to just under it is less visible than the raw geometry suggests. The
+      // negative top margin discounts the header band from the root box so the
+      // trigger point is unchanged from before the header became sticky.
+      threshold: 0.35,
+      rootMargin: '-56px 0px 0px 0px',
+    });
     io.observe(el);
     return () => io.disconnect();
   }, [value]);

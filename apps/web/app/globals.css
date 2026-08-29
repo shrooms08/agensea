@@ -194,3 +194,20 @@ header nav .navlink[data-active='true']::after {
 
 /* Counting figures must not jitter as digits change width. */
 .num, .tnum { font-variant-numeric: tabular-nums; font-feature-settings: 'tnum' 1; }
+
+/* ---------------------------------------------------------------------------
+   STICKY HEADER. Permanently visible — no hide-on-scroll-down/reveal-on-up.
+   Solid --bg so content scrolling beneath does not bleed through the 1px
+   bottom border. z-index sits above the curve SVG and the slider, both of
+   which are in normal flow (no stacking context of their own).
+--------------------------------------------------------------------------- */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+/* The sticky header eats ~53px of viewport. Scroll anchoring for in-page jumps
+   must clear it, or a targeted element lands underneath. */
+:target { scroll-margin-top: 64px; }

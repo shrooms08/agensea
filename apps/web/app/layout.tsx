@@ -16,7 +16,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${display.variable} ${mono.variable}`}>
       <body>
-        <header style={{ borderBottom: '1px solid var(--border)' }}>
+        <header className="site-header">
           <div className="container" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 32px' }}>
             <a href="/" className="brand" aria-label="AgenSea home">
               <MarkSparse size={20} />

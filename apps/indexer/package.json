@@ -11,7 +11,8 @@
     "stats": "tsx src/bazaar/stats.ts",
     "typecheck": "tsc --noEmit",
     "pass1": "tsx src/erc8004/pass1.ts",
-    "pass2": "tsx src/erc8004/pass2.ts"
+    "pass2": "tsx src/erc8004/pass2.ts",
+    "delta": "tsx src/erc8004/delta.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.58.0"
