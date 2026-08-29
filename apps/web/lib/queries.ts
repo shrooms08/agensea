@@ -69,3 +69,30 @@ export async function getAllOverlapAgents(): Promise<OverlapAgent[]> {
   });
   return rows;
 }
+
+export interface BazaarResource { resource_url: string; resource_type: string | null; last_updated: string | null }
+export interface Payee { pay_to: string; resources: number; pct_of_catalogue: number }
+
+/** All 976 resources. Paged to exhaustion by sbSelect; the rows stay on the
+ *  server and only aggregates reach the client. */
+export async function getBazaarResources(): Promise<BazaarResource[]> {
+  const { rows } = await sbSelect<BazaarResource>('bazaar_resources', {
+    query: 'select=resource_url,resource_type,last_updated&order=resource_url.asc',
+    revalidate: 3600,
+  });
+  return rows;
+}
+
+export async function getPayees(): Promise<Payee[]> {
+  const { rows } = await sbSelect<Payee>('bazaar_payee_concentration', {
+    query: 'select=pay_to,resources,pct_of_catalogue&order=resources.desc',
+    revalidate: 3600,
+  });
+  return rows;
+}
+
+/** Host of a resource URL. Mirrors the SQL index split_part(resource_url,'/',3). */
+export function hostOf(url: string): string {
+  try { return new URL(url).host.toLowerCase(); }
+  catch { return url.split('/')[2]?.toLowerCase() ?? '(unparseable)'; }
+}
