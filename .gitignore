@@ -8,3 +8,7 @@ out/
 
 # Session signers and other local secrets. Never commit.
 .secrets/
+
+# Next.js build output
+.next/
+next-env.d.ts
