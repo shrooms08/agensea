@@ -37,13 +37,17 @@ export default async function Bazaar() {
           own sweep — the Bazaar API is never called from your browser.
         </p>
         {/* Historical delta: cannot be derived from current data, which holds only
-            the latest sweep. Both endpoints were measured by our own ingest —
-            0x3c5f3a6c… (coinmarketcap.com) 14 resources on 24 Aug, 4 on 29 Aug;
-            0x50ab2018… flat at 941 across both. Update if a later sweep moves either. */}
+            the latest sweep. Measured by our own ingest.
+            RANKING ON 24 Aug 2026 (verify before editing this sentence):
+              #1 0x50ab2018… 941
+              #2 0x515e7bce… 15   (xona-agent.com)
+              #3 0x3c5f3a6c… 14   (coinmarketcap.com)  <- the operator below
+            So it was the THIRD-largest, not the second: 0x515e7bce held one
+            more resource. On 29 Aug it holds 4; 0x50ab2018… is flat at 941. */}
         <p className="prose prose-sm" style={{ color: 'var(--text-faint)', marginTop: 10, fontSize: 13 }}>
-          Concentration is hardening, not easing: between 24 and 29 Aug 2026 the second-largest
-          independent operator delisted 71% of its catalogue — 14 resources down to 4 — while the
-          leader held flat at 941.
+          Concentration is hardening, not easing: between 24 and 29 Aug 2026 the third-largest
+          operator delisted 71% of its catalogue — 14 resources down to 4 — while the leader
+          held flat at 941.
         </p>
       </section>
 

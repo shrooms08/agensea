@@ -211,3 +211,43 @@ header nav .navlink[data-active='true']::after {
 /* The sticky header eats ~53px of viewport. Scroll anchoring for in-page jumps
    must clear it, or a targeted element lands underneath. */
 :target { scroll-margin-top: 64px; }
+
+/* ---------------------------------------------------------------------------
+   GRID HAIRLINES — corrected.
+   The panel used to paint --border and let a 1px gap reveal it. That works only
+   when every row is full: at 1440 the marketplace grid resolved to 3 columns
+   for 4 cards, leaving 2 empty tracks rendering as grey #262626 blocks.
+   Lines are now drawn per-cell, so an incomplete row shows --bg like the rest
+   of the page and the hairline grid is unchanged where cells exist.
+--------------------------------------------------------------------------- */
+.grid-panel {
+  background: var(--bg);
+  gap: 0;
+  border: none;
+  border-top: 1px solid var(--border);
+  border-left: 1px solid var(--border);
+}
+.grid-panel > * {
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+/* cols-2 means two, not "as many as fit". 4 cards should be 2x2, not 3+1. */
+.cols-2 { grid-template-columns: repeat(2, 1fr); }
+@media (max-width: 760px) { .cols-2 { grid-template-columns: 1fr; } }
+
+/* Column counts are deterministic at desktop and step down at real breakpoints.
+   auto-fit was resolving "cols-4" to FIVE columns at 1440 (minmax 212px into a
+   1116px container), leaving a 4-card grid with a stray empty track and columns
+   narrower than the sibling grids above it. */
+.cols-5 { grid-template-columns: repeat(5, 1fr); }
+.cols-4 { grid-template-columns: repeat(4, 1fr); }
+.cols-3 { grid-template-columns: repeat(3, 1fr); }
+@media (max-width: 1080px) {
+  .cols-5 { grid-template-columns: repeat(3, 1fr); }
+  .cols-4 { grid-template-columns: repeat(2, 1fr); }
+  .cols-3 { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 700px) {
+  .cols-5, .cols-4, .cols-3 { grid-template-columns: 1fr; }
+}
