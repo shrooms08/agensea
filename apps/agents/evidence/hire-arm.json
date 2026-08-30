@@ -1,0 +1,93 @@
+{
+  "T1": {
+    "task": "T1",
+    "agentId": 2012,
+    "agent": "Venus Health Factor Monitor",
+    "input": {
+      "wallet": "0xb76b35db3f2a7d8346013d9b02edbf756cf27c72"
+    },
+    "jobId": "795",
+    "hireTx": "0x0aaf7e47c03854639f168136ba50da5ffef3cfd620e9bda2a1d3d30e0c679b93",
+    "submitTx": "0x1f033937940f436fd3b083a4b6401e4893cd08dd7b4e993c078f87f1f2ebd77a",
+    "deliverableHash": "0x91bf1d0f12b1273a5da70cf7ca22d9e4e54550fd7c1873df1c6cbf45adedf1e1",
+    "onChain": "0x91bf1d0f12b1273a5da70cf7ca22d9e4e54550fd7c1873df1c6cbf45adedf1e1",
+    "verified": true,
+    "jobStatus": "SUBMITTED",
+    "grantTx": "0xc7cf707ab7a37393c6375f3709a968760e66102ee4675bc71c1aa8d977e42d2e",
+    "grantFeeWei": "43510300000000",
+    "wallClockMs": 28976,
+    "analysisMs": 12952,
+    "cost": {
+      "buyerU": "1000000000000000000",
+      "buyerGasWei": "140465700000000",
+      "providerGasWei": "47589100000000",
+      "providerUEarned": "0"
+    },
+    "timestamps": {
+      "hireCallAt": 1788086808912,
+      "verifiedAt": 1788086837888
+    }
+  },
+  "T2": {
+    "task": "T2",
+    "agentId": 2013,
+    "agent": "PancakeSwap V3 Rebalancing Monitor",
+    "input": {
+      "tokenId": "6801109",
+      "pool": "0x7e58f160b5b77b8b24cd9900c09a3e730215ac47",
+      "pair": "ASTER/USDT",
+      "fee": 500
+    },
+    "jobId": "796",
+    "hireTx": "0x7c47064f1faa6d534d71be49d844afc26ef927f5ff2254760811c37dded550db",
+    "submitTx": "0x46504f1aec0dd7665c090f738191177a3cef5cfde0986dc29faf7cf42bf14d12",
+    "deliverableHash": "0x4f873233aa4443e65a2507b9c8dcc3f00c6b6a2926530ebc2adb73c04b99d0ad",
+    "onChain": "0x4f873233aa4443e65a2507b9c8dcc3f00c6b6a2926530ebc2adb73c04b99d0ad",
+    "verified": true,
+    "jobStatus": "SUBMITTED",
+    "grantTx": "0x0213061cc8dfd971d5369cda6386bb2a00886d4ae017ec6dcec2175075ae1154",
+    "grantFeeWei": "28163300000000",
+    "wallClockMs": 19977,
+    "analysisMs": 4154,
+    "cost": {
+      "buyerU": "1000000000000000000",
+      "buyerGasWei": "140465700000000",
+      "providerGasWei": "45542500000000",
+      "providerUEarned": "0"
+    },
+    "timestamps": {
+      "hireCallAt": 1788086841028,
+      "verifiedAt": 1788086861005
+    }
+  },
+  "T3": {
+    "task": "T3",
+    "agentId": 2015,
+    "agent": "BSC Yield Route Optimiser",
+    "input": {
+      "asset": "BTCB",
+      "positionSizeUsd": 10000
+    },
+    "jobId": "797",
+    "hireTx": "0x83e5df9a36b089ec5f252203134c70dd19b809039406065b8ab93e0afa59ac06",
+    "submitTx": "0xbc8efe331d412d2abf415ee5d79443b2bee7d0fc8ed2f45d51327b1f246269cd",
+    "deliverableHash": "0x0ee064d6b1ca9403f58daa793e7391c017279066a1594ab9f4dba8285368c654",
+    "onChain": "0x0ee064d6b1ca9403f58daa793e7391c017279066a1594ab9f4dba8285368c654",
+    "verified": true,
+    "jobStatus": "SUBMITTED",
+    "grantTx": "0x43c931bbab0e549e9efb985aaa6f977db108451ee227f5cf471c2f6360072412",
+    "grantFeeWei": "28163300000000",
+    "wallClockMs": 18015,
+    "analysisMs": 2995,
+    "cost": {
+      "buyerU": "1000000000000000000",
+      "buyerGasWei": "135622400000000",
+      "providerGasWei": "48479900000000",
+      "providerUEarned": "0"
+    },
+    "timestamps": {
+      "hireCallAt": 1788086864540,
+      "verifiedAt": 1788086882555
+    }
+  }
+}

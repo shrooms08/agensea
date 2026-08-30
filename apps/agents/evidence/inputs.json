@@ -1,0 +1,24 @@
+{
+  "_comment": "FROZEN INPUTS — TermiX Agent Advantage Report. Both arms run the identical task against these. Pinned 30 Aug 2026 after live verification; analysis chain is BSC mainnet (56), settlement chain 97.",
+  "T1": {
+    "category": "health (lending risk)",
+    "agent": { "agentId": 2012, "name": "Venus Health Factor Monitor" },
+    "task": "Full Venus position read: health factor, collateral, borrows, per-market liquidation thresholds, risk recommendation",
+    "input": { "wallet": "0xb76b35db3f2a7d8346013d9b02edbf756cf27c72" },
+    "verified_live": "getAccountLiquidity liquidity=15823.30e18, shortfall=0 (active position)"
+  },
+  "T2": {
+    "category": "trading / rebalancing  <-- satisfies the trading requirement",
+    "agent": { "agentId": 2013, "name": "PancakeSwap V3 Rebalancing Monitor" },
+    "task": "Position analysis: range status, composition, fees, recommended re-centred range",
+    "input": { "tokenId": "6801109", "pool": "0x7e58f160b5b77b8b24cd9900c09a3e730215ac47", "pair": "ASTER/USDT", "fee": 500 },
+    "verified_live": "ownerOf ok, liquidity 2.3758e24 (reduced from 5.22e24 at job 757 — position partially withdrawn since; both arms see current state)"
+  },
+  "T3": {
+    "category": "yield optimisation",
+    "agent": { "agentId": 2015, "name": "BSC Yield Route Optimiser" },
+    "task": "Supply-APR comparison for one asset across Venus, Aave V3, Lista; best route incl. gas + break-even",
+    "input": { "asset": "BTCB", "positionSizeUsd": 10000 },
+    "verified_live": "all three venues answering (Venus 25269500/block, Aave reserveData ok, Lista share 1.003846e18)"
+  }
+}

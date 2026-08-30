@@ -19,6 +19,7 @@
     "retry": "tsx src/spike/altana_retry.ts",
     "session3": "tsx src/spike/altana_session3.ts",
     "revoke-all": "tsx src/spike/revoke_all.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "advantage": "tsx src/scripts/advantage_run.ts"
   }
 }

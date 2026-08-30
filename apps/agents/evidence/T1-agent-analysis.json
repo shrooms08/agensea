@@ -1,0 +1,80 @@
+{
+  "account": "0xb76b35db3f2a7d8346013d9b02edbf756cf27c72",
+  "chainId": 56,
+  "chainLabel": "BNB Smart Chain mainnet",
+  "blockNumber": 118945982,
+  "healthFactor": 3.4607,
+  "riskLevel": "HEALTHY",
+  "collateralUsd": 28682.845221,
+  "weightedCollateralUsd": 22289.986707,
+  "borrowPowerUsd": 20630.246773,
+  "borrowedUsd": 6440.740413,
+  "avgLiquidationThreshold": 0.7771190945726334,
+  "priceDropToLiquidation": 0.7110411188487878,
+  "recommendation": "Health factor is 3.4607, a comfortable buffer — collateral would have to fall 71.1% before liquidation. No action needed; re-check if you borrow more or markets move sharply.",
+  "markets": [
+    {
+      "symbol": "vBNB",
+      "supplyUsd": 8338.887849,
+      "borrowUsd": 0,
+      "collateralFactor": 0.8,
+      "liquidationThreshold": 0.8
+    },
+    {
+      "symbol": "vBTC",
+      "supplyUsd": 13802.997942,
+      "borrowUsd": 0,
+      "collateralFactor": 0.8,
+      "liquidationThreshold": 0.8
+    },
+    {
+      "symbol": "vADA",
+      "supplyUsd": 1088.075583,
+      "borrowUsd": 0,
+      "collateralFactor": 0,
+      "liquidationThreshold": 0.63
+    },
+    {
+      "symbol": "vDOT",
+      "supplyUsd": 52.750378,
+      "borrowUsd": 0,
+      "collateralFactor": 0,
+      "liquidationThreshold": 0
+    },
+    {
+      "symbol": "vUSDT",
+      "supplyUsd": 0.002214,
+      "borrowUsd": 6440.740413,
+      "collateralFactor": 0.8,
+      "liquidationThreshold": 0.8
+    },
+    {
+      "symbol": "vLINK",
+      "supplyUsd": 1222.036054,
+      "borrowUsd": 0,
+      "collateralFactor": 0,
+      "liquidationThreshold": 0.63
+    },
+    {
+      "symbol": "vXRP",
+      "supplyUsd": 569.10337,
+      "borrowUsd": 0,
+      "collateralFactor": 0.5,
+      "liquidationThreshold": 0.65
+    },
+    {
+      "symbol": "vSOL",
+      "supplyUsd": 1700.058522,
+      "borrowUsd": 0,
+      "collateralFactor": 0.65,
+      "liquidationThreshold": 0.72
+    },
+    {
+      "symbol": "vETH",
+      "supplyUsd": 1908.933304,
+      "borrowUsd": 0,
+      "collateralFactor": 0.8,
+      "liquidationThreshold": 0.8
+    }
+  ]
+}
