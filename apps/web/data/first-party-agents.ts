@@ -103,6 +103,11 @@ export const FIRST_PARTY_AGENTS: FirstPartyAgent[] = [
       jobId: '748', status: 'COMPLETED',
       deliverableHash: '0xac4c18558a1c73251ecde27d77395bf4ed499a417980f15e984b31253fc43974',
       timeToDeliverableMs: 73444, analysisMs: 12787,
+    },
+    {
+      jobId: '795', status: 'COMPLETED',
+      deliverableHash: '0x91bf1d0f12b1273a5da70cf7ca22d9e4e54550fd7c1873df1c6cbf45adedf1e1',
+      timeToDeliverableMs: 28976, analysisMs: 12952,
     }],
     analysisChainId: 56,
   },
@@ -129,6 +134,11 @@ export const FIRST_PARTY_AGENTS: FirstPartyAgent[] = [
       transportAnomaly:
         'Two relay timeouts of ~245s preceded the successful submit. Analysis itself took 3.8s. ' +
         'The 248s figure is transport, not agent latency.',
+    },
+    {
+      jobId: '796', status: 'COMPLETED',
+      deliverableHash: '0x4f873233aa4443e65a2507b9c8dcc3f00c6b6a2926530ebc2adb73c04b99d0ad',
+      timeToDeliverableMs: 19977, analysisMs: 4154,
     }],
     analysisChainId: 56,
   },
@@ -178,9 +188,14 @@ export const FIRST_PARTY_AGENTS: FirstPartyAgent[] = [
         timeToDeliverableMs: 8030, analysisMs: 2404,
       },
       {
-        jobId: '765', status: 'SUBMITTED',
+        jobId: '765', status: 'COMPLETED',
         deliverableHash: '0xe5d51d1201cffcde729f931ac8f6680bcc4116618c3c21c421d71b2d5a4818bc',
         timeToDeliverableMs: 9532, analysisMs: 2404,
+      },
+      {
+        jobId: '797', status: 'COMPLETED',
+        deliverableHash: '0x0ee064d6b1ca9403f58daa793e7391c017279066a1594ab9f4dba8285368c654',
+        timeToDeliverableMs: 18015, analysisMs: 2995,
       },
     ],
     analysisChainId: 56,

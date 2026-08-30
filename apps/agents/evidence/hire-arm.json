@@ -26,7 +26,9 @@
     "timestamps": {
       "hireCallAt": 1788086808912,
       "verifiedAt": 1788086837888
-    }
+    },
+    "settleTx": "0xe5a6f956da70cc90ac94029419b6a2cd8eb808b214398c7f67f4f24bc016a86a",
+    "finalStatus": "COMPLETED"
   },
   "T2": {
     "task": "T2",
@@ -58,7 +60,9 @@
     "timestamps": {
       "hireCallAt": 1788086841028,
       "verifiedAt": 1788086861005
-    }
+    },
+    "settleTx": "0xc336e6d42ed28f10cc7edf26038a34d6d93de04c32023d24ffd71635c7e12a2e",
+    "finalStatus": "COMPLETED"
   },
   "T3": {
     "task": "T3",
@@ -88,6 +92,8 @@
     "timestamps": {
       "hireCallAt": 1788086864540,
       "verifiedAt": 1788086882555
-    }
+    },
+    "settleTx": "0x92cbcc4bafdb895cc4645f862032af30c7cad211d498339c2474f155ffa9f4e7",
+    "finalStatus": "COMPLETED"
   }
 }
