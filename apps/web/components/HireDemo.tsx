@@ -116,6 +116,15 @@ export function HireDemo({ agentId, completedCount }: { agentId: number; complet
         </div>
       )}
 
+      {ev('session-restored') != null && (
+        <div className="hd-enter" style={{ marginTop: 12, padding: '10px 14px', background: 'var(--surface-raised)', boxShadow: 'inset 2px 0 0 var(--live-dim)' }}>
+          <span className="data" style={{ color: 'var(--live)' }}>
+            Session re-granted before submit (was revoked) —{' '}
+            <a className="meta" style={{ color: 'var(--live-dim)' }} href={EXPLORER + String((ev('session-restored') as Ev).tx)} target="_blank" rel="noreferrer">tx ↗</a>
+          </span>
+        </div>
+      )}
+
       {(events.length > 0 || running) && (
         <div style={{ marginTop: 18 }}>
           {STAGES.map(([key, label], i) => {

@@ -21,11 +21,13 @@ import { planGrid } from '../../../agents/src/grid/analyze.ts';
 import { compareYields } from '../../../agents/src/yield/compare.ts';
 import { encodeFunctionData, parseAbi } from 'viem';
 import SESSIONS from '@/data/demo-sessions.json';
+import { readAuthority, healAgentSession } from './session-admin';
 
 export type HireEvent =
   | { stage: 'funded'; jobId: string; tx: string }
   | { stage: 'analysing' }
   | { stage: 'analysed'; ms: number }
+  | { stage: 'session-restored'; tx: string }
   | { stage: 'submitted'; tx: string }
   | { stage: 'verified'; hash: string; onChain: string; manifest: unknown; analysis: unknown }
   | { stage: 'settlement-pending'; eligibleAt: number; note: string }
@@ -103,6 +105,16 @@ export async function* runDemoHire(agentId: number): AsyncGenerator<HireEvent> {
   try { analysis = await task.run(); }
   catch { yield { stage: 'error', kind: 'rpc', message: 'analysis read failed — could not reach BSC mainnet' }; return; }
   yield { stage: 'analysed', ms: Date.now() - tA };
+
+  // If a revoke demo removed this session's authority, heal it first —
+  // tombstone-safe register:false grant to the same persisted signer.
+  try {
+    const auth = await readAuthority(agentId);
+    if (auth && !auth.active) {
+      const { tx } = await healAgentSession(agentId);
+      yield { stage: 'session-restored', tx: tx ?? '' };
+    }
+  } catch { /* fall through: submit will surface the real failure */ }
 
   // SUBMIT via the scoped session
   const manifest: DeliverableManifest = {

@@ -10,6 +10,7 @@ import { deliverableFor } from '@/data/deliverables';
 import { CategoryChip, FirstPartyBadge, CAT_TOKEN } from '@/components/CategoryChip';
 import { VerifyDeliverable } from '@/components/VerifyDeliverable';
 import { HireDemo } from '@/components/HireDemo';
+import { SessionRevoke } from '@/components/SessionRevoke';
 
 export const revalidate = 86400;
 export const dynamicParams = false;   // exactly four, all known at build
@@ -83,6 +84,7 @@ export default async function FirstPartyAgent({ params }: { params: Promise<{ id
             <Field k="expires" v={expiry} />
           </div>
         </div>
+        <SessionRevoke agentId={agent.agentId} />
         <div style={{ marginTop: 14, padding: '14px 18px', background: 'var(--surface-raised)', boxShadow: 'inset 2px 0 0 var(--warn)' }}>
           <div style={{ font: "500 10px/1 var(--mono)", letterSpacing: '0.12em', color: 'var(--warn)', textTransform: 'uppercase' }}>Sizing a cap</div>
           <p className="prose-sm prose-muted" style={{ marginTop: 8, fontSize: 13 }}>
