@@ -300,3 +300,26 @@ header nav .navlink[data-active='true']::after {
      immediately); the animated path hides and fades it back in via JS refs. */
   .hero-mobile[data-anim] .hm-reveal { opacity: 0; }
 }
+
+/* ---------------------------------------------------------------------------
+   HIRE STREAM TIMELINE MOTION. Same idiom as the rest of the site: CSS
+   animations + rAF, no libraries, everything gated behind
+   prefers-reduced-motion (fallback = instant appearance).
+   The pending pulse is the ONLY looping motion on the site — justified as a
+   live-work signal: it runs only while a stage is genuinely awaiting a chain
+   confirmation (or on the settlement row, which is genuinely pending until
+   its 900s window lapses) and stops the moment the state confirms or fails.
+--------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: no-preference) {
+  .hd-enter {
+    animation: hd-slide 200ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+  .hd-tx { opacity: 0; animation: fade 150ms ease-out 120ms forwards; }
+  .hd-connector { transform-origin: top; animation: hd-grow 200ms ease-out both; }
+  .hd-pulse { animation: hd-pulse 1.2s ease-in-out infinite; }
+}
+/* Base state outside the media query so reduced-motion still sees the row. */
+.hd-pending { opacity: 0.4; }
+@keyframes hd-slide { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes hd-grow  { from { transform: scaleY(0); } }
+@keyframes hd-pulse { 50% { opacity: 0.85; } }

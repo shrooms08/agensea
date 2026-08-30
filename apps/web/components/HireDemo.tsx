@@ -1,13 +1,17 @@
 'use client';
 /**
- * "Hire — run a live job" — streams the demo hire's real progression.
- * Each stage lands with its tx link as it confirms. Failure states are
- * first-class and distinct: limit-reached, relay, RPC, internal — a judge
- * pressing this during an outage sees "couldn't reach the chain", never an
- * eternal spinner or a fake success.
+ * "Hire — run a live job" — streams the demo hire's real progression as a
+ * vertical timeline. Each stage, on its REAL confirmation, slides in 8px with
+ * a 200ms overshoot ease; its tx link fades in 150ms behind it; a 1px
+ * connector grows down from the previous stage as it lands. The in-flight
+ * stage pulses at reduced opacity — the only looping motion on the site,
+ * justified as live-work signal; it stops the instant the state confirms or
+ * fails. Failure states enter with the same motion and never pulse.
+ * All motion is CSS behind prefers-reduced-motion; fallback is instant.
  */
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { VerifyDeliverable } from './VerifyDeliverable';
+import { prefersReducedMotion, easeOut } from '@/lib/motion';
 
 const EXPLORER = 'https://testnet.bscscan.com/tx/';
 type Ev = Record<string, unknown> & { stage: string };
@@ -19,7 +23,26 @@ const STAGES = [
   ['settlement-pending', 'Escrow release'],
 ] as const;
 
-export function HireDemo({ agentId }: { agentId: number }) {
+/** Count-up from `from` to `to` on mount — the existing CountUp idiom, local
+ *  because the base value arrives as a prop rather than from scroll. */
+function CountBump({ from, to }: { from: number; to: number }) {
+  const [n, setN] = useState(prefersReducedMotion() ? to : from);
+  useEffect(() => {
+    if (prefersReducedMotion()) { setN(to); return; }
+    const t0 = performance.now();
+    let raf = 0;
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - t0) / 800);
+      setN(Math.round(from + (to - from) * easeOut(p)));
+      if (p < 1) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [from, to]);
+  return <span className="tnum">{n}</span>;
+}
+
+export function HireDemo({ agentId, completedCount }: { agentId: number; completedCount: number }) {
   const [events, setEvents] = useState<Ev[]>([]);
   const [running, setRunning] = useState(false);
   const [fatal, setFatal] = useState<string | null>(null);
@@ -28,6 +51,8 @@ export function HireDemo({ agentId }: { agentId: number }) {
 
   const ev = (stage: string) => events.find((e) => e.stage === stage);
   const verified = ev('verified');
+  // The in-flight stage: first unconfirmed one while running without error.
+  const inFlightIdx = STAGES.findIndex(([k]) => !ev(k));
 
   async function press() {
     if (running || doneRef.current) return;
@@ -81,34 +106,53 @@ export function HireDemo({ agentId }: { agentId: number }) {
       </div>
 
       {limit && (
-        <div style={{ marginTop: 14, padding: '12px 16px', background: 'var(--surface-raised)', boxShadow: 'inset 2px 0 0 var(--warn)' }}>
+        <div className="hd-enter" style={{ marginTop: 14, padding: '12px 16px', background: 'var(--surface-raised)', boxShadow: 'inset 2px 0 0 var(--warn)' }}>
           <span className="data" style={{ color: 'var(--warn)' }}>{limit}</span>
         </div>
       )}
       {fatal && !limit && (
-        <div style={{ marginTop: 14, padding: '12px 16px', background: 'var(--surface-raised)', boxShadow: 'inset 2px 0 0 var(--danger)' }}>
+        <div className="hd-enter" style={{ marginTop: 14, padding: '12px 16px', background: 'var(--surface-raised)', boxShadow: 'inset 2px 0 0 var(--danger)' }}>
           <span className="data" style={{ color: 'var(--danger)' }}>{fatal}</span>
         </div>
       )}
 
       {(events.length > 0 || running) && (
-        <div style={{ marginTop: 16, display: 'grid', gap: 10 }}>
-          {STAGES.map(([key, label]) => {
+        <div style={{ marginTop: 18 }}>
+          {STAGES.map(([key, label], i) => {
             const e = ev(key);
-            const active = !e && running && !fatal;
+            const inFlight = i === inFlightIdx && running && !fatal;
+            const settlementRow = key === 'settlement-pending' && !!e;
             const tx = e && typeof e.tx === 'string' && e.tx ? (e.tx as string) : null;
             return (
-              <div key={key} style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
-                <span className="data" style={{ width: 14, color: e ? 'var(--live)' : active ? 'var(--stale)' : 'var(--text-faint)' }}>
-                  {e ? '✓' : active ? '·' : '—'}
-                </span>
-                <span className="data" style={{ color: e ? 'var(--text)' : 'var(--text-muted)' }}>
-                  {label}
-                  {key === 'funded' && e ? ` — job ${e.jobId}` : ''}
-                  {key === 'analysed' && e ? ` — ${((e.ms as number) / 1000).toFixed(1)}s` : ''}
-                  {key === 'settlement-pending' && e ? ' — pending: releases after the 900s dispute window (protocol, not agent)' : ''}
-                </span>
-                {tx && <a className="meta" style={{ color: 'var(--live-dim)' }} href={EXPLORER + tx} target="_blank" rel="noreferrer">tx ↗</a>}
+              <div key={key} style={{ display: 'flex', gap: 14 }}>
+                {/* marker + growing connector */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 14 }}>
+                  {i > 0 && (
+                    <div className={e ? 'hd-connector' : undefined}
+                         style={{ width: 1, height: 14, background: e ? 'var(--live-dim)' : 'var(--border)' }} />
+                  )}
+                  <span className={`data${inFlight || settlementRow ? ' hd-pending hd-pulse' : ''}`}
+                        style={{ color: e ? (settlementRow ? 'var(--stale)' : 'var(--live)') : inFlight ? 'var(--stale)' : 'var(--text-faint)', lineHeight: '20px' }}>
+                    {e ? (settlementRow ? '·' : '✓') : inFlight ? '·' : '—'}
+                  </span>
+                </div>
+                {/* row content: mounts (and animates) only on its real confirmation */}
+                <div style={{ paddingBottom: 4, minHeight: i > 0 ? 34 : 20, display: 'flex', alignItems: 'flex-end', gap: 12 }}>
+                  {e ? (
+                    <div className="hd-enter" style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
+                      <span className={`data${settlementRow ? ' hd-pending hd-pulse' : ''}`} style={{ color: 'var(--text)' }}>
+                        {label}
+                        {key === 'funded' ? ` — job ${e.jobId}` : ''}
+                        {key === 'analysed' ? ` — ${((e.ms as number) / 1000).toFixed(1)}s` : ''}
+                        {settlementRow ? ' — pending: releases after the 900s dispute window (protocol, not agent)' : ''}
+                      </span>
+                      {tx && <a className="meta hd-tx" style={{ color: 'var(--live-dim)' }} href={EXPLORER + tx} target="_blank" rel="noreferrer">tx ↗</a>}
+                    </div>
+                  ) : (
+                    <span className={`data${inFlight ? ' hd-pending hd-pulse' : ''}`}
+                          style={{ color: inFlight ? 'var(--text-muted)' : 'var(--text-faint)' }}>{label}</span>
+                  )}
+                </div>
               </div>
             );
           })}
@@ -116,9 +160,9 @@ export function HireDemo({ agentId }: { agentId: number }) {
       )}
 
       {verified != null && (
-        <div style={{ marginTop: 18 }}>
+        <div className="hd-enter" style={{ marginTop: 18 }}>
           <div className="meta" style={{ marginBottom: 8 }}>
-            completed count: +1 (this job; settles after the window)
+            completed jobs: <CountBump from={completedCount} to={completedCount + 1} /> (this job settles after the window)
           </div>
           <VerifyDeliverable jobId={String((ev('funded') as Ev).jobId)} manifest={verified.manifest} />
         </div>
