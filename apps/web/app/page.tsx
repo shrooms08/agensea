@@ -5,6 +5,7 @@
 import { getRegistryStats, getFanoutCurve, getClientConcentration } from '@/lib/queries';
 import { ParticleHero, MobileParticleHero } from '@/components/ParticleHero';
 import { Stat } from '@/components/Stat';
+import { ParticleCreature } from '@/components/ParticleCreature';
 import { ThresholdSlider } from '@/components/ThresholdSlider';
 import { FIRST_PARTY_AGENTS, CATEGORY_SLUGS, CHAIN } from '@/data/first-party-agents';
 import { pct, int } from '@/lib/format';
@@ -22,6 +23,7 @@ export default async function Home() {
 
   return (
     <>
+      <ParticleCreature tag="landing" />
       {/* Scroll-scrubbed particle hero. fallback="none": reduced-motion,
           no-WebGL and <768px visitors see exactly the page below, whose own
           hero IS the normal-height hero. Nothing below this line changed. */}
@@ -63,7 +65,7 @@ export default async function Home() {
           {int(conc.distinctClients)} addresses, and two of them account for {pct(conc.top2Pct, 1)}.
           Filter those out and the number collapses.
         </p>
-        <div style={{ marginTop: 14 }}>
+        <div style={{ marginTop: 14, background: 'var(--bg)' }}>
           <ThresholdSlider curve={curve} measuredAt={s('agents_with_client').measured_at} />
         </div>
       </section>
@@ -86,6 +88,7 @@ export default async function Home() {
           })}
         </div>
       </section>
+
     </>
   );
 }

@@ -323,3 +323,22 @@ header nav .navlink[data-active='true']::after {
 @keyframes hd-slide { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes hd-grow  { from { transform: scaleY(0); } }
 @keyframes hd-pulse { 50% { opacity: 0.85; } }
+
+/* ---------------------------------------------------------------------------
+   Particle creature (404 + landing signature). Hidden pre-paint on mobile
+   and for reduced-motion — the JS reads this back via getComputedStyle and
+   never starts its loop, so neither instance reserves space or spends frames.
+--------------------------------------------------------------------------- */
+/* Background stage: fixed behind everything, never interactive.
+   z-index -1 paints above the body background but below all in-flow
+   content; opacity is the hero handoff — the layer only fades in once
+   the hero region has scrolled past. */
+.creature-layer {
+  position: fixed; inset: 0; z-index: -1;
+  pointer-events: none;
+  opacity: 0; transition: opacity 700ms ease;
+}
+.creature-layer.is-on { opacity: 1; }
+@media (max-width: 767px), (prefers-reduced-motion: reduce) {
+  .creature-layer { display: none; }
+}
