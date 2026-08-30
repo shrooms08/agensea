@@ -9,6 +9,7 @@ import { FIRST_PARTY_AGENTS, byId, CHAIN, ERC8183, DISPUTE_WINDOW_SECONDS } from
 import { deliverableFor } from '@/data/deliverables';
 import { CategoryChip, FirstPartyBadge, CAT_TOKEN } from '@/components/CategoryChip';
 import { VerifyDeliverable } from '@/components/VerifyDeliverable';
+import { HireDemo } from '@/components/HireDemo';
 
 export const revalidate = 86400;
 export const dynamicParams = false;   // exactly four, all known at build
@@ -52,6 +53,10 @@ export default async function FirstPartyAgent({ params }: { params: Promise<{ id
         <Field k="completed jobs" v={String(agent.jobs.filter((j) => j.status === 'COMPLETED').length)} />
         <Field k="fastest analysis" v={`${(Math.min(...agent.jobs.map((j) => j.analysisMs)) / 1000).toFixed(1)}s`} />
         <Field k="dispute window" v={`${DISPUTE_WINDOW_SECONDS}s`} />
+      </section>
+
+      <section className="sec">
+        <HireDemo agentId={agent.agentId} />
       </section>
 
       <section className="sec">

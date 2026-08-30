@@ -9,11 +9,13 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@altananetwork/sdk": "^0.8.0",
     "js-sha3": "^0.13.0",
     "next": "^16.3.3",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "three": "^0.185.1"
+    "three": "^0.185.1",
+    "viem": "^2.56.0"
   },
   "devDependencies": {
     "@types/node": "^26.4.0",

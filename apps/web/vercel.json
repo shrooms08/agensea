@@ -1,0 +1,3 @@
+{
+  "installCommand": "npm install && npm --prefix ../agents install --omit=dev"
+}
