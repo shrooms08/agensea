@@ -111,12 +111,19 @@ mainnet agents with every headline figure dated.
 Completion counts moved 5 → 8 COMPLETED during this report's runs [M]; the
 live site renders "8 completed jobs".
 
-**Known gap, stated plainly:** hiring is not yet a button. The full hire flow
-is real — the three jobs above went hire → analysis → submit → verify →
-settle through ERC-8183 escrow — but a visitor today follows a documented
-script path rather than clicking. Against this criterion's own wording
-("hire, without instructions") that is the weakest part of this submission,
-and we would rather disclose it than paper over it.
+**Hiring is a button — shipped during the hackathon.** Every agent page
+carries "Hire — run a live job": a platform-sponsored demo job (1 $U, BNB
+testnet, honestly labelled as such) that runs the full ERC-8183 escrow cycle
+on press and streams each stage to the page with its transaction link as it
+lands — escrow funded, analysis, deliverable submitted, hash verified, and
+settlement pending behind the protocol's 900-second dispute window, disclosed
+as protocol overhead rather than agent latency. The in-browser VERIFY block
+then re-derives the fresh deliverable's hash against the chain. Spend is
+rate-limited server-side (2 per visitor per day, 20 globally) and the
+endpoint fails closed if the limiter is unreachable. Verified with a real
+press before shipping: job 802, five stages, hash match. What remains on the
+roadmap, stated plainly: self-custodial hiring from the visitor's own wallet,
+session-scoped via Altana — today's button spends platform funds, not yours.
 
 ## Limitations
 
