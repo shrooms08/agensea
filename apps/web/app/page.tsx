@@ -26,7 +26,7 @@ export default async function Home() {
           no-WebGL and <768px visitors see exactly the page below, whose own
           hero IS the normal-height hero. Nothing below this line changed. */}
       <ParticleHero
-        caption={`${int(Number(s('agents_minted').value))} agents minted. Signal assembles.`}
+        caption={`${int(Number(s('agents_minted').value))} minted. ${int(Number(s('agents_with_client').value))} ever heard from.`}
         sub="A marketplace and registry explorer for ERC-8004 on BNB Chain."
         fallback="none"
       />

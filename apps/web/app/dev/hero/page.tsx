@@ -15,10 +15,11 @@ export const revalidate = 86400;
 export default async function DevHero() {
   const stats = await getRegistryStats();
   const minted = int(Number(stats['agents_minted']!.value));
+  const heard = int(Number(stats['agents_with_client']!.value));
   return (
     <>
       <ParticleHero
-        caption={`${minted} agents minted. Signal assembles.`}
+        caption={`${minted} minted. ${heard} ever heard from.`}
         sub="A marketplace and registry explorer for ERC-8004 on BNB Chain."
         fallback="static"
       />
