@@ -23,7 +23,7 @@ export default async function Home() {
 
   return (
     <>
-      <ParticleCreature tag="landing" variant="layer" />
+      <ParticleCreature tag="landing" />
       {/* Scroll-scrubbed particle hero. fallback="none": reduced-motion,
           no-WebGL and <768px visitors see exactly the page below, whose own
           hero IS the normal-height hero. Nothing below this line changed. */}

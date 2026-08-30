@@ -329,8 +329,7 @@ header nav .navlink[data-active='true']::after {
    and for reduced-motion — the JS reads this back via getComputedStyle and
    never starts its loop, so neither instance reserves space or spends frames.
 --------------------------------------------------------------------------- */
-.creature-wrap { display: flex; justify-content: center; }
-/* Landing background stage: fixed behind everything, never interactive.
+/* Background stage: fixed behind everything, never interactive.
    z-index -1 paints above the body background but below all in-flow
    content; opacity is the hero handoff — the layer only fades in once
    the hero region has scrolled past. */
@@ -341,5 +340,5 @@ header nav .navlink[data-active='true']::after {
 }
 .creature-layer.is-on { opacity: 1; }
 @media (max-width: 767px), (prefers-reduced-motion: reduce) {
-  .creature-wrap, .creature-layer { display: none; }
+  .creature-layer { display: none; }
 }
