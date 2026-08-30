@@ -2,11 +2,11 @@
  * Landing: five statistics, then four category cards.
  * Every count renders with its measured_at from registry_stats.
  */
-import { getRegistryStats, getFanoutCurve } from '@/lib/queries';
+import { getRegistryStats, getFanoutCurve, getClientConcentration } from '@/lib/queries';
 import { Stat } from '@/components/Stat';
 import { ThresholdSlider } from '@/components/ThresholdSlider';
 import { FIRST_PARTY_AGENTS, CATEGORY_SLUGS, CHAIN } from '@/data/first-party-agents';
-import { pct } from '@/lib/format';
+import { pct, int } from '@/lib/format';
 
 const CAT_TOKEN: Record<string, string> = {
   'rebalancing': 'var(--cat-rebalancing)',
@@ -16,7 +16,7 @@ const CAT_TOKEN: Record<string, string> = {
 };
 
 export default async function Home() {
-  const [stats, curve] = await Promise.all([getRegistryStats(), getFanoutCurve()]);
+  const [stats, curve, conc] = await Promise.all([getRegistryStats(), getFanoutCurve(), getClientConcentration()]);
   const s = (k: string) => stats[k]!;
 
   return (
@@ -38,7 +38,7 @@ export default async function Home() {
               tone="var(--live)" note={pct(100 * Number(s('agents_with_client').value) / Number(s('agents_minted').value), 4)} />
         <Stat label="Client relationships" value={Number(s('client_edges').value)} measuredAt={s('client_edges').measured_at} />
         <Stat label="Distinct clients" value={Number(s('distinct_clients').value)} measuredAt={s('distinct_clients').measured_at}
-              tone="var(--warn)" note="two addresses = 36% of edges" />
+              tone="var(--warn)" note={`two addresses = ${pct(conc.top2Pct, 1)} of edges`} />
         <Stat label="B402 resources" value={Number(s('bazaar_resources').value)} measuredAt={s('bazaar_resources').measured_at}
               note={`${s('bazaar_payees').value} payees · top ${s('bazaar_top_payee_pct').value}%`} />
       </section>
@@ -46,8 +46,10 @@ export default async function Home() {
       <section style={{ padding: '28px 0 36px' }}>
         <h2 style={{ font: "500 21px/1.2 var(--display)" }}>Liveness is not binary</h2>
         <p className="prose-sm prose-muted" style={{ marginTop: 8 }}>
-          1.44% of agents have a client. But 8,260 relationships come from 107 addresses,
-          and two of them account for 36%. Filter those out and the number collapses.
+          {pct(100 * Number(s('agents_with_client').value) / Number(s('agents_minted').value), 2)} of
+          agents have a client. But {int(conc.totalEdges)} relationships come from{' '}
+          {int(conc.distinctClients)} addresses, and two of them account for {pct(conc.top2Pct, 1)}.
+          Filter those out and the number collapses.
         </p>
         <div style={{ marginTop: 14 }}>
           <ThresholdSlider curve={curve} measuredAt={s('agents_with_client').measured_at} />

@@ -17,7 +17,9 @@ import { int, shortAddr, measuredOn, livenessToken } from '@/lib/format';
 export const revalidate = 86400;   // 24h; push updates via POST /api/revalidate
 export const dynamicParams = true; // ids outside the prerendered set render on demand
 
-/** A bounded, interesting subset — NOT all 4,348. The rest are ISR on first hit. */
+/** A bounded, interesting subset — NOT the whole live set, which tracks
+ *  registry_stats.agents_with_client (4,353 as of 29 Aug 2026).
+ *  The rest are ISR on first hit. */
 export async function generateStaticParams() {
   const TOP_BY_FANOUT = [
     2658, 2862, 2140, 2517, 2532, 2536, 2554, 2586, 2385, 2410, 2430, 2432,

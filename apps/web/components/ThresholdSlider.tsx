@@ -3,7 +3,8 @@
  * Fan-out threshold slider.
  *
  * The value is a BREAKPOINT INDEX, not a threshold. The 31 real thresholds are
- * wildly uneven — 1,2,3,4,8,14,16 then a jump to 96, then 254/924/1137/1800 —
+ * wildly uneven — 1,2,3,4,6,8,14,16 then a jump to 96, then 254/924/1137/1800
+ * (read live from agent_fanout_curve; 32 rows as of 29 Aug 2026) —
  * so mapping position to value would leave most of the travel dead. Index
  * mapping gives even travel; the readout always shows the real threshold and
  * the real agent count, never the index. Index 0 is the (0,0) sentinel.

@@ -4,7 +4,8 @@
  * Every figure carries its measured_at. All reads are server-side: the Binance
  * B402 API is never called from the browser (binance.com is DNS-blocked for
  * some ISPs, so a client fetch would fail silently for those users). What the
- * browser receives is the aggregate, not the 976 rows.
+ * browser receives is the aggregate, not the ~978 rows.
+ * (row count tracks registry_stats.bazaar_resources — 978 as of 29 Aug 2026)
  */
 import { getBazaarResources, getPayees, getRegistryStats, getAllOverlapAgents, hostOf } from '@/lib/queries';
 import { Stat } from '@/components/Stat';
@@ -34,6 +35,15 @@ export default async function Bazaar() {
           {int(resources.length)} paid resources are listed across {payees.length} distinct payees.
           One address holds {top ? pct(top.pct_of_catalogue) : '—'} of them. Read server-side from our
           own sweep — the Bazaar API is never called from your browser.
+        </p>
+        {/* Historical delta: cannot be derived from current data, which holds only
+            the latest sweep. Both endpoints were measured by our own ingest —
+            0x3c5f3a6c… (coinmarketcap.com) 14 resources on 24 Aug, 4 on 29 Aug;
+            0x50ab2018… flat at 941 across both. Update if a later sweep moves either. */}
+        <p className="prose prose-sm" style={{ color: 'var(--text-faint)', marginTop: 10, fontSize: 13 }}>
+          Concentration is hardening, not easing: between 24 and 29 Aug 2026 the second-largest
+          independent operator delisted 71% of its catalogue — 14 resources down to 4 — while the
+          leader held flat at 941.
         </p>
       </section>
 

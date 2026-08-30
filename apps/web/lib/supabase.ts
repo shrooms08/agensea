@@ -35,7 +35,8 @@ export interface SelectOpts {
    */
   truncate?: { reason: string; limit: number };
   /** Safety ceiling for an unranged read. Exceeding it THROWS rather than
-   *  silently returning a prefix. agent_liveness is 301,992 rows. */
+   *  silently returning a prefix. agent_liveness tracks
+   *  registry_stats.agents_minted (317,468 as of 29 Aug 2026). */
   maxRows?: number;
   revalidate?: number;
 }
@@ -50,8 +51,9 @@ const DEFAULT_MAX_ROWS = 20000;
  *
  * PostgREST caps an unpaged select at 1000 rows and returns the prefix with no
  * error, so the naive call silently understates every relation larger than the
- * cap. agent_liveness_with_clients is 4,348 rows: rendered unpaged it would
- * show 1,000 beside a headline of 4,348. That class of bug is why this pages
+ * cap. agent_liveness_with_clients is >4,000 rows (tracks
+ * registry_stats.agents_with_client, 4,353 as of 29 Aug 2026): rendered unpaged
+ * it would show 1,000 beside the real headline. That class of bug is why this pages
  * by default and throws instead of truncating.
  *
  * Three modes:
@@ -64,15 +66,32 @@ export async function sbSelect<T = unknown>(table: string, opts: SelectOpts): Pr
     const h: Record<string, string> = { apikey: ANON!, Authorization: `Bearer ${ANON}`, ...extra };
     return h;
   };
+  /**
+   * Retries transient TRANSPORT failures. A build prerendering 25+ pages across
+   * 7 workers hits Supabase hard enough to draw the occasional TLS decode error
+   * (ERR_SSL_TLSV1_ALERT_DECODE_ERROR), and with no retry a single blip failed
+   * the whole build. A non-2xx RESPONSE is data, not a transport fault, and is
+   * still thrown immediately — we do not retry a 401 or a bad query.
+   */
   const fetchPage = async (from: number, to: number, wantCount: boolean) => {
     const headers = base(wantCount ? { Prefer: 'count=exact', Range: `${from}-${to}` } : { Range: `${from}-${to}` });
-    const res = await fetch(`${BASE}/rest/v1/${table}?${opts.query}`, {
-      headers, next: { revalidate: opts.revalidate ?? 60 },
-    });
-    const cr = res.headers.get('content-range');
-    const total = cr && cr.includes('/') && cr.split('/')[1] !== '*' ? Number(cr.split('/')[1]) : null;
-    if (!res.ok) throw new Error(`supabase ${table} -> ${res.status}: ${(await res.text()).slice(0, 200)}`);
-    return { rows: (await res.json()) as T[], total, status: res.status };
+    let lastErr: unknown;
+    for (let attempt = 1; attempt <= 4; attempt++) {
+      try {
+        const res = await fetch(`${BASE}/rest/v1/${table}?${opts.query}`, {
+          headers, next: { revalidate: opts.revalidate ?? 60 },
+        });
+        const cr = res.headers.get('content-range');
+        const total = cr && cr.includes('/') && cr.split('/')[1] !== '*' ? Number(cr.split('/')[1]) : null;
+        if (!res.ok) throw Object.assign(new Error(`supabase ${table} -> ${res.status}: ${(await res.text()).slice(0, 200)}`), { fatal: true });
+        return { rows: (await res.json()) as T[], total, status: res.status };
+      } catch (e) {
+        if ((e as { fatal?: boolean }).fatal) throw e;      // real HTTP error: surface it
+        lastErr = e;
+        if (attempt < 4) await new Promise((r) => setTimeout(r, 250 * 2 ** (attempt - 1)));
+      }
+    }
+    throw new Error(`supabase ${table}: transport failed after 4 attempts: ${String((lastErr as Error)?.message ?? lastErr)}`);
   };
 
   // Mode 1: caller wants one specific page.

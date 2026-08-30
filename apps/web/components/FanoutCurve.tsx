@@ -4,7 +4,9 @@
  *
  * Two features of the data must stay visible, per the brief:
  *   - the 16 -> 96 gap on x (no client has fan-out between them)
- *   - the 924 -> 1800 cliff on y (1,561 -> 4,348 agents: two addresses)
+ *   - the 924 -> 1800 cliff on y (1,566 -> 4,353 agents: two addresses)
+ *     Those endpoints track agent_fanout_curve; the SHAPE is what matters here,
+ *     and it has held across re-sweeps (same max, same cliff).
  * A log x-axis keeps the dense 1..16 head readable while still showing the
  * long tail; the cliff is a vertical jump and shows regardless.
  *
@@ -56,7 +58,7 @@ export function FanoutCurve({ curve, index, onRevealed }: {
 
   const path = pts.map((p, i) => `${i ? 'L' : 'M'}${x(p.threshold).toFixed(1)},${y(p.qualifying_agents).toFixed(1)}`).join('');
   // Same path, closed to the baseline. The cliff between 924 and 1800 is a
-  // jump from 1,561 to 4,348 agents; as a line it reads as a stroke, as an
+  // jump of ~2,800 agents (see agent_fanout_curve); as a line it reads as a stroke, as an
   // area it reads as the mass it actually is.
   const area = `${path}L${x(pts[pts.length - 1]!.threshold).toFixed(1)},${(H - PAD_B).toFixed(1)}L${x(pts[0]!.threshold).toFixed(1)},${(H - PAD_B).toFixed(1)}Z`;
   const cur = pts[Math.max(0, Math.min(index, pts.length - 1))]!;

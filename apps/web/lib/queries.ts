@@ -48,7 +48,9 @@ export interface LiveAgent {
   summary_value: string | null; summary_decimals: number | null;
 }
 
-/** Server-side pagination. 301,992 rows never reach the client. */
+/** Server-side pagination. The full table — tracks
+ *  registry_stats.agents_minted (317,468 as of 29 Aug 2026) — never reaches
+ *  the client. */
 export async function getLiveAgents(opts: { page: number; perPage: number; minFanout?: number }) {
   const from = opts.page * opts.perPage;
   return sbSelect<LiveAgent>('agent_liveness_with_clients', {
@@ -87,7 +89,8 @@ export async function getAllOverlapAgents(): Promise<OverlapAgent[]> {
 export interface BazaarResource { resource_url: string; resource_type: string | null; last_updated: string | null }
 export interface Payee { pay_to: string; resources: number; pct_of_catalogue: number }
 
-/** All 976 resources. Paged to exhaustion by sbSelect; the rows stay on the
+/** All resources — tracks registry_stats.bazaar_resources (978 as of 29 Aug
+ *  2026). Paged to exhaustion by sbSelect; the rows stay on the
  *  server and only aggregates reach the client. */
 export async function getBazaarResources(): Promise<BazaarResource[]> {
   const { rows } = await sbSelect<BazaarResource>('bazaar_resources', {
@@ -109,4 +112,27 @@ export async function getPayees(): Promise<Payee[]> {
 export function hostOf(url: string): string {
   try { return new URL(url).host.toLowerCase(); }
   catch { return url.split('/')[2]?.toLowerCase() ?? '(unparseable)'; }
+}
+
+export interface ClientConcentration {
+  totalEdges: number; top2Edges: number; top2Pct: number; distinctClients: number;
+}
+
+/**
+ * Client-side concentration, derived from client_fanout rather than written as
+ * prose. The "two addresses account for N% of edges" line was hardcoded at 36%
+ * and silently went stale when the sweep re-ran; computing it means it cannot.
+ */
+export async function getClientConcentration(): Promise<ClientConcentration> {
+  const { rows } = await sbSelect<{ client: string; agent_count: number }>('client_fanout', {
+    query: 'select=client,agent_count&order=agent_count.desc',
+    revalidate: DAY,
+  });
+  const totalEdges = rows.reduce((n, r) => n + r.agent_count, 0);
+  const top2Edges = rows.slice(0, 2).reduce((n, r) => n + r.agent_count, 0);
+  return {
+    totalEdges, top2Edges,
+    top2Pct: totalEdges ? (100 * top2Edges) / totalEdges : 0,
+    distinctClients: rows.length,
+  };
 }
