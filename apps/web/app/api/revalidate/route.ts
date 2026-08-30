@@ -17,7 +17,9 @@ import { timingSafeEqual } from 'node:crypto';
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const PATHS = ['/', '/bazaar', '/agents', '/marketplace'];
+const PATHS = ['/', '/bazaar', '/agents', '/marketplace',
+  '/category/rebalancing', '/category/grid-trading',
+  '/category/yield-optimisation', '/category/health-factor-monitoring'];
 
 function authorised(header: string | null): boolean {
   const secret = process.env.REVALIDATE_SECRET;

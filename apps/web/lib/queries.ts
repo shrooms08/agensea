@@ -136,3 +136,44 @@ export async function getClientConcentration(): Promise<ClientConcentration> {
     distinctClients: rows.length,
   };
 }
+
+export interface RegistryCategoryAgent {
+  agent_id: number; client_count: number; token_uri_host: string | null;
+  name: string | null; declared_category: string | null;
+}
+
+/**
+ * Third-party registry agents for a category page.
+ *
+ * HOW MATCHING WAS DECIDED: of 4,353 agents with clients, 3,474 have metadata
+ * but only 7 carry an explicit `category` key (122 have `skills`; 193 merely
+ * mention category-like words somewhere in their metadata text). Keyword
+ * inference over prose would mislabel agents, so matching uses ONLY the
+ * explicit self-declared `category` key, mapped to this site's slugs. Pages
+ * therefore show few third-party agents — or none — rather than mislabeled
+ * ones. [M: SQL over agent_liveness_with_clients, 30 Aug 2026]
+ */
+const CATEGORY_ALIASES: Record<string, string[]> = {
+  'rebalancing': ['rebalancing'],
+  'grid-trading': ['grid', 'grid-trading'],
+  'yield-optimisation': ['yield', 'yield-optimisation'],
+  'health-factor-monitoring': ['health-factor', 'health-factor-monitoring'],
+};
+
+export async function getRegistryAgentsForCategory(slug: string): Promise<RegistryCategoryAgent[]> {
+  const aliases = CATEGORY_ALIASES[slug] ?? [];
+  if (aliases.length === 0) return [];
+  const list = aliases.map((a) => `"${a}"`).join(',');
+  const { rows } = await sbSelect<{ agent_id: number; client_count: number; token_uri_host: string | null; metadata: Record<string, unknown> | null }>(
+    'agent_liveness_with_clients', {
+      query: `select=agent_id,client_count,token_uri_host,metadata&metadata->>category=in.(${aliases.join(',')})&order=client_count.desc`,
+      truncate: { reason: 'top 10 per category page', limit: 10 },
+      revalidate: DAY,   // fetch-level revalidate WINS over the page export when shorter
+    });
+  void list;
+  return rows.map((r) => ({
+    agent_id: r.agent_id, client_count: r.client_count, token_uri_host: r.token_uri_host,
+    name: (r.metadata?.name as string | undefined) ?? null,
+    declared_category: (r.metadata?.category as string | undefined) ?? null,
+  }));
+}
