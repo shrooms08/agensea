@@ -11,7 +11,8 @@ ways. Every number tagged [M]easured with its source. No estimated timings.
 <!-- price/speed vs the alternative -->
 - Price per job: 1 $U + ~$0.13 gas [M: evidence/hire-arm.json]
 - Time to verified deliverable: T1 29.0s · T2 20.0s · T3 18.0s [M]
-- DIY time: T1 ____ · T2 ____ · T3 ____  [M: Minos, timed runs — PENDING]
+- DIY time: T1 12m13s† · T2 5m50s · T3 6m04s  [M: Minos, timed runs]
+  († file records 8:13 — awaiting confirmation; conclusion unchanged either way)
 - ⟨prose after review⟩
 
 ## 2. Proven agent advantage (30%) — the evidence table
@@ -25,11 +26,11 @@ ways. Every number tagged [M]easured with its source. No estimated timings.
 | agent: job / txs [M] | 795 · hire 0x0aaf7e47… · submit 0x1f033937… | 796 · 0x7c47064f… · 0x46504f1a… | 797 · 0x83e5df9a… · 0xbc8efe33… |
 | agent: verified on chain [M] | hash match ✓ | hash match ✓ | hash match ✓ |
 | agent: output file | `T1-agent-analysis.json` | `T2-agent-analysis.json` | `T3-agent-analysis.json` |
-| **DIY: time** [M-PENDING] | ____ | ____ | ____ |
+| **DIY: time** [M] | 12m13s† | 5m50s | 6m04s |
 | DIY: cost | $0 + operator time | $0 + operator time | $0 + operator time |
-| DIY: output file | `T1-diy.*` PENDING | `T2-diy.*` PENDING | `T3-diy.*` PENDING |
+| DIY: output file | `T1-diy.md` | `T2-diy.md` | `T3-diy.md` |
 | DIY: verifiability | notes/screenshot | notes/screenshot | notes/screenshot |
-| quality diff | ⟨after DIY run⟩ | ⟨after DIY run⟩ | ⟨after DIY run⟩ |
+| quality diff | **agent right, DIY WRONG on HF** — chain-adjudicated (missed vUSDT borrow $6,441; getAssetsIn=11 vs 7 found) | agree on all facts; agent exact amounts; DIY adds "mispriced at creation" insight | same ranking; Lista method split (realised 0.92% vs published 0.39%); DIY adds vault-size caveat |
 
 Verifiability difference (applies to all three): the agent deliverable's
 keccak256 is stored in `job.deliverable` on chain 97 and re-derivable by
@@ -48,11 +49,11 @@ The DIY output is whatever the operator wrote down.
 
 ## 4. Marketplace quality (20%)
 - Find/compare: live site, categories, VERIFY.  ⟨prose after review⟩
-- Completion counts: before this run ____ · after ____  [M — settling now]
+- Completion counts: 5 -> 8 COMPLETED [M]; live site renders "8 completed jobs"
 - Known gap, stated honestly: hiring currently requires the documented
   script path, not a UI button. ⟨decide with Minos how to phrase / whether a
   UI hire ships before the deadline⟩
 
 ## Appendix — evidence folder
 inputs.json · hire-arm.json · T{1,2,3}-agent-{analysis,deliverable}.json ·
-T{1,2,3}-diy.* [PENDING] · DIY-TIMING-SHEETS.md · settle txs [pending window]
+T{1,2,3}-diy.md · DIY-TIMING-SHEETS.md · quality-comparison.md · settle txs in hire-arm.json
