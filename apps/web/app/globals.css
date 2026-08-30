@@ -323,3 +323,14 @@ header nav .navlink[data-active='true']::after {
 @keyframes hd-slide { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes hd-grow  { from { transform: scaleY(0); } }
 @keyframes hd-pulse { 50% { opacity: 0.85; } }
+
+/* ---------------------------------------------------------------------------
+   Particle creature (404 + landing signature). Hidden pre-paint on mobile
+   and for reduced-motion — the JS reads this back via getComputedStyle and
+   never starts its loop, so neither instance reserves space or spends frames.
+--------------------------------------------------------------------------- */
+.creature-wrap { display: flex; justify-content: center; }
+.creature-section { padding: 20px 0 8px; }
+@media (max-width: 767px), (prefers-reduced-motion: reduce) {
+  .creature-wrap, .creature-section { display: none; }
+}

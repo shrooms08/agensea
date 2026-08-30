@@ -5,6 +5,7 @@
 import { getRegistryStats, getFanoutCurve, getClientConcentration } from '@/lib/queries';
 import { ParticleHero, MobileParticleHero } from '@/components/ParticleHero';
 import { Stat } from '@/components/Stat';
+import { ParticleCreature } from '@/components/ParticleCreature';
 import { ThresholdSlider } from '@/components/ThresholdSlider';
 import { FIRST_PARTY_AGENTS, CATEGORY_SLUGS, CHAIN } from '@/data/first-party-agents';
 import { pct, int } from '@/lib/format';
@@ -85,6 +86,10 @@ export default async function Home() {
             );
           })}
         </div>
+      </section>
+
+      <section className="creature-section sec-rule">
+        <ParticleCreature tag="landing" />
       </section>
     </>
   );
