@@ -330,7 +330,16 @@ header nav .navlink[data-active='true']::after {
    never starts its loop, so neither instance reserves space or spends frames.
 --------------------------------------------------------------------------- */
 .creature-wrap { display: flex; justify-content: center; }
-.creature-section { padding: 20px 0 8px; }
+/* Landing background stage: fixed behind everything, never interactive.
+   z-index -1 paints above the body background but below all in-flow
+   content; opacity is the hero handoff — the layer only fades in once
+   the hero region has scrolled past. */
+.creature-layer {
+  position: fixed; inset: 0; z-index: -1;
+  pointer-events: none;
+  opacity: 0; transition: opacity 700ms ease;
+}
+.creature-layer.is-on { opacity: 1; }
 @media (max-width: 767px), (prefers-reduced-motion: reduce) {
-  .creature-wrap, .creature-section { display: none; }
+  .creature-wrap, .creature-layer { display: none; }
 }
