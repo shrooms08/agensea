@@ -8,6 +8,7 @@
 import { FIRST_PARTY_AGENTS, CHAIN, ECONOMICS, TYPICAL_TTD_RANGE_MS } from '@/data/first-party-agents';
 import { CategoryChip, FirstPartyBadge } from '@/components/CategoryChip';
 
+export const metadata = { title: 'Marketplace' };
 export const revalidate = 86400;
 
 export default function Marketplace() {

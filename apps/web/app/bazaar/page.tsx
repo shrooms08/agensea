@@ -11,6 +11,7 @@ import { getBazaarResources, getPayees, getRegistryStats, getAllOverlapAgents, h
 import { Stat } from '@/components/Stat';
 import { int, pct, shortAddr, measuredOn } from '@/lib/format';
 
+export const metadata = { title: 'Bazaar' };
 export const revalidate = 86400;   // see lib/queries.ts: long by design, free-tier Supabase pauses
 
 export default async function Bazaar() {
