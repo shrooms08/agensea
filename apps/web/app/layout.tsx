@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { Space_Grotesk, JetBrains_Mono } from 'next/font/google';
-import { MarkSparse, Wordmark } from '@/components/Logo';
+import { Mark, Wordmark } from '@/components/Logo';
 import { Nav } from '@/components/Nav';
 import './globals.css';
 
@@ -58,7 +58,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <header className="site-header">
           <div className="container" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 32px' }}>
             <a href="/" className="brand" aria-label="AgenSea home">
-              <MarkSparse size={20} />
+              <Mark size={22} />
               <Wordmark height={18} />
             </a>
             <Nav />

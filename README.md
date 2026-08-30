@@ -233,3 +233,47 @@ cd apps/indexer && npm run ingest && npm run stats
 # agents
 cd apps/agents && ALTANA_CHAIN=97 npm run retry
 ```
+
+## Sweep runbook — what to re-run after a delta sweep
+
+Data on the site comes from three places with **different staleness behaviour**.
+Run every step; skipping the last one leaves a public asset silently wrong.
+
+```bash
+# 1. Extend the agent sweep from the stored cursor to current head
+cd apps/indexer && npm run delta
+
+# 2. Re-ingest the B402 Bazaar catalogue
+npm run ingest
+
+# 3. Re-enrich agents that have clients (needed, or agent_liveness_with_clients
+#    inner-joins away the newly-live agents and the view disagrees with the stats)
+npm run pass2
+
+# 4. Recompute the fan-out curve and refresh registry_stats with a new
+#    measured_at  (SQL: select * from public.refresh_fanout();  then upsert
+#    registry_stats — see apps/indexer/sql/004_fanout.sql)
+
+# 5. REGENERATE THE OG CARD — see below
+cd apps/web && npx tsx genog.mjs
+
+# 6. Push the new data to the live site
+curl -X POST -H "Authorization: Bearer $REVALIDATE_SECRET" \
+  https://agensea-navy.vercel.app/api/revalidate
+```
+
+### The OG card drifts silently — this is the one to remember
+
+Every figure rendered in the app is read live from `registry_stats`, so it
+cannot go stale. **`app/opengraph-image.png` is the exception**: it is a static
+PNG baked from `registry_stats` at generation time, and it is what renders when
+the URL is pasted into Discord, Twitter, Telegram or a submission form.
+
+Nothing fails if you forget it. The site will be correct and the social card
+will quietly show last week's numbers under a `measured …` date that no longer
+matches. Treat `npx tsx genog.mjs` as part of the same checklist as
+`/api/revalidate` — they are the two steps that publish data rather than compute
+it, and only one of them is visible in the app.
+
+A redeploy is required after regenerating: the card is a build asset, not an
+ISR page, so `/api/revalidate` does **not** update it.

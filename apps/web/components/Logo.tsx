@@ -1,23 +1,38 @@
 /**
- * AgenSea logo — SPARSE GRID direction.
+ * AgenSea mark — canonical v2, transcribed verbatim from
+ * design/agensea-mark-left.svg. Ten rounded cells, mass on the right
+ * dissolving leftward. Do not redraw: regenerate from that file.
  *
- * Transcribed from design/AgenSea_Design_System.html (symbol #ags-mark-sparse).
- * 7 filled cells on an 8x8 grid: (6,0), (3,2), (5,3), (2,4), (4,5), (1,6), (6,6).
- * The reference is explicit that "7 of 64 is a gesture at sparsity, not a
- * stated figure" — do not wire these cells to any live metric.
+ * DEPRECATED 30 Aug 2026 — the previous 7-cell square-grid mark
+ * (`MarkSparse`, cells (6,0)(3,2)(5,3)(2,4)(4,5)(1,6)(6,6) on an 8x8 grid)
+ * was superseded by this file on 30 Aug 2026 and must not be used anywhere.
+ * The reduced 4-cell favicon variant is derived from a SUBSET of the cells
+ * below by scripts-mkicons.py — see that file, not this one.
  *
- * Sizing floor: the reference notes the sparse grid needs ~2.3px cells and
- * "does not survive a favicon", so keep it at 20px or above.
+ * Header uses the RAW framing of the source artboard (deliberately not
+ * re-centred); apple-icon.png centres the content instead.
  */
-export function MarkSparse({ size = 20, className }: { size?: number; className?: string }) {
+export function Mark({ size = 22, className }: { size?: number; className?: string }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 8 8" className={className} role="img" aria-label="AgenSea">
-      <g fill="currentColor" shapeRendering="crispEdges"><rect className="mark-cell" x="6" y="0" width="1" height="1" /><rect className="mark-cell" x="3" y="2" width="1" height="1" /><rect className="mark-cell" x="5" y="3" width="1" height="1" /><rect className="mark-cell" x="2" y="4" width="1" height="1" /><rect className="mark-cell" x="4" y="5" width="1" height="1" /><rect className="mark-cell" x="1" y="6" width="1" height="1" /><rect className="mark-cell" x="6" y="6" width="1" height="1" /></g>
+    <svg width={size} height={size} viewBox="0 0 512 512" className={className}
+         role="img" aria-label="AgenSea" fill="none">
+      <g fill="currentColor">
+      <rect x="354.5" y="217.2" width="89.6" height="83.6" rx="20.9" className="mark-cell" />
+      <rect x="265.0" y="133.6" width="89.6" height="83.6" rx="20.9" className="mark-cell" />
+      <rect x="265.0" y="300.8" width="89.6" height="89.6" rx="22.4" className="mark-cell" />
+      <rect x="181.4" y="217.2" width="89.6" height="83.6" rx="20.9" className="mark-cell" />
+      <rect x="199.3" y="56.0" width="65.7" height="77.6" rx="16.4" className="mark-cell" />
+      <rect x="193.3" y="390.3" width="71.6" height="65.7" rx="16.4" className="mark-cell" />
+      <rect x="109.7" y="151.5" width="71.6" height="65.7" rx="16.4" className="mark-cell" />
+      <rect x="115.7" y="300.8" width="65.7" height="65.7" rx="16.4" className="mark-cell" />
+      <rect x="67.9" y="109.7" width="47.8" height="41.8" rx="10.4" className="mark-cell" />
+      <rect x="67.9" y="360.5" width="47.8" height="47.8" rx="11.9" className="mark-cell" />
+      </g>
     </svg>
   );
 }
 
-/** Full wordmark, 404x100. Display face; pairs with MarkSparse in the header. */
+/** Full wordmark, 404x100. Display face; pairs with Mark in the header. */
 export function Wordmark({ height = 24, className }: { height?: number; className?: string }) {
   return (
     <svg height={height} viewBox="0 0 404 100" className={className} role="img" aria-label="AgenSea">

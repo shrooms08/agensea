@@ -4,9 +4,21 @@ const S = Object.fromEntries(JSON.parse(readFileSync('/tmp/og_stats.json','utf8'
 const n = (k) => Number(S[k].value).toLocaleString('en-GB');
 const measured = new Date(S.agents_minted.measured_at)
   .toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric',timeZone:'UTC'});
-const FULL = [[6,0],[3,2],[5,3],[2,4],[4,5],[1,6],[6,6]];
-const mark = (px) => `<svg width="${px}" height="${px}" viewBox="0 0 8 8" shape-rendering="crispEdges" style="display:block">
-  ${FULL.map(([x,y])=>`<rect x="${x}" y="${y}" width="1" height="1" fill="#F5F5F5"/>`).join('')}</svg>`;
+// Canonical mark v2, verbatim from design/agensea-mark-left.svg.
+// The previous 7-cell grid mark was superseded 30 Aug 2026.
+const mark = (px) => `<svg width="${px}" height="${px}" viewBox="0 0 512 512" fill="none" style="display:block">
+  <g fill="#F5F5F5">
+    <rect x="354.5" y="217.2" width="89.6" height="83.6" rx="20.9"/>
+    <rect x="265.0" y="133.6" width="89.6" height="83.6" rx="20.9"/>
+    <rect x="265.0" y="300.8" width="89.6" height="89.6" rx="22.4"/>
+    <rect x="181.4" y="217.2" width="89.6" height="83.6" rx="20.9"/>
+    <rect x="199.3" y="56.0" width="65.7" height="77.6" rx="16.4"/>
+    <rect x="193.3" y="390.3" width="71.6" height="65.7" rx="16.4"/>
+    <rect x="109.7" y="151.5" width="71.6" height="65.7" rx="16.4"/>
+    <rect x="115.7" y="300.8" width="65.7" height="65.7" rx="16.4"/>
+    <rect x="67.9" y="109.7" width="47.8" height="41.8" rx="10.4"/>
+    <rect x="67.9" y="360.5" width="47.8" height="47.8" rx="11.9"/>
+  </g></svg>`;
 
 const FIGS = [
   ['Agents minted',       n('agents_minted'),     '#F5F5F5'],
