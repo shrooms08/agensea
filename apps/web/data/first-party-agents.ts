@@ -55,6 +55,9 @@ export interface CompletedJob {
   /** True when timeToDeliverableMs is dominated by relay transport failure
    *  rather than agent work — must be disclosed wherever the number is shown. */
   transportAnomaly?: string;
+  /** Settlement tx on chain 97, recorded by the settle scripts (hire-arm.json).
+   *  Only jobs with this field can appear in the footer's LAST JOB strip. */
+  settleTx?: string;
 }
 
 export interface FirstPartyAgent {
@@ -106,6 +109,7 @@ export const FIRST_PARTY_AGENTS: FirstPartyAgent[] = [
     },
     {
       jobId: '795', status: 'COMPLETED',
+      settleTx: '0xe5a6f956da70cc90ac94029419b6a2cd8eb808b214398c7f67f4f24bc016a86a',
       deliverableHash: '0x91bf1d0f12b1273a5da70cf7ca22d9e4e54550fd7c1873df1c6cbf45adedf1e1',
       timeToDeliverableMs: 28976, analysisMs: 12952,
     }],
@@ -137,6 +141,7 @@ export const FIRST_PARTY_AGENTS: FirstPartyAgent[] = [
     },
     {
       jobId: '796', status: 'COMPLETED',
+      settleTx: '0xc336e6d42ed28f10cc7edf26038a34d6d93de04c32023d24ffd71635c7e12a2e',
       deliverableHash: '0x4f873233aa4443e65a2507b9c8dcc3f00c6b6a2926530ebc2adb73c04b99d0ad',
       timeToDeliverableMs: 19977, analysisMs: 4154,
     }],
@@ -194,6 +199,7 @@ export const FIRST_PARTY_AGENTS: FirstPartyAgent[] = [
       },
       {
         jobId: '797', status: 'COMPLETED',
+      settleTx: '0x92cbcc4bafdb895cc4645f862032af30c7cad211d498339c2474f155ffa9f4e7',
         deliverableHash: '0x0ee064d6b1ca9403f58daa793e7391c017279066a1594ab9f4dba8285368c654',
         timeToDeliverableMs: 18015, analysisMs: 2995,
       },

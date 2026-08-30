@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Space_Grotesk, JetBrains_Mono } from 'next/font/google';
 import { Mark, Wordmark } from '@/components/Logo';
 import { Nav } from '@/components/Nav';
+import { SiteFooter } from '@/components/SiteFooter';
 import './globals.css';
 
 const display = Space_Grotesk({ subsets: ['latin'], weight: ['400','500','700'], variable: '--font-display', display: 'swap' });
@@ -65,6 +66,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         </header>
         <main className="container">{children}</main>
+        <SiteFooter />
       </body>
     </html>
   );
