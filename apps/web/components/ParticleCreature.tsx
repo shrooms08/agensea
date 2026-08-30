@@ -35,29 +35,33 @@ const SPACING = 26;              // px between dot centers at rest
 const CENTER = (N - 1) / 2;
 const DMAX = Math.hypot(CENTER, CENTER);
 const IDLE_AFTER = 2000;         // ms without pointer movement -> wander
-const ROAM_A = (2 * Math.PI) / 47, ROAM_B = (2 * Math.PI) / 31; // rad/s
-const ROAM_MARGIN = 180;         // keep the wander path inside the edges
+const ROAM_A = (2 * Math.PI) / 37, ROAM_B = (2 * Math.PI) / 26; // rad/s
+const ROAM_MARGIN = 120;         // keep the wander path inside the edges
 const PULSE_MS = 1100;
-// Body spring (per-frame units at 60fps): ~2s travel period, damping
-// ratio ~0.75 — a visible swing on sharp turns that settles in one arc.
-const SPRING_K = 0.0028;
-const SPRING_DAMP = 0.92;
-// Velocity stretch: full elongation at ~18px/frame, never beyond 50%.
+// Body spring (per-frame units at 60fps): ~2.2s travel period, damping
+// ratio ~0.6 — a pronounced swing on sharp turns that settles in a curve.
+const SPRING_K = 0.0022;
+const SPRING_DAMP = 0.944;
+// Velocity stretch: full elongation at ~18px/frame, capped at 120% — gooey
+// in flight. The hard rule lives in the asymmetric smoothing below: growth
+// is gradual but relaxation is fast, so the body is fully round again
+// within ~1.5s of stopping (edge dots: tau ~0.47s, 3*tau ~1.4s).
 const STRETCH_PER_SPEED = 1 / 18;
-const STRETCH_MAX = 0.5;
+const STRETCH_MAX = 1.2;
 
 function makeSprite(): HTMLCanvasElement {
-  // Glow sprite: --live #39FF14 radial falloff, drawn once, composited
-  // 'lighter' (the canvas analogue of plus-lighter) over --bg.
+  // Glow sprite: --text #F5F5F5 radial falloff — moonlight, not signal
+  // green — drawn once, composited 'lighter' (the canvas analogue of
+  // plus-lighter) over --bg.
   const SPR = 64;
   const sprite = document.createElement('canvas');
   sprite.width = sprite.height = SPR;
   const sctx = sprite.getContext('2d')!;
   const g = sctx.createRadialGradient(SPR / 2, SPR / 2, 0, SPR / 2, SPR / 2, SPR / 2);
-  g.addColorStop(0.0, 'rgba(57,255,20,0.95)');
-  g.addColorStop(0.18, 'rgba(57,255,20,0.55)');
-  g.addColorStop(0.5, 'rgba(57,255,20,0.12)');
-  g.addColorStop(1.0, 'rgba(57,255,20,0)');
+  g.addColorStop(0.0, 'rgba(245,245,245,0.95)');
+  g.addColorStop(0.18, 'rgba(245,245,245,0.55)');
+  g.addColorStop(0.5, 'rgba(245,245,245,0.12)');
+  g.addColorStop(1.0, 'rgba(245,245,245,0)');
   sctx.fillStyle = g;
   sctx.beginPath();
   sctx.arc(SPR / 2, SPR / 2, SPR / 2, 0, Math.PI * 2);
@@ -110,7 +114,7 @@ export function ParticleCreature({ tag, intensity = 0.3 }: { tag: string; intens
       dots.push({
         ox: (i - CENTER) * SPACING, oy: (j - CENTER) * SPACING,
         w,
-        speed: 0.34 - 0.28 * ease,
+        speed: 0.38 - 0.345 * ease,
         wobA: 1.2 + 2.4 * (1 - w),          // edges shimmer more than the core
         wobFx: 0.4 + 0.6 * hash(n),          // Hz, unique per dot
         wobFy: 0.4 + 0.6 * hash(n + 500),
@@ -154,8 +158,8 @@ export function ParticleCreature({ tag, intensity = 0.3 }: { tag: string; intens
       const pulse = pu >= 0 && pu < 1 ? 1 + 0.22 * Math.sin(Math.PI * pu) : 1;
 
       // Target: wander path, or the cursor while it is live.
-      const wanderX = W / 2 + (W / 2 - Math.min(ROAM_MARGIN, W / 4)) * Math.sin(t * ROAM_A + 0.7) * 0.9;
-      const wanderY = H / 2 + (H / 2 - Math.min(ROAM_MARGIN, H / 4)) * Math.sin(t * ROAM_B + 2.1) * 0.82;
+      const wanderX = W / 2 + (W / 2 - Math.min(ROAM_MARGIN, W / 4)) * Math.sin(t * ROAM_A + 0.7);
+      const wanderY = H / 2 + (H / 2 - Math.min(ROAM_MARGIN, H / 4)) * Math.sin(t * ROAM_B + 2.1);
       const tx = cursorX * (1 - idleBlend) + wanderX * idleBlend;
       const ty = cursorY * (1 - idleBlend) + wanderY * idleBlend;
       if (!seeded) { cx = tx; cy = ty; }
@@ -173,7 +177,7 @@ export function ParticleCreature({ tag, intensity = 0.3 }: { tag: string; intens
       const speed = Math.hypot(vx, vy);
       if (speed > 0.15) { ux = vx / speed; uy = vy / speed; }
       const targetStretch = Math.min(speed * STRETCH_PER_SPEED, 1) * STRETCH_MAX;
-      stretch += (targetStretch - stretch) * 0.08 * step;
+      stretch += (targetStretch - stretch) * (targetStretch < stretch ? 0.14 : 0.08) * step;
 
       ctx.clearRect(0, 0, W, H);
       ctx.globalCompositeOperation = 'lighter';
