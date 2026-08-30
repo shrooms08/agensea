@@ -1,0 +1,61 @@
+{
+  "_comment": "Session tuples for the demo-hire route. PUBLIC data only — addresses, public keys, expiries. Private keys live in server env.",
+  "sessions": [
+    {
+      "agentId": 2012,
+      "address": "0x9eE5F336f25bD814f1625C9Ec959Cd4974055bf1",
+      "publicKey": "0x048ef48691c7d9f0e3ded5b00b4f9c6b36272d60ffb67c5f0710bf33eb0b5ff86eef9ea25a777281df9456c375796e4d67fecc5d8787ede69c9ee2b56b9c8c6dcf",
+      "expiry": 1790726400,
+      "capWei": "94210600000000",
+      "calls": [
+        {
+          "signature": "submit(uint256,bytes32,bytes)",
+          "to": "0xa206c0517B6371C6638CD9e4a42Cc9f02A33B0DE"
+        }
+      ],
+      "walletAddress": "0x85d32d525E1812FeE7001f34DD6dd86154619090"
+    },
+    {
+      "agentId": 2013,
+      "address": "0x74D56BB9349Af2c6CD980cBaA6dCe90ce4Df5894",
+      "publicKey": "0x04c7aed2b8fed8940e0646d75f80e31f35b6f55b923765977545680e644c8e643fc2624b8bf4f5f053185055a0fa43a1a946f7c85f813557b2f6b0e898777eb471",
+      "expiry": 1790726400,
+      "capWei": "94210600000000",
+      "calls": [
+        {
+          "signature": "submit(uint256,bytes32,bytes)",
+          "to": "0xa206c0517B6371C6638CD9e4a42Cc9f02A33B0DE"
+        }
+      ],
+      "walletAddress": "0x85d32d525E1812FeE7001f34DD6dd86154619090"
+    },
+    {
+      "agentId": 2014,
+      "address": "0x9376991c8A0B93Bd9837dF2022a168b6bd6Ed9e8",
+      "publicKey": "0x049af15f77cc455d789e0e6091acab0b290e7cb819ad25a7a8b3e9b037ba7c04a025544f577602b5d91835a5f802e951b9c0c537279723f88db83c3c690ad8d554",
+      "expiry": 1790726400,
+      "capWei": "94210600000000",
+      "calls": [
+        {
+          "signature": "submit(uint256,bytes32,bytes)",
+          "to": "0xa206c0517B6371C6638CD9e4a42Cc9f02A33B0DE"
+        }
+      ],
+      "walletAddress": "0x85d32d525E1812FeE7001f34DD6dd86154619090"
+    },
+    {
+      "agentId": 2015,
+      "address": "0x8fd56cb9dbD92EB48528c3446D9b427e130338dA",
+      "publicKey": "0x043687bc9f561bd10d900912cc73f50fd8dd49ac714bc59e8d7d3f5c267b7236eb9d23e26b2fa11fcfdb7e745201f27bc3b534911da0ddfe48ff7e1bf659a5328b",
+      "expiry": 1790726400,
+      "capWei": "94210600000000",
+      "calls": [
+        {
+          "signature": "submit(uint256,bytes32,bytes)",
+          "to": "0xa206c0517B6371C6638CD9e4a42Cc9f02A33B0DE"
+        }
+      ],
+      "walletAddress": "0x85d32d525E1812FeE7001f34DD6dd86154619090"
+    }
+  ]
+}
