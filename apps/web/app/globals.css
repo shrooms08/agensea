@@ -255,3 +255,16 @@ header nav .navlink[data-active='true']::after {
 @media (max-width: 700px) {
   .cols-5, .cols-4, .cols-3 { grid-template-columns: 1fr; }
 }
+
+/* ---------------------------------------------------------------------------
+   PARTICLE HERO REGION (feat/particle-hero).
+   Rendered at SSR so the 220vh region is in the first paint — mounting it
+   after hydration shifted everything below by 2.2 viewports (CLS 0.778,
+   Lighthouse 95 -> 71). Mobile and reduced-motion are excluded by media
+   query, which is also decided pre-paint: those visitors never reserve the
+   space and never shift. Only the rare no-WebGL case collapses via JS.
+--------------------------------------------------------------------------- */
+.hero-region { height: 220vh; position: relative; margin: 0 calc(50% - 50vw); width: 100vw; }
+@media (max-width: 767px), (prefers-reduced-motion: reduce) {
+  .hero-region { display: none; }
+}

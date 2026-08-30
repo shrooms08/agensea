@@ -3,6 +3,7 @@
  * Every count renders with its measured_at from registry_stats.
  */
 import { getRegistryStats, getFanoutCurve, getClientConcentration } from '@/lib/queries';
+import { ParticleHero } from '@/components/ParticleHero';
 import { Stat } from '@/components/Stat';
 import { ThresholdSlider } from '@/components/ThresholdSlider';
 import { FIRST_PARTY_AGENTS, CATEGORY_SLUGS, CHAIN } from '@/data/first-party-agents';
@@ -21,6 +22,14 @@ export default async function Home() {
 
   return (
     <>
+      {/* Scroll-scrubbed particle hero. fallback="none": reduced-motion,
+          no-WebGL and <768px visitors see exactly the page below, whose own
+          hero IS the normal-height hero. Nothing below this line changed. */}
+      <ParticleHero
+        caption={`${int(Number(s('agents_minted').value))} minted. ${int(Number(s('agents_with_client').value))} ever heard from.`}
+        sub="A marketplace and registry explorer for ERC-8004 on BNB Chain."
+        fallback="none"
+      />
       <section style={{ padding: '40px 0 26px' }}>
         <h1 style={{ font: "500 40px/1.08 var(--display)", maxWidth: 720 }}>
           Most agents on chain have never been used.
