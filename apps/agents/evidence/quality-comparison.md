@@ -1,10 +1,11 @@
 # Quality comparison — agent vs DIY, per task
 
-Method note, stated up front: the DIY runs were performed by Minos with help
-from an AI chat assistant for directions and arithmetic. That is the realistic
-2026 baseline — the comparison is not "agent vs unaided human", it is "hired
-agent vs a capable operator using every free tool available". Timings are his
-stopwatch; nothing here is estimated.
+Method note, stated up front: the DIY runs were performed by Minos WITH an AI
+chat assistant as copilot — directions and arithmetic. That is the realistic
+2026 baseline: the comparison is not "agent vs unaided human", it is "hired
+agent vs an informed user with a copilot, using every free tool available".
+Timings are his stopwatch; nothing here is estimated. As T1 shows, the copilot
+is part of the failure surface, not just the speed-up.
 
 Both arms ran the identical frozen inputs. The runs happened hours apart, so
 tick/rate drift between them reflects the market moving, not disagreement —
@@ -26,14 +27,17 @@ each claim below is judged against chain state at ITS OWN read time.
 `vUSDT.borrowBalanceStored(wallet)` = **6,441.45 USDT** (agent's 6,440.74 +
 interest accrued between reads). The wallet has real debt. HF ∞ is wrong.
 
-**Root cause — a method failure, not an operator failure.** The wallet's vUSDT
-market holds **$0.002 of supply** against **$6.4K of borrow**. Any manual route
-that enumerates markets from visible token balances (which is what BscScan
-shows you) will never surface a market you supplied dust to — and that is
-exactly where the entire debt sat. The only reliable enumeration is
-`getAssetsIn`, which the sheet listed but which is easy to skip once the
-Venus app route fails and time pressure mounts. The agent enumerates
-`getAssetsIn` unconditionally on every run.
+**Root cause — the copilot's shortcut, and it is structural.** The timing
+sheet listed `getAssetsIn` as the enumeration step; the AI assistant steered
+the run to token-balance enumeration instead — faster, and structurally blind
+to borrows, because a borrow position needs no visible token balance at all.
+The wallet's vUSDT market holds **$0.002 of supply** against **$6.4K of
+borrow**: invisible in any balance listing, carrying the entire debt. So the
+DIY arm — an informed user WITH a copilot — still produced a confidently wrong
+answer, and wrong in the reassuring direction, on the risk task. The corrected
+picture: **~$6.4k borrowed against ~$29k supplied is a real, finite health
+factor of 3.46, not ∞.** The agent enumerates `getAssetsIn` unconditionally
+on every run; it cannot take this shortcut.
 
 **Stakes:** this is the risk-monitoring task. The DIY conclusion — "no price
 move can liquidate this wallet" — is the exact wrong answer to give the owner
@@ -90,19 +94,17 @@ agent improvement (add TVL + size-impact caveat to the yield agent).
 | | T1 | T2 | T3 |
 |---|---|---|---|
 | agent time (hire→verified) [M] | 29.0s | 20.0s | 18.0s |
-| DIY time [M, Minos] | 12m13s † | 5m50s | 6m04s |
-| speed-up | **25×** † | **17.5×** | **20×** |
+| DIY time [M, Minos] | 8m13s | 5m50s | 6m04s |
+| speed-up | **17×** | **17.5×** | **20×** |
 | agent cost [M] | 1 $U + $0.130 | 1 $U + $0.129 | 1 $U + $0.127 |
-| DIY cost | $0 + 12m13s of operator | $0 + 5m50s | $0 + 6m04s |
+| DIY cost | $0 + 8m13s of operator | $0 + 5m50s | $0 + 6m04s |
 | correctness | **agent right, DIY wrong on HF** (chain-adjudicated) | agree | agree (method split on Lista, ranking same) |
 | verifiability | hash on chain, re-derivable | prose file | hash + cited blocks vs published-rate screenshot |
 | unique DIY insight | — | "range mispriced at creation" | vault-size caveat |
 
-† T1 time discrepancy: the message said **12m13s**, the file records **8:13**.
-The table uses the message figure pending Minos's confirmation; at 8m13s the
-speed-up is 17×. Either way the conclusion is unchanged.
-
-The one-line version the report will argue: **the agent was 17–25× faster,
+The one-line version the report will argue: **the agent was 17–20× faster,
 cost ~$1.13 a task — and on the task where correctness carried real stakes,
-the manual route produced a confidently wrong answer that only the agent's
-on-chain, re-derivable output could have exposed.**
+an informed user with an AI copilot still produced a confidently wrong answer
+in the reassuring direction, because the copilot took a structurally blind
+shortcut the agent cannot take. Only the agent's on-chain, re-derivable
+output could have exposed it.**

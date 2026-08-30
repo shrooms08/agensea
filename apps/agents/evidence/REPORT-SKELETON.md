@@ -11,8 +11,7 @@ ways. Every number tagged [M]easured with its source. No estimated timings.
 <!-- price/speed vs the alternative -->
 - Price per job: 1 $U + ~$0.13 gas [M: evidence/hire-arm.json]
 - Time to verified deliverable: T1 29.0s · T2 20.0s · T3 18.0s [M]
-- DIY time: T1 12m13s† · T2 5m50s · T3 6m04s  [M: Minos, timed runs]
-  († file records 8:13 — awaiting confirmation; conclusion unchanged either way)
+- DIY time: T1 8m13s · T2 5m50s · T3 6m04s  [M: Minos, timed runs, confirmed]
 - ⟨prose after review⟩
 
 ## 2. Proven agent advantage (30%) — the evidence table
@@ -26,11 +25,11 @@ ways. Every number tagged [M]easured with its source. No estimated timings.
 | agent: job / txs [M] | 795 · hire 0x0aaf7e47… · submit 0x1f033937… | 796 · 0x7c47064f… · 0x46504f1a… | 797 · 0x83e5df9a… · 0xbc8efe33… |
 | agent: verified on chain [M] | hash match ✓ | hash match ✓ | hash match ✓ |
 | agent: output file | `T1-agent-analysis.json` | `T2-agent-analysis.json` | `T3-agent-analysis.json` |
-| **DIY: time** [M] | 12m13s† | 5m50s | 6m04s |
+| **DIY: time** [M] | 8m13s | 5m50s | 6m04s |
 | DIY: cost | $0 + operator time | $0 + operator time | $0 + operator time |
 | DIY: output file | `T1-diy.md` | `T2-diy.md` | `T3-diy.md` |
 | DIY: verifiability | notes/screenshot | notes/screenshot | notes/screenshot |
-| quality diff | **agent right, DIY WRONG on HF** — chain-adjudicated (missed vUSDT borrow $6,441; getAssetsIn=11 vs 7 found) | agree on all facts; agent exact amounts; DIY adds "mispriced at creation" insight | same ranking; Lista method split (realised 0.92% vs published 0.39%); DIY adds vault-size caveat |
+| quality diff | **agent right, DIY WRONG on HF** — chain-adjudicated: copilot's token-balance shortcut is structurally blind to borrows; missed vUSDT ($0.002 supplied, $6,441 borrowed); true HF 3.46, not ∞ | agree on all facts; agent exact amounts; DIY adds "mispriced at creation" insight | same ranking; Lista method split (realised 0.92% vs published 0.39%); DIY adds vault-size caveat |
 
 Verifiability difference (applies to all three): the agent deliverable's
 keccak256 is stored in `job.deliverable` on chain 97 and re-derivable by
