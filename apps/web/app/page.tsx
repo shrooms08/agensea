@@ -3,7 +3,7 @@
  * Every count renders with its measured_at from registry_stats.
  */
 import { getRegistryStats, getFanoutCurve, getClientConcentration } from '@/lib/queries';
-import { ParticleHero } from '@/components/ParticleHero';
+import { ParticleHero, MobileParticleHero } from '@/components/ParticleHero';
 import { Stat } from '@/components/Stat';
 import { ThresholdSlider } from '@/components/ThresholdSlider';
 import { FIRST_PARTY_AGENTS, CATEGORY_SLUGS, CHAIN } from '@/data/first-party-agents';
@@ -30,6 +30,9 @@ export default async function Home() {
         sub="A marketplace and registry explorer for ERC-8004 on BNB Chain."
         fallback="none"
       />
+      {/* Mobile <768px: normal-height play-once hero. Hidden >=768px by CSS.
+          Desktop scroll-scrub above is untouched. */}
+      <MobileParticleHero sub="A marketplace and registry explorer for ERC-8004 on BNB Chain." />
       <section style={{ padding: '40px 0 26px' }}>
         <h1 style={{ font: "500 40px/1.08 var(--display)", maxWidth: 720 }}>
           Most agents on chain have never been used.

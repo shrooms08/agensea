@@ -268,3 +268,35 @@ header nav .navlink[data-active='true']::after {
 @media (max-width: 767px), (prefers-reduced-motion: reduce) {
   .hero-region { display: none; }
 }
+
+/* ---------------------------------------------------------------------------
+   MOBILE PLAY-ONCE HERO (feat/mobile-hero).
+   Normal-height hero for <768px: canvas strip + wordmark + sub. All heights
+   are fixed in CSS and present at SSR, so CLS stays 0 — nothing mounts late.
+
+   The data-anim attribute is set by a tiny INLINE script (pre-paint, before
+   hydration): only when width<768, motion is allowed, and WebGL exists.
+   Without it — no JS, reduced-motion, no WebGL, any script failure — the
+   static formed mark shows immediately. The failure mode is "the phone shows
+   what it shows today", never a blank hero.
+--------------------------------------------------------------------------- */
+.hero-mobile { display: none; }
+@media (max-width: 767px) {
+  .hero-mobile {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 18px; padding: 26px 0 34px; text-align: center;
+  }
+  .hero-mobile .hm-stage {
+    position: relative; width: 100vw; height: 52vh; max-height: 460px;
+    margin: 0 calc(50% - 50vw);
+  }
+  .hero-mobile canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: none; }
+  .hero-mobile .hm-static {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  }
+  .hero-mobile[data-anim] canvas { display: block; }
+  .hero-mobile[data-anim] .hm-static { display: none; }
+  /* Reveal text: visible by default (no-JS / reduced-motion / no-WebGL see it
+     immediately); the animated path hides and fades it back in via JS refs. */
+  .hero-mobile[data-anim] .hm-reveal { opacity: 0; }
+}

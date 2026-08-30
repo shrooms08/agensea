@@ -283,3 +283,141 @@ export function ParticleHero({ caption, sub, fallback = 'none' }: {
     </div>
   );
 }
+
+/* ===========================================================================
+ * MOBILE PLAY-ONCE HERO (feat/mobile-hero).
+ * A separate export — the desktop scroll-scrub component above is untouched.
+ *
+ * Plays exactly once per page load: ~600ms drift, ~1.6s convergence, settle.
+ * TIME-based (elapsed wall clock drives the progress uniform), so a slow
+ * phone plays the same animation slower-smoothly, never faster-janky.
+ * After settle the rAF loop is cancelled outright: zero ongoing GPU/battery
+ * cost, no replay on tab return. Reuses VERT/FRAG and sampleMark verbatim —
+ * the only difference is what drives uProgress.
+ * =========================================================================== */
+
+const M_PARTICLES = 4000;
+const M_DRIFT_MS = 600;
+const M_CONVERGE_MS = 1600;
+const M_SETTLE_TAIL_MS = 250;   // a few frames after progress=1 so stragglers rest
+
+/** Inline, pre-paint gate: runs before this section paints, so the static/canvas
+ *  decision causes no flash and no shift. Any failure leaves the static mark. */
+const GATE_JS = `(function(){try{
+  if (window.innerWidth >= 768) return;
+  if (!window.matchMedia('(prefers-reduced-motion: no-preference)').matches) return;
+  var c = document.createElement('canvas');
+  if (!(c.getContext('webgl2') || c.getContext('webgl'))) return;
+  var el = document.currentScript && document.currentScript.previousElementSibling;
+  if (el) el.setAttribute('data-anim', '1');
+}catch(e){}})()`;
+
+export function MobileParticleHero({ sub }: { sub: string }) {
+  const rootRef = useRef<HTMLElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const revealRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const root = rootRef.current, canvas = canvasRef.current;
+    if (!root || !canvas || !root.hasAttribute('data-anim')) return; // gate said static
+    let dead = false, raf = 0, cleanup: (() => void) | undefined;
+
+    (async () => {
+      try {
+        const THREE = await import('three');
+        if (dead) return;
+        const stage = canvas.parentElement!;
+        const w = stage.clientWidth, h = stage.clientHeight;
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: false, powerPreference: 'high-performance' });
+        renderer.setPixelRatio(dpr);
+        renderer.setSize(w, h, false);
+        const scene = new THREE.Scene();
+        const camera = new THREE.OrthographicCamera(0, w, 0, h, -10, 10);
+        const uniforms = { uProgress: { value: 0 }, uTime: { value: 0 }, uDpr: { value: dpr } };
+        const material = new THREE.ShaderMaterial({
+          vertexShader: VERT, fragmentShader: FRAG, uniforms,
+          transparent: true, depthWrite: false, depthTest: false,
+        });
+        const targets = sampleMark(M_PARTICLES);
+        if (!targets) throw new Error('sample failed');
+
+        const markPx = Math.min(0.86 * h, 0.62 * w);
+        const ox = (w - markPx) / 2, oy = (h - markPx) / 2;
+        const scatter = new Float32Array(M_PARTICLES * 3);
+        const target = new Float32Array(M_PARTICLES * 2);
+        const seed = new Float32Array(M_PARTICLES);
+        const size = new Float32Array(M_PARTICLES);
+        const alpha = new Float32Array(M_PARTICLES);
+        const strag = new Float32Array(M_PARTICLES);
+        for (let i = 0; i < M_PARTICLES; i++) {
+          scatter[i * 3] = (Math.random() * 1.2 - 0.1) * w;
+          scatter[i * 3 + 1] = (Math.random() * 1.2 - 0.1) * h;
+          target[i * 2] = ox + (targets[i * 2]! / MARK_ARTBOARD) * markPx;
+          target[i * 2 + 1] = oy + (targets[i * 2 + 1]! / MARK_ARTBOARD) * markPx;
+          seed[i] = Math.random();
+          const depth = Math.random();
+          size[i] = (1.0 + depth * 2.0) * (0.75 + 0.5 * Math.random());
+          alpha[i] = 0.22 + depth * 0.7;
+          strag[i] = Math.random() < STRAGGLER_FRACTION ? 1 : 0;
+        }
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.BufferAttribute(scatter, 3));
+        geometry.setAttribute('aTarget', new THREE.BufferAttribute(target, 2));
+        geometry.setAttribute('aSeed', new THREE.BufferAttribute(seed, 1));
+        geometry.setAttribute('aSize', new THREE.BufferAttribute(size, 1));
+        geometry.setAttribute('aAlpha', new THREE.BufferAttribute(alpha, 1));
+        geometry.setAttribute('aStraggler', new THREE.BufferAttribute(strag, 1));
+        const points = new THREE.Points(geometry, material);
+        points.frustumCulled = false;
+        scene.add(points);
+
+        const t0 = performance.now();
+        const tick = () => {
+          const el = performance.now() - t0;
+          // TIME-based progress: drift, then eased convergence.
+          const lin = Math.min(1, Math.max(0, (el - M_DRIFT_MS) / M_CONVERGE_MS));
+          uniforms.uProgress.value = lin;          // shader adds stagger + smoothstep
+          uniforms.uTime.value = el / 1000;
+          if (revealRef.current) {
+            const o = Math.min(1, Math.max(0, (lin - 0.8) / 0.18));
+            revealRef.current.style.opacity = String(o);
+            revealRef.current.style.transform = `translateY(${(1 - o) * 8}px)`;
+          }
+          renderer.render(scene, camera);
+          if (el < M_DRIFT_MS + M_CONVERGE_MS + M_SETTLE_TAIL_MS) {
+            raf = requestAnimationFrame(tick);
+          } else {
+            // SETTLED: the loop ends here, permanently. No replay on tab
+            // return, no idle drift, no further GPU work of any kind.
+            if (revealRef.current) { revealRef.current.style.opacity = '1'; revealRef.current.style.transform = 'none'; }
+            (window as unknown as { __heroSettled?: number }).__heroSettled = performance.now();
+            console.info('[mobile-hero] settled; rAF cancelled — no further frames');
+          }
+        };
+        raf = requestAnimationFrame(tick);
+        cleanup = () => { cancelAnimationFrame(raf); geometry.dispose(); material.dispose(); renderer.dispose(); };
+      } catch {
+        // Any init failure: fall back to the static mark, exactly as no-WebGL.
+        root.removeAttribute('data-anim');
+      }
+    })();
+    return () => { dead = true; cleanup?.(); };
+  }, []);
+
+  return (
+    <>
+      <section ref={rootRef} className="hero-mobile">
+        <div className="hm-stage">
+          <canvas ref={canvasRef} />
+          <div className="hm-static"><Mark size={190} /></div>
+        </div>
+        <div ref={revealRef} className="hm-reveal" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
+          <Wordmark height={24} />
+          <p className="prose-sm prose-muted" style={{ maxWidth: 440, margin: 0, fontSize: 14, padding: '0 18px' }}>{sub}</p>
+        </div>
+      </section>
+      <script dangerouslySetInnerHTML={{ __html: GATE_JS }} />
+    </>
+  );
+}
