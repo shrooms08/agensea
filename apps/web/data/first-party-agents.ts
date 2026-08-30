@@ -97,7 +97,7 @@ export const FIRST_PARTY_AGENTS: FirstPartyAgent[] = [
       calls: SUBMIT_ONLY,
       spendCapWei: '1780070842932652',
       spendCapLabel: '0.00178 tBNB / hour',
-      expiryUnix: 1788082902,
+      expiryUnix: 1790726400,
     },
     jobs: [{
       jobId: '748', status: 'COMPLETED',
@@ -125,7 +125,7 @@ export const FIRST_PARTY_AGENTS: FirstPartyAgent[] = [
       calls: SUBMIT_ONLY,
       spendCapWei: '94210600000000',
       spendCapLabel: '0.0000942 tBNB / hour',
-      expiryUnix: 1788085363,
+      expiryUnix: 1790726400,
     },
     jobs: [{
       jobId: '757', status: 'COMPLETED',
@@ -156,7 +156,7 @@ export const FIRST_PARTY_AGENTS: FirstPartyAgent[] = [
       calls: SUBMIT_ONLY,
       spendCapWei: '94210600000000',
       spendCapLabel: '0.0000942 tBNB / hour',
-      expiryUnix: 1788085390,
+      expiryUnix: 1790726400,
     },
     jobs: [{
       jobId: '754', status: 'COMPLETED',
@@ -179,7 +179,7 @@ export const FIRST_PARTY_AGENTS: FirstPartyAgent[] = [
       calls: SUBMIT_ONLY,
       spendCapWei: '94210600000000',
       spendCapLabel: '0.0000942 tBNB / hour',
-      expiryUnix: 1788085415,
+      expiryUnix: 1790726400,
     },
     jobs: [
       {
