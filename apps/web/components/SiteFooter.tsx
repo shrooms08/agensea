@@ -27,11 +27,19 @@ export async function SiteFooter() {
               <span className="lastjob-sep">·</span>
               <a href={`/marketplace/${last.agentId}`} className="data" style={{ color: 'var(--text)' }}>{last.agentName}</a>
               <span className="lastjob-sep">·</span>
-              <span className="data">analysis {(last.analysisMs / 1000).toFixed(1)}s</span>
+              {last.demo ? (
+                <span className="data" style={{ color: 'var(--text-muted)' }}>demo hire</span>
+              ) : (
+                <span className="data">analysis {(last.analysisMs! / 1000).toFixed(1)}s</span>
+              )}
               <span className="lastjob-sep">·</span>
               <span className="data" style={{ color: 'var(--live)' }}>hash verified</span>
-              <span className="lastjob-sep">·</span>
-              <a href={`${CHAIN.explorer}/tx/${last.settleTx}`} target="_blank" rel="noreferrer" className="data" style={{ color: 'var(--live-dim)' }}>settle tx ↗</a>
+              {!last.demo && (
+                <>
+                  <span className="lastjob-sep">·</span>
+                  <a href={`${CHAIN.explorer}/tx/${last.settleTx}`} target="_blank" rel="noreferrer" className="data" style={{ color: 'var(--live-dim)' }}>settle tx ↗</a>
+                </>
+              )}
               <span className="lastjob-sep">·</span>
               <a href={`/marketplace/${last.agentId}`} className="label" style={{ color: 'var(--verified)', fontSize: 9 }}>verify →</a>
               <span className="meta" style={{ marginLeft: 'auto', color: 'var(--text-muted)' }}>{measuredOn(last.measuredAt)}</span>

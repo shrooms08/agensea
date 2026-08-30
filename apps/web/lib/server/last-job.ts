@@ -1,54 +1,92 @@
 /**
- * LAST JOB strip data — SERVER ONLY, read at ISR time.
+ * LAST JOB strip data — SERVER ONLY, read at ISR time, eth_call only.
  *
- * Candidates are the config jobs that are fully documented (analysisMs +
- * settleTx recorded by the settle scripts). The chain is the authority on
- * the claim: at render we re-read the job from chain 97 and only report it
- * when statusName is COMPLETED and the on-chain deliverable hash equals the
- * config hash — "hash verified" is that comparison, made now, not remembered.
- * Any failure returns null and the strip renders "last job: unavailable";
- * it never shows a stale or invented row.
+ * Candidates are ALL COMPLETED jobs on chain 97 for our four agents: we walk
+ * down from the commerce job counter and take the highest-id COMPLETED job
+ * whose provider is the agents' wallet. What renders depends on what can be
+ * PROVEN for that job:
  *
- * (Live demo hires can settle later than these jobs, but carry no measured
- * analysis time or recorded settle tx, so they are not renderable here.)
+ *  - Config jobs (data/first-party-agents.ts) carry measured analysisMs and
+ *    a recorded settleTx — full row, gated on the on-chain deliverable hash
+ *    equalling the config hash.
+ *  - Demo hires have neither measurement; they render as "demo hire" with
+ *    only chain-proven fields. The hash check recomputes keccak256 of the
+ *    manifest persisted by the hire route (demo_deliverables, backfilled
+ *    from the submit events for jobs before persistence existed) against
+ *    the on-chain job.deliverable — made now, not remembered.
+ *
+ * A candidate that cannot be verified is SKIPPED (never half-rendered) and
+ * the walk continues to the next lower COMPLETED job. Any failure, or an
+ * empty walk, returns null and the strip renders "last job: unavailable" —
+ * never stale, never invented.
  */
 import 'server-only';
 import { BNB_TESTNET, getErc8183Job } from '@altananetwork/sdk';
-import { FIRST_PARTY_AGENTS } from '@/data/first-party-agents';
+import { manifestHash, type DeliverableManifest } from '../../../agents/src/erc8183/manifest.ts';
+import { FIRST_PARTY_AGENTS, ERC8183, byId } from '@/data/first-party-agents';
+import { sbSelect } from '@/lib/supabase';
+
+const PROVIDER = '0x85d32d525E1812FeE7001f34DD6dd86154619090'.toLowerCase();
+const JOB_COUNTER_SELECTOR = '0x50355d76'; // same read the hire route uses for the next id
+const MAX_WALK = 25;    // candidates to examine below the counter
+const DEADLINE_MS = 15000;
 
 export interface LastJob {
   jobId: string;
   agentId: number;
   agentName: string;
-  analysisMs: number;
-  settleTx: string;
-  measuredAt: string; // ISO, time of the chain read
+  demo: boolean;
+  analysisMs?: number;  // config jobs only — never invented for demo hires
+  settleTx?: string;    // config jobs only
+  measuredAt: string;   // ISO, time of the chain read
+}
+
+async function latestJobId(): Promise<number> {
+  const r = await fetch(BNB_TESTNET.publicRpcUrl, {
+    method: 'POST', headers: { 'content-type': 'application/json' }, cache: 'no-store',
+    body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_call',
+      params: [{ to: ERC8183.commerce, data: JOB_COUNTER_SELECTOR }, 'latest'] }),
+  });
+  return Number(BigInt(((await r.json()) as { result: string }).result));
+}
+
+async function scan(): Promise<LastJob | null> {
+  const configJobs = new Map(FIRST_PARTY_AGENTS.flatMap((a) => a.jobs.map((j) => [Number(j.jobId), { agent: a, job: j }] as const)));
+  const latest = await latestJobId();
+
+  for (let id = latest; id > latest - MAX_WALK && id > 0; id--) {
+    const chainJob = await getErc8183Job(BNB_TESTNET, BigInt(id));
+    if (String((chainJob as { provider?: string }).provider ?? '').toLowerCase() !== PROVIDER) continue;
+    if (chainJob.statusName !== 'COMPLETED') continue;
+
+    const cfg = configJobs.get(id);
+    if (cfg) {
+      if (chainJob.deliverable.toLowerCase() !== cfg.job.deliverableHash.toLowerCase()) continue;
+      if (!cfg.job.settleTx) continue; // not fully documented — not renderable with full fields
+      return { jobId: String(id), agentId: cfg.agent.agentId, agentName: cfg.agent.name, demo: false,
+               analysisMs: cfg.job.analysisMs, settleTx: cfg.job.settleTx, measuredAt: new Date().toISOString() };
+    }
+
+    // Demo hire: verify against the persisted manifest, or skip.
+    const { rows } = await sbSelect<{ agent_id: number; manifest: DeliverableManifest }>(
+      'demo_deliverables', { query: `select=agent_id,manifest&job_id=eq.${id}`, range: [0, 0] });
+    const row = rows[0];
+    if (!row) continue;
+    if (manifestHash(row.manifest).toLowerCase() !== chainJob.deliverable.toLowerCase()) continue;
+    const agent = byId(row.agent_id);
+    if (!agent) continue;
+    return { jobId: String(id), agentId: agent.agentId, agentName: agent.name, demo: true,
+             measuredAt: new Date().toISOString() };
+  }
+  return null;
 }
 
 export async function readLastJob(): Promise<LastJob | null> {
   try {
-    const candidates = FIRST_PARTY_AGENTS.flatMap((a) =>
-      a.jobs.filter((j) => j.settleTx && j.status === 'COMPLETED')
-        .map((j) => ({ agent: a, job: j })));
-    if (candidates.length === 0) return null;
-    const top = candidates.sort((x, y) => Number(y.job.jobId) - Number(x.job.jobId))[0];
-
-    const chainJob = (await Promise.race([
-      getErc8183Job(BNB_TESTNET, BigInt(top.job.jobId)),
-      new Promise((_, rej) => setTimeout(() => rej(new Error('chain read timeout')), 8000)),
-    ])) as { statusName: string; deliverable: string };
-
-    if (chainJob.statusName !== 'COMPLETED') return null;
-    if (chainJob.deliverable.toLowerCase() !== top.job.deliverableHash.toLowerCase()) return null;
-
-    return {
-      jobId: top.job.jobId,
-      agentId: top.agent.agentId,
-      agentName: top.agent.name,
-      analysisMs: top.job.analysisMs,
-      settleTx: top.job.settleTx!,
-      measuredAt: new Date().toISOString(),
-    };
+    return (await Promise.race([
+      scan(),
+      new Promise<null>((_, rej) => setTimeout(() => rej(new Error('last-job deadline')), DEADLINE_MS)),
+    ])) as LastJob | null;
   } catch {
     return null;
   }

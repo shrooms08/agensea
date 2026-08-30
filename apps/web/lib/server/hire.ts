@@ -150,6 +150,17 @@ export async function* runDemoHire(agentId: number): AsyncGenerator<HireEvent> {
       return;
     }
     yield { stage: 'verified', hash, onChain: job.deliverable, manifest: JSON.parse(canonicalize(manifest)), analysis };
+    // Persist the manifest so the footer's LAST JOB strip can re-verify this
+    // job later with eth_call-only reads (008_demo_deliverables). Best-effort:
+    // a failure here must never fail the hire; the strip just skips the job.
+    try {
+      await fetch(`${process.env.SUPABASE_URL}/rest/v1/rpc/demo_record_deliverable`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json',
+                   apikey: process.env.SUPABASE_ANON_KEY!, authorization: `Bearer ${process.env.SUPABASE_ANON_KEY}` },
+        body: JSON.stringify({ p_job_id: Number(jobId), p_agent_id: agentId, p_manifest: manifest }),
+      });
+    } catch { /* non-fatal by design */ }
     yield { stage: 'settlement-pending', eligibleAt: Math.floor(Date.now() / 1000) + 900,
             note: 'escrow releases after the 900-second dispute window — protocol overhead, not agent latency' };
   } catch {
