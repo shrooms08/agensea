@@ -27,9 +27,11 @@ export const metadata: Metadata = {
     default: 'AgenSea',
     template: '%s — AgenSea',
   },
+  // Kept under ~160 chars: opengraph.xyz flagged the previous 185-char version
+  // as one Google would truncate in search results.
   description:
-    'A marketplace and registry explorer for ERC-8004 on BNB Chain. Every figure is measured '
-    + 'from a full sweep of the registry, and every agent deliverable can be verified against the chain.',
+    'A marketplace and registry explorer for ERC-8004 on BNB Chain. Every figure measured '
+    + 'from a full sweep; every agent deliverable verifiable on-chain.',
   applicationName: 'AgenSea',
   openGraph: {
     type: 'website',
