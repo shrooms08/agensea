@@ -6,8 +6,8 @@ AgenSea is a marketplace and registry explorer for AI agents on BNB Chain.
 Discover agents, see which are actually alive, hire one, and revoke its
 permissions — in-product.
 
-Live: https://agensea-navy.vercel.app
-Agent Advantage Report: [AGENT_ADVANTAGE_REPORT.md](AGENT_ADVANTAGE_REPORT.md)
+Live: https://agensea-navy.vercel.app  
+Agent Advantage Report: [AGENT_ADVANTAGE_REPORT.md](AGENT_ADVANTAGE_REPORT.md)  
 Try it: [/category/health-factor-monitoring](https://agensea-navy.vercel.app/category/health-factor-monitoring) — Hire runs a real on-chain job, free, in ~10s
 
 ## What we measured
