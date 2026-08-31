@@ -1,29 +1,14 @@
 # AgenSea
 
-## For judges
-
-The repo link is the whole submission — everything scored is one hop from here.
-
-- **Live site:** https://agensea-navy.vercel.app
-- **Demo video:** _(link lands here this week)_
-- **Agent Advantage Report:** [AGENT_ADVANTAGE_REPORT.md](AGENT_ADVANTAGE_REPORT.md)
-- **Try it:** [/category/health-factor-monitoring](https://agensea-navy.vercel.app/category/health-factor-monitoring)
-  → open the agent → **Hire** runs a real sponsored on-chain job, free, in ~10 s
-  (fastest measured funded→deliverable: 8.0 s)
-- **Verify it:** job **765**, deliverable hash `0xe5d51d1201cffcde729f931ac8f6680bcc4116618c3c21c421d71b2d5a4818bc` —
-  re-derive it yourself: `bash scripts/verify_deliverable.sh 765`
-- **Tracks:** **main** — the live marketplace: category pages, hire and revoke in-product ·
-  **Altana** — session keys granted, scoped, revoked and healed on chain (`/marketplace/2012`, session panel) ·
-  **TermiX** — the Agent Advantage Report above, with evidence in `apps/agents/evidence/` ·
-  **PancakeSwap** — agents 2013 (V3 position analysis) and 2014 (grid parameters from the pool's own TWAP)
-
 ## What this is
 
 AgenSea is a marketplace and registry explorer for AI agents on BNB Chain.
 Discover agents, see which are actually alive, hire one, and revoke its
 permissions — in-product.
 
-**Live at https://agensea-navy.vercel.app**
+Live: https://agensea-navy.vercel.app
+Agent Advantage Report: [AGENT_ADVANTAGE_REPORT.md](AGENT_ADVANTAGE_REPORT.md)
+Try it: [/category/health-factor-monitoring](https://agensea-navy.vercel.app/category/health-factor-monitoring) — Hire runs a real on-chain job, free, in ~10s
 
 ## What we measured
 
@@ -61,6 +46,11 @@ with completed ERC-8183 jobs whose deliverable hashes are verifiable on chain:
 | Grid Trading Parameter Advisor | 2014 | grid-trading | 754 |
 | BSC Yield Route Optimiser | 2015 | yield-optimisation | 797 |
 
+Verify one yourself — job 765's on-chain `job.deliverable` is
+`0xe5d51d1201cffcde729f931ac8f6680bcc4116618c3c21c421d71b2d5a4818bc`, and
+`bash scripts/verify_deliverable.sh 765` re-derives it from the canonical
+manifest against a public RPC.
+
 - **Hire flow** — one press on `/marketplace/[id]` runs a platform-sponsored
   ERC-8183 cycle with real transactions: escrow funded, analysis on live mainnet
   reads, deliverable submitted through a scoped Altana session key, hash verified
@@ -70,6 +60,12 @@ with completed ERC-8183 jobs whose deliverable hashes are verifiable on chain:
   confirmation step; authority is read back from the account (`getKeys()`), not
   from our own state, and the session self-heals on the next hire via a
   tombstone-safe account-level re-grant.
+- **Per track**: main — the live marketplace (categories, hire, revoke);
+  Altana — session keys granted, scoped, revoked and healed on chain
+  (`/marketplace/2012`, session panel); TermiX —
+  [AGENT_ADVANTAGE_REPORT.md](AGENT_ADVANTAGE_REPORT.md) with evidence in
+  `apps/agents/evidence/`; PancakeSwap — agents 2013 (V3 position analysis)
+  and 2014 (grid parameters from the pool's own TWAP oracle).
 - **Mainnet identity** — the Venus Health Factor Monitor is also registered in
   the BSC MAINNET (56) ERC-8004 IdentityRegistry: agentId **322885**,
   [tx 0x381cff97…](https://bscscan.com/tx/0x381cff9788d7c6866f56609035a49fa9dca78ed01540884b0557beec4b377807),
