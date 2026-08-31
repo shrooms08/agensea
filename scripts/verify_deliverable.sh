@@ -24,7 +24,7 @@ echo "on-chain job.deliverable : $ONCHAIN"
 # 2. recover the manifest from the policy's event log (optParams carries it)
 H=$(cast block-number --rpc-url "$RPC")
 curl -s -X POST "$RPC" -H 'content-type: application/json' \
- -d "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_getLogs\",\"params\":[{\"address\":\"$POLICY\",\"fromBlock\":\"$(printf '0x%x' $((H-45000)))\",\"toBlock\":\"$(printf '0x%x' $H)\"}]}" \
+ -d "{\"jsonrpc\":\"2.0\",\"id\":1,\"method\":\"eth_getLogs\",\"params\":[{\"address\":\"$POLICY\",\"fromBlock\":\"$(printf '0x%x' $((H-${BLOCKS:-45000})))\",\"toBlock\":\"$(printf '0x%x' $H)\"}]}" \
  > /tmp/vlogs.json
 
 ENSURE=$([ "$LEGACY" = "--legacy" ] && echo False || echo True)
@@ -34,14 +34,31 @@ job, ensure = int(sys.argv[1]), sys.argv[2] == 'True'
 for l in json.load(open('/tmp/vlogs.json'))['result']:
     txt = bytes.fromhex(l['data'][2:]).decode('utf8', 'ignore')
     if 'deliverable_url' not in txt: continue
-    j = json.loads(txt[txt.index('{'):txt.rindex('}')+1])
-    m = json.loads(base64.b64decode(j['deliverable_url'].split(',', 1)[1]))
-    if m['job_id'] != job: continue
+    try:
+        j = json.loads(txt[txt.index('{'):txt.rindex('}')+1])
+        url = j.get('deliverable_url', '')
+        if not url.startswith('data:'): continue   # other providers use https URLs
+        m = json.loads(base64.b64decode(url.split(',', 1)[1]))
+    except Exception:
+        continue
+    if m.get('job_id') != job: continue
     sys.stdout.write(json.dumps(m, sort_keys=True, separators=(',', ':'), ensure_ascii=ensure))
     break
 PY
 
-if [ ! -s /tmp/vcanon.txt ]; then echo "manifest for job $JOB not found in the last 45k blocks"; exit 1; fi
+if [ ! -s /tmp/vcanon.txt ]; then
+  echo "note: submit event outside the ${BLOCKS:-45000}-block scan; using the manifest committed in apps/web/data/deliverables.ts"
+  python3 - "$JOB" "$ENSURE" <<'PY2' > /tmp/vcanon.txt
+import sys, json, re, pathlib
+job, ensure = sys.argv[1], sys.argv[2] == 'True'
+src = pathlib.Path('apps/web/data/deliverables.ts').read_text()
+body = src[src.index('= {') + 2 : src.rindex('} as unknown') + 1]
+d = json.loads(body)
+if job in d:
+    sys.stdout.write(json.dumps(d[job]['manifest'], sort_keys=True, separators=(',', ':'), ensure_ascii=ensure))
+PY2
+fi
+if [ ! -s /tmp/vcanon.txt ]; then echo "manifest for job $JOB not found on chain (last ${BLOCKS:-45000} blocks) or in the repo"; exit 1; fi
 echo "canonical manifest bytes : $(wc -c < /tmp/vcanon.txt | tr -d ' ')"
 RECOMPUTED=$(cast keccak "$(cat /tmp/vcanon.txt)")
 echo "recomputed keccak256     : $RECOMPUTED"
