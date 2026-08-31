@@ -387,3 +387,17 @@ header nav .navlink[data-active='true']::after {
 .cat-card-foot { display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto; padding-top: 14px; }
 .cat-card-arrow { font: 500 14px/1 var(--mono); color: var(--text-muted); }
 .cat-card:hover .cat-card-arrow { color: var(--text); }
+
+/* ---------------------------------------------------------------------------
+   Category switcher on /category/[slug]: chips for the other three categories
+   in their hues, plus the marketplace route, directly under the h1.
+--------------------------------------------------------------------------- */
+.cat-switch { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-top: 16px; }
+.cat-switch-chip {
+  display: inline-flex; align-items: center; gap: 7px;
+  font: 500 10px/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase;
+  padding: 6px 8px; border: 1px solid var(--border);
+}
+.cat-switch-chip:hover { border-color: var(--border-strong); }
+.cat-switch-back { margin-left: auto; font: 500 10px/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--live); }
+@media (max-width: 767px) { .cat-switch-back { margin-left: 0; width: 100%; } }

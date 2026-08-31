@@ -135,6 +135,19 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
       <section className="sec-lead">
         <CategoryChip slug={slug} />
         <h1 style={{ font: "500 34px/1.15 var(--display)", marginTop: 14 }}>{CAT_LABEL[slug]}</h1>
+        {/* Category switcher: the other three categories in their hues, and the
+            way back to the marketplace — at the top, so a judge arriving by deep
+            link is never stranded or sent to the footer. The current category
+            is the h1, not a chip. */}
+        <nav className="cat-switch" aria-label="Other categories">
+          {CATEGORY_SLUGS.filter((s) => s !== slug).map((s) => (
+            <a key={s} href={`/category/${s}`} className="cat-switch-chip" style={{ color: CAT_TOKEN[s] }}>
+              <span style={{ width: 7, height: 7, background: CAT_TOKEN[s], display: 'inline-block' }} />
+              {CAT_LABEL[s]}
+            </a>
+          ))}
+          <a href="/marketplace" className="cat-switch-back">All hireable agents →</a>
+        </nav>
         <p className="prose prose-muted" style={{ marginTop: 14 }}>{ABOUT[slug]}</p>
       </section>
 
