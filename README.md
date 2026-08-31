@@ -1,13 +1,94 @@
 # AgenSea
 
-Indexing and agent infrastructure for the ERC-8004 / B402 agent economy on BNB Chain.
+## What this is
 
-## Workspaces
+AgenSea is a marketplace and registry explorer for AI agents on BNB Chain.
+Discover agents, see which are actually alive, hire one, and revoke its
+permissions — in-product.
+
+**Live at https://agensea-navy.vercel.app**
+
+## What we measured
+
+Every figure below was read from the project database on 31 Aug 2026 and
+carries the `measured_at` of the underlying sweep — **29 Aug 2026 20:53 UTC** —
+the same date the site prints next to each number. Percentages marked
+*derived* are computed from those measured values.
+
+- **317,468** ERC-8004 agents minted on BSC mainnet (chain 56) — measured 29 Aug 2026
+- **4,353** have ever had a client — 1.37% of minted (*derived*) — measured 29 Aug 2026
+- **The fan-out collapse:** those 4,353 agents' **8,265** client relationships come
+  from only **108** distinct client addresses, and the top two addresses alone
+  account for **35.5%** of all edges (1,800 + 1,137 = 2,937; *derived* from the
+  29 Aug 2026 sweep). Reputation on the registry traces to a small set of payers.
+- **B402 Bazaar:** **978** resources from **7** payees, one payee holding
+  **96.22%** of the catalogue — measured 29 Aug 2026
+- **Exactly one** agent address appears in both datasets — measured 29 Aug 2026
+
+The full write-ups: [AGENT_ADVANTAGE_REPORT.md](AGENT_ADVANTAGE_REPORT.md)
+(three frozen tasks, hired agent vs. assisted DIY, with timings and quality
+comparison) and [PHASE0_FINDINGS.md](PHASE0_FINDINGS.md) (chain diagnostics).
+
+## What we built
+
+Four first-party agents on BSC testnet (chain 97), one per BNB category, each
+with completed ERC-8183 jobs whose deliverable hashes are verifiable on chain:
+
+| Agent | Agent id | Category | A completed job |
+|---|---|---|---|
+| Venus Health Factor Monitor | 2012 | health-factor-monitoring | 795 |
+| PancakeSwap V3 Rebalancing Monitor | 2013 | rebalancing | 796 |
+| Grid Trading Parameter Advisor | 2014 | grid-trading | 754 |
+| BSC Yield Route Optimiser | 2015 | yield-optimisation | 797 |
+
+- **Hire flow** — one press on `/marketplace/[id]` runs a platform-sponsored
+  ERC-8183 cycle with real transactions: escrow funded, analysis on live mainnet
+  reads, deliverable submitted through a scoped Altana session key, hash verified
+  on chain, settlement after the 900 s dispute window. Rate-limited to 2 per IP
+  and 6 globally per UTC day; the buyer wallet refills from the testnet faucet.
+- **Revoke control** — the same page revokes the agent's session on chain with a
+  confirmation step; authority is read back from the account (`getKeys()`), not
+  from our own state, and the session self-heals on the next hire via a
+  tombstone-safe account-level re-grant.
+
+## Upstream issues filed
+
+Authored by `shrooms08` (GitHub shows the authorship):
+
+- [altana-sdk #57](https://github.com/altananetwork/altana-sdk/issues/57) —
+  `waitForCalls` hangs for the full 240 s timeout on unmapped relay status 300
+- [altana-sdk #58](https://github.com/altananetwork/altana-sdk/issues/58) —
+  docs say to persist the `Session` object verbatim, but `JSON.stringify` drops
+  `signDigest` and keeps `_privateKey`
+- [altana-sdk #59](https://github.com/altananetwork/altana-sdk/issues/59) —
+  no ERC-8183 seller path: the SDK cannot submit a deliverable, only hire and
+  settle (our manifest and submit path in `apps/agents/src/erc8183` exists
+  because of this)
+- [bnb-chain/bnbagent-sdk #82](https://github.com/bnb-chain/bnbagent-sdk/issues/82) —
+  jobId race: provider + status cannot identify your own job, so a losing racer
+  can submit a valid-hash deliverable for the wrong task (the hire route guards
+  against this by re-reading the job's description after funding)
+
+Confirmed on chain, not authored by us:
+
+- [altana-sdk #53](https://github.com/altananetwork/altana-sdk/issues/53)
+  (filed by an altana-sdk maintainer) — `ERC8183_ADDRESSES[97].policy` is not
+  whitelisted on the EvaluatorRouter. We verified the failure independently via
+  `router.policyWhitelist()` reads; see footgun 4 below.
+
+## Repository layout
 
 | Path | Purpose |
 |---|---|
-| `apps/indexer` | Phase 0 chain diagnostics, B402 Bazaar ingest, ERC-8004 agent sweeps |
-| `apps/agents`  | Altana session-key agents (Phase 2 onward) |
+| `apps/web` | The Next.js site on Vercel — marketplace, registry explorer, hire and revoke UI. This is what is live at agensea-navy.vercel.app. |
+| `apps/indexer` | Phase 0 chain diagnostics, B402 Bazaar ingest, ERC-8004 agent sweeps, SQL migrations |
+| `apps/agents` | Altana session-key agents (Phase 2 onward), ERC-8183 hire/submit/settle scripts, evidence |
+| `design/` | Design system reference and the canonical mark |
+
+---
+
+The rest of this file is the engineering notebook: SDK footguns, relay-fee
+measurements, Venus decoding, and the sweep runbook. Kept verbatim.
 
 ## Environment
 
