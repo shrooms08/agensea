@@ -375,3 +375,15 @@ header nav .navlink[data-active='true']::after {
   .footer-nav { margin-left: 0; }
   .lastjob-strip .meta { margin-left: 0; width: 100%; }
 }
+
+/* ---------------------------------------------------------------------------
+   Landing category cards. The square keeps its place; the category name sits
+   beside it. The card is a link to /category/[slug]: the border step on hover
+   applies regardless of motion preference (it is a colour, not motion), and
+   the arrow is persistent so the affordance survives a still screenshot.
+--------------------------------------------------------------------------- */
+.cat-card { display: flex; flex-direction: column; }
+.cat-card:hover { border-color: var(--border-strong); }
+.cat-card-foot { display: flex; justify-content: space-between; align-items: flex-end; margin-top: auto; padding-top: 14px; }
+.cat-card-arrow { font: 500 14px/1 var(--mono); color: var(--text-muted); }
+.cat-card:hover .cat-card-arrow { color: var(--text); }

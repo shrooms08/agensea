@@ -9,9 +9,9 @@ export const CAT_TOKEN: Record<CategorySlug, string> = {
 
 export const CAT_LABEL: Record<CategorySlug, string> = {
   'rebalancing': 'Rebalancing',
-  'grid-trading': 'Grid execution',
+  'grid-trading': 'Grid trading',
   'yield-optimisation': 'Yield optimisation',
-  'health-factor-monitoring': 'Health factor',
+  'health-factor-monitoring': 'Health factor monitoring',
 };
 
 export function CategoryChip({ slug }: { slug: CategorySlug }) {
