@@ -12,6 +12,7 @@ import { VerifyDeliverable } from '@/components/VerifyDeliverable';
 import { HireDemo } from '@/components/HireDemo';
 import { SessionRevoke } from '@/components/SessionRevoke';
 import { HirePreflight } from '@/components/HirePreflight';
+import { WalletHire } from '@/components/WalletHire';
 
 export const revalidate = 86400;
 export const dynamicParams = false;   // exactly four, all known at build
@@ -71,6 +72,7 @@ export default async function FirstPartyAgent({ params }: { params: Promise<{ id
 
       <section className="sec" id="hire" style={{ scrollMarginTop: 76 }}>
         <HirePreflight />
+        <WalletHire agentId={agent.agentId} />
         <HireDemo agentId={agent.agentId} completedCount={agent.jobs.filter((j) => j.status === 'COMPLETED').length} />
       </section>
 
