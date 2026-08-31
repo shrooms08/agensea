@@ -73,6 +73,30 @@ jobs:
           done
           exit $FAIL
 
+      - name: Faucet claim (10 $U to the buyer wallet unless in cooldown)
+        # Non-fatal by design: a faucet or endpoint failure must never affect
+        # the headroom check or the run's other steps.
+        continue-on-error: true
+        env:
+          REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET }}
+        run: |
+          set -o pipefail
+          CODE=$(curl -sS --max-time 120 -X POST \
+            -H "Authorization: Bearer $REVALIDATE_SECRET" \
+            -o /tmp/faucet.json -w '%{http_code}' "$BASE/api/faucet-claim" || echo 000)
+          echo "HTTP $CODE"; cat /tmp/faucet.json | head -c 600; echo
+          if [ "$CODE" != "200" ]; then
+            echo "::warning title=Faucet claim failed::HTTP $CODE — non-fatal; the headroom check below still runs"
+            exit 1
+          fi
+          python3 - <<'EOF'
+          import json; d = json.load(open('/tmp/faucet.json'))
+          if d.get('status') == 'claimed':
+              print(f"::notice title=Faucet claimed::+10 $U, tx {d['tx']}, gas {d['costTbnb']:.6f} tBNB, balance now {d['balanceU']:.1f} $U")
+          else:
+              print(f"::notice title=Faucet in cooldown::balance {d.get('balanceU')} $U — no claim this run")
+          EOF
+
       # Runs LAST on purpose: it exits 1 on a low balance, and GitHub skips every
       # later step after a failure — so from any earlier position a low balance
       # (or a hiccup here) would silently kill revalidation and cache warming.
