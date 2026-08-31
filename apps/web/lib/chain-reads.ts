@@ -101,34 +101,76 @@ export async function readRefPool() {
 /* ------------------------------------------------------------- grid-trading */
 const GRID_POOL = '0x36696169c63e42cd08ce11f5deebbcebae652050'; // USDT/WBNB 0.05%
 
+/**
+ * eth_call that surfaces the failure instead of swallowing it, so a caller
+ * can tell an oracle "OLD" revert (window too long) from a dead RPC.
+ */
+async function ethCallOrError(to: string, data: string): Promise<{ result: string } | { error: string }> {
+  try {
+    const res = await fetch(rpcUrl(), {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_call', params: [{ to, data }, 'latest'] }),
+      signal: AbortSignal.timeout(12_000),
+      next: { revalidate: 86400 },
+    });
+    if (!res.ok) return { error: `http ${res.status}` };
+    const b = (await res.json()) as { result?: string; error?: { message?: string; data?: string } };
+    if (b.error) return { error: `${b.error.message ?? 'error'} ${b.error.data ?? ''}`.trim() };
+    return typeof b.result === 'string' ? { result: b.result } : { error: 'no result' };
+  } catch (e) { return { error: String((e as Error)?.message ?? e) }; }
+}
+
+// Uniswap-style oracles revert with Error("OLD") when a secondsAgo predates
+// the oldest retained observation. "OLD" = 0x4f4c44 inside the revert data.
+const isOldRevert = (err: string) => /\bOLD\b/.test(err) || /4f4c44/i.test(err);
+
+/** Rungs tried in order; the first the oracle can serve wins. A rung below 3h
+ *  cannot yield a volatility figure (fewer than two hourly returns has no
+ *  dispersion and would print 0.000%), so 1h renders unavailable, honestly. */
+const VOL_LADDER_HOURS = [15, 12, 9, 6, 3, 1] as const;
+
 export async function readRealisedVol() {
-  // Hourly TWAPs over up to 15h from the pool's own oracle, one observe() call.
-  const HOURS = 15;
-  const agos: number[] = [];
-  for (let i = HOURS; i >= 0; i--) agos.push(i * 3600);
-  const head = '0x883bdbfd' + pad(32) + pad(agos.length) + agos.map((a) => pad(a)).join('');
-  const r = await ethCall(GRID_POOL, head);
-  if (!r) return null;
-  // returns (int56[] tickCumulatives, uint160[] secondsPerLiquidityCumulativeX128s)
-  const h = r.slice(2);
-  const arr1At = Number(BigInt('0x' + h.slice(0, 64))) / 32;
-  const len = Number(BigInt('0x' + h.slice(arr1At * 64, arr1At * 64 + 64)));
-  if (len < 3) return null;
-  const cums: bigint[] = [];
-  for (let i = 0; i < len; i++) {
-    let v = BigInt('0x' + h.slice((arr1At + 1 + i) * 64, (arr1At + 2 + i) * 64));
-    if (v >= 1n << 255n) v -= 1n << 256n;
-    cums.push(v);
+  // Hourly TWAPs from the pool's own oracle, one observe() call per rung. The
+  // pool's observation ring (cardinality 900, one write per swap-block) often
+  // covers less than 15h, and observe() then reverts OLD; step down to the
+  // longest window it actually retains and LABEL that window — never imply 15h.
+  for (const hours of VOL_LADDER_HOURS) {
+    const agos: number[] = [];
+    for (let i = hours; i >= 0; i--) agos.push(i * 3600);
+    const head = '0x883bdbfd' + pad(32) + pad(agos.length) + agos.map((a) => pad(a)).join('');
+    const r = await ethCallOrError(GRID_POOL, head);
+    if ('error' in r) {
+      console.info(`[realised-vol] rung ${hours}h failed: ${isOldRevert(r.error) ? 'OLD (oracle does not retain that far)' : r.error.slice(0, 80)}`);
+      continue;
+    }
+    // returns (int56[] tickCumulatives, uint160[] secondsPerLiquidityCumulativeX128s)
+    const h = r.result.slice(2);
+    const arr1At = Number(BigInt('0x' + h.slice(0, 64))) / 32;
+    const len = Number(BigInt('0x' + h.slice(arr1At * 64, arr1At * 64 + 64)));
+    const cums: bigint[] = [];
+    for (let i = 0; i < len; i++) {
+      let v = BigInt('0x' + h.slice((arr1At + 1 + i) * 64, (arr1At + 2 + i) * 64));
+      if (v >= 1n << 255n) v -= 1n << 256n;
+      cums.push(v);
+    }
+    const twapTicks: number[] = [];
+    for (let i = 1; i < cums.length; i++) twapTicks.push(Number(cums[i]! - cums[i - 1]!) / 3600);
+    const rets: number[] = [];
+    for (let i = 1; i < twapTicks.length; i++) rets.push((twapTicks[i]! - twapTicks[i - 1]!) * Math.log(1.0001));
+    if (rets.length < 2) {
+      console.info(`[realised-vol] rung ${hours}h served but has ${rets.length} hourly return(s) — no dispersion, rendering unavailable`);
+      return null;
+    }
+    const mean = rets.reduce((a, b) => a + b, 0) / rets.length;
+    const varr = rets.reduce((a, b) => a + (b - mean) ** 2, 0) / (rets.length - 1);
+    const hourlyVolPct = Math.sqrt(varr) * 100;
+    const windowHours = twapTicks.length; // the span of hourly TWAPs actually used
+    console.info(`[realised-vol] rung ${hours}h succeeded (${hours === VOL_LADDER_HOURS[0] ? 'top rung' : 'stepped down'}); window ${windowHours}h, ${rets.length} returns`);
+    return { pool: GRID_POOL, pair: 'USDT/WBNB', feePct: 0.05, windowHours, requestedHours: VOL_LADDER_HOURS[0],
+             hourlyVolPct, annualisedVolPct: hourlyVolPct * Math.sqrt(24 * 365), ...stamp() };
   }
-  const twapTicks: number[] = [];
-  for (let i = 1; i < cums.length; i++) twapTicks.push(Number(cums[i]! - cums[i - 1]!) / 3600);
-  const rets: number[] = [];
-  for (let i = 1; i < twapTicks.length; i++) rets.push((twapTicks[i]! - twapTicks[i - 1]!) * Math.log(1.0001));
-  const mean = rets.reduce((a, b) => a + b, 0) / rets.length;
-  const varr = rets.reduce((a, b) => a + (b - mean) ** 2, 0) / Math.max(1, rets.length - 1);
-  const hourlyVolPct = Math.sqrt(varr) * 100;
-  return { pool: GRID_POOL, pair: 'USDT/WBNB', feePct: 0.05, windowHours: rets.length,
-           hourlyVolPct, annualisedVolPct: hourlyVolPct * Math.sqrt(24 * 365), ...stamp() };
+  console.info('[realised-vol] every rung failed — unavailable');
+  return null;
 }
 
 /* ------------------------------------------------------------------- yield */

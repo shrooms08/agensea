@@ -99,7 +99,7 @@ async function LiveData({ slug }: { slug: CategorySlug }) {
         <Cell k="reference pool" v={`${d.pair} ${d.feePct}%`} />
         <Cell k="realised vol (hourly)" v={`${d.hourlyVolPct.toFixed(3)}%`} />
         <Cell k="annualised" v={`${d.annualisedVolPct.toFixed(1)}%`} />
-        <Cell k="window" v={`${d.windowHours}h of hourly TWAPs`} />
+        <Cell k="window" v={`${d.windowHours}h of hourly TWAPs${d.windowHours < d.requestedHours ? ` (oracle retains <${d.requestedHours}h)` : ''}`} />
       </div>
       <ReadAt iso={d.readAt} />
     </div>);
