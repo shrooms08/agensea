@@ -321,6 +321,17 @@ reproduces `getAccountLiquidity()` exactly (verified to 4 dp on a live position)
 `facetAddress()` and by scanning all five facets' bytecode. The per-market
 incentive is `w4` (`1.1e18` = a 10% liquidator bonus).
 
+### 7. Two kernel behaviours found while building wallet-native hiring
+
+- **Short-expiry jobs are rejected.** `createJob` with `expiredAt` ~75s out
+  reverts with custom error `0xf7a0748c`; the kernel enforces a minimum job
+  duration (our standard 3600s passes).
+- **A plain EOA `settle` reverts — only the relay path lands.** Even from the
+  provider address itself, `settle(uint256,bytes)` sent as an ordinary
+  transaction reverts on both the router and the commerce contract; the same
+  calldata through the relay (`client.execute` to the router) settles fine.
+  See `apps/agents/src/scripts/settle_ids.ts`.
+
 ## Verified contracts (chain 97)
 
 | Contract | Address | Bytecode |

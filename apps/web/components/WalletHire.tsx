@@ -17,6 +17,7 @@
 import { useAccount, useWriteContract, usePublicClient } from 'wagmi';
 import { formatEther } from 'viem';
 import { useEffect, useRef, useState } from 'react';
+import { keccak256, stringToHex } from 'viem';
 import { bscTestnet97, U_TOKEN } from '@/lib/wallet/config';
 import { COMMERCE_ABI, ROUTER_ABI, ERC20_APPROVE_ABI, ERC8183 } from '@/lib/wallet/erc8183';
 import { useWalletFunding } from '@/components/HirePreflight';
@@ -165,6 +166,55 @@ export function WalletHire({ agentId }: { agentId: number }) {
   }
 
   const ev = (stage: string) => events.find((e) => e.stage === stage);
+
+  // Settlement countdown: when it reaches zero with the tab open, OUR keeper
+  // settles the job so the judge watches SUBMITTED become COMPLETED.
+  const pending = ev('settlement-pending') as { eligibleAt?: number } | undefined;
+  const settled = ev('settled');
+  const [nowS, setNowS] = useState(() => Math.floor(Date.now() / 1000));
+  const settleFired = useRef(false);
+  useEffect(() => {
+    if (!pending || settled) return;
+    const t = setInterval(() => setNowS(Math.floor(Date.now() / 1000)), 1000);
+    return () => clearInterval(t);
+  }, [pending, settled]);
+  const remaining = pending?.eligibleAt ? Math.max(0, pending.eligibleAt - nowS) : null;
+  useEffect(() => {
+    if (!pending || settled || remaining === null || remaining > 0 || settleFired.current || !jobId) return;
+    settleFired.current = true;
+    void (async () => {
+      try {
+        const r = await fetch('/api/settle', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ jobId }) });
+        const j = (await r.json()) as { ok?: boolean; tx?: string; status?: string; error?: string };
+        if (r.ok && j.status === 'COMPLETED') setEvents((p) => [...p, { stage: 'settled', tx: j.tx ?? '' }]);
+        else setEvents((p) => [...p, { stage: 'settle-note', message: j.error ?? 'the keepalive sweep will settle it shortly' }]);
+      } catch { setEvents((p) => [...p, { stage: 'settle-note', message: 'the keepalive sweep will settle it shortly' }]); }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [remaining, pending, settled, jobId]);
+
+  // Buyer-side VERIFY: recompute keccak256 of the canonical manifest IN THE
+  // BROWSER and compare against the hash the chain stores. Same rules as the
+  // server: sorted keys, no whitespace, non-ASCII escaped as \uXXXX.
+  const verifiedEv = ev('verified') as { manifest?: unknown; onChain?: string } | undefined;
+  let verifyState: 'match' | 'mismatch' | null = null;
+  let localHash = '';
+  if (verifiedEv?.manifest && verifiedEv.onChain) {
+    const sortStringify = (v: unknown): string => {
+      if (v === null || typeof v !== 'object') return JSON.stringify(v);
+      if (Array.isArray(v)) return '[' + v.map(sortStringify).join(',') + ']';
+      return '{' + Object.keys(v as object).sort().map((k) => JSON.stringify(k) + ':' + sortStringify((v as Record<string, unknown>)[k])).join(',') + '}';
+    };
+    let canon = '';
+    for (const ch of sortStringify(verifiedEv.manifest)) {
+      if (ch.codePointAt(0)! < 0x80) { canon += ch; continue; }
+      // one \uXXXX per UTF-16 code unit, matching the server's escapeNonAscii
+      for (let i = 0; i < ch.length; i++) canon += '\\u' + ch.charCodeAt(i).toString(16).padStart(4, '0');
+    }
+    localHash = keccak256(stringToHex(canon));
+    verifyState = localHash.toLowerCase() === verifiedEv.onChain.toLowerCase() ? 'match' : 'mismatch';
+  }
+
   if (!f.isConnected) return null;
 
   return (
@@ -222,7 +272,7 @@ export function WalletHire({ agentId }: { agentId: number }) {
             ['analysed', 'Analysis complete'],
             ['submitted', 'Deliverable submitted via session key'],
             ['verified', 'Hash verified on chain'],
-            ['settlement-pending', 'Settlement pending — releases after the 900 s dispute window, swept automatically'],
+            ['settlement-pending', 'Escrow releases after the 900-second dispute window and settles automatically'],
           ].map(([k, label]) => {
             const e = ev(k);
             if (!e && k !== 'analysing') return null;
@@ -235,6 +285,25 @@ export function WalletHire({ agentId }: { agentId: number }) {
             );
           })}
           {ev('session-restored') && <div className="data" style={{ color: 'var(--live)' }}>Session re-granted before submit — <a className="meta" style={{ color: 'var(--live-dim)' }} href={EXPLORER + String(ev('session-restored')!.tx)} target="_blank" rel="noreferrer">tx ↗</a></div>}
+          {verifyState && (
+            <div className="hd-enter" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--surface-raised)', boxShadow: `inset 2px 0 0 var(${verifyState === 'match' ? '--verified' : '--danger'})` }}>
+              <span className="label" style={{ fontSize: 9, color: verifyState === 'match' ? 'var(--verified)' : 'var(--danger)' }}>verify</span>
+              <span className="data">
+                {verifyState === 'match'
+                  ? `keccak256 recomputed in your browser matches the chain — ${localHash.slice(0, 14)}…`
+                  : 'recomputed hash does NOT match the chain — do not trust this deliverable'}
+              </span>
+            </div>
+          )}
+          {pending && !settled && remaining !== null && remaining > 0 && (
+            <div className="data" style={{ color: 'var(--text-muted)' }}>settles in {Math.floor(remaining / 60)}:{String(remaining % 60).padStart(2, '0')} — keep the tab open to watch it complete</div>
+          )}
+          {settled && (
+            <div className="hd-enter data" style={{ color: 'var(--live)' }}>
+              COMPLETED — escrow settled by our keeper{settled.tx ? <> — <a className="meta" style={{ color: 'var(--live-dim)' }} href={EXPLORER + String(settled.tx)} target="_blank" rel="noreferrer">settle tx ↗</a></> : null}
+            </div>
+          )}
+          {ev('settle-note') && <div className="data" style={{ color: 'var(--text-muted)' }}>{String((ev('settle-note') as { message?: string }).message)}</div>}
         </div>
       )}
 
