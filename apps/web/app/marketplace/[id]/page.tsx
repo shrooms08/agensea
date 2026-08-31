@@ -54,6 +54,15 @@ export default async function FirstPartyAgent({ params }: { params: Promise<{ id
         <Field k="completed jobs" v={String(agent.jobs.filter((j) => j.status === 'COMPLETED').length)} />
         <Field k="fastest analysis" v={`${(Math.min(...agent.jobs.map((j) => j.analysisMs)) / 1000).toFixed(1)}s`} />
         <Field k="dispute window" v={`${DISPUTE_WINDOW_SECONDS}s`} />
+        {agent.mainnetAgentId && (
+          <div>
+            <div style={{ font: "500 9px/1 var(--mono)", letterSpacing: '0.12em', color: 'var(--text-faint)', textTransform: 'uppercase' }}>mainnet identity</div>
+            <a href={`https://bscscan.com/tx/${agent.mainnetRegisterTx}`} target="_blank" rel="noreferrer"
+               style={{ font: "400 12px/1.5 var(--mono)", color: 'var(--live-dim)', marginTop: 6, display: 'inline-block' }}>
+              {agent.mainnetAgentId} ↗
+            </a>
+          </div>
+        )}
       </section>
 
       <section className="sec">

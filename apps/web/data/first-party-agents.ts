@@ -62,6 +62,11 @@ export interface CompletedJob {
 
 export interface FirstPartyAgent {
   agentId: number;
+  /** ERC-8004 identity on BSC MAINNET (56), where registered. Only agent 2012
+   *  carries one — the other three were deliberately not registered (one
+   *  mainnet identity is sufficient; see mainnet_register_56.ts). */
+  mainnetAgentId?: number;
+  mainnetRegisterTx?: string;
   slug: CategorySlug;
   name: string;
   description: string;
@@ -88,6 +93,8 @@ const SUBMIT_ONLY: CallPermission[] = [
 export const FIRST_PARTY_AGENTS: FirstPartyAgent[] = [
   {
     agentId: 2012,
+    mainnetAgentId: 322885,
+    mainnetRegisterTx: '0x381cff9788d7c6866f56609035a49fa9dca78ed01540884b0557beec4b377807',
     slug: 'health-factor-monitoring',
     name: 'Venus Health Factor Monitor',
     description:

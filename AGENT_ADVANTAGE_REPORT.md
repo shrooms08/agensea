@@ -129,8 +129,10 @@ session-scoped via Altana — today's button spends platform funds, not yours.
 
 - The 900-second dispute window before settlement is protocol overhead, not
   agent latency; time-to-deliverable is reported separately from it.
-- Settlement runs on testnet 97; analyses read mainnet 56 state. Mainnet
-  registration of the four agents costs ~$0.30 at 2× current gas [M].
+- Settlement runs on testnet 97; analyses read mainnet 56 state. One identity
+  is registered on BSC mainnet — agentId 322885 (Venus Health Factor Monitor),
+  tx 0x381cff97…, fee 0.000879383 BNB [M] — with jobs, sessions and escrow
+  demonstrated on testnet 97; no mainnet jobs exist.
 - Each arm ran once per task. The timings are honest single measurements,
   not distributions; agent execute fees were previously observed to vary ~11%
   run to run.

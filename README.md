@@ -50,6 +50,11 @@ with completed ERC-8183 jobs whose deliverable hashes are verifiable on chain:
   confirmation step; authority is read back from the account (`getKeys()`), not
   from our own state, and the session self-heals on the next hire via a
   tombstone-safe account-level re-grant.
+- **Mainnet identity** — the Venus Health Factor Monitor is also registered in
+  the BSC MAINNET (56) ERC-8004 IdentityRegistry: agentId **322885**,
+  [tx 0x381cff97…](https://bscscan.com/tx/0x381cff9788d7c6866f56609035a49fa9dca78ed01540884b0557beec4b377807),
+  byte-identical metadata. Jobs, sessions and escrow are demonstrated on
+  testnet 97 — no mainnet jobs exist.
 
 ## Upstream issues filed
 
@@ -148,6 +153,13 @@ Measured on BSC testnet (chain 97):
 
 The account-side fee and the L1 gas are different numbers; size spend caps
 against the **fee**, not against gas.
+
+Mainnet (chain 56), one observation: the first `execute` (register + 7702
+delegation + KeyStore registration, batched) cost **0.000879383 BNB** against
+1,387,882 gas at 0.05 gwei — a **12.7× markup over raw gas** [M, one
+observation]. The absolute fee lands almost exactly on the testnet
+first-execute figure (~0.00087) even though mainnet quotes a live rate
+(`constantRate: null`) where testnet pins 1.0.
 
 ### Spend caps must cover the relay fee
 
