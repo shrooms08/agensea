@@ -1,8 +1,8 @@
 /**
  * POST /api/hire/[agentId] — platform-sponsored demo hire. SPENDS REAL FUNDS
  * (1 $U + gas per call), so the rate limiter runs BEFORE anything else:
- * 2/IP/day + 20/global/day, enforced atomically in Postgres
- * (demo_hire_permit, 006_demo_limits.sql). Raw IPs are never stored — only a
+ * enforced atomically in Postgres (demo_action_permit kind='hire',
+ * 007_demo_actions.sql; limits live there). Raw IPs are never stored — only a
  * salted sha256. Responses stream as NDJSON stage events.
  */
 import { createHash } from 'node:crypto';
@@ -26,9 +26,13 @@ export async function POST(req: Request, ctx: { params: Promise<{ agentId: strin
   const anon = process.env.SUPABASE_ANON_KEY!;
   let permit: { allowed: boolean; reason: string } | null = null;
   try {
-    const r = await fetch(`${base}/rest/v1/rpc/demo_hire_permit`, {
+    // demo_action_permit with kind='hire' (007): counted separately from
+    // revokes. The older demo_hire_permit counted every row regardless of
+    // kind, so each revoke — a scored feature judges will use — silently
+    // consumed a hire slot, per-IP and global.
+    const r = await fetch(`${base}/rest/v1/rpc/demo_action_permit`, {
       method: 'POST', headers: { apikey: anon, Authorization: `Bearer ${anon}`, 'content-type': 'application/json' },
-      body: JSON.stringify({ p_ip_hash: ipHash, p_agent_id: agentId }),
+      body: JSON.stringify({ p_ip_hash: ipHash, p_agent_id: agentId, p_kind: 'hire' }),
       cache: 'no-store', signal: AbortSignal.timeout(10_000),
     });
     const rows = (await r.json()) as { allowed: boolean; reason: string }[];
