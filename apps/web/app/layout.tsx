@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { Space_Grotesk, JetBrains_Mono } from 'next/font/google';
 import { Mark, Wordmark } from '@/components/Logo';
 import { Nav } from '@/components/Nav';
+import { WalletProvider } from '@/components/WalletProvider';
+import { WalletButton } from '@/components/WalletButton';
 import { SiteFooter } from '@/components/SiteFooter';
 import './globals.css';
 
@@ -56,6 +58,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${display.variable} ${mono.variable}`}>
       <body>
+        <WalletProvider>
         <header className="site-header">
           <div className="container" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 32px' }}>
             <a href="/" className="brand" aria-label="AgenSea home">
@@ -63,10 +66,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Wordmark height={18} />
             </a>
             <Nav />
+            <WalletButton />
           </div>
         </header>
         <main className="container">{children}</main>
         <SiteFooter />
+        </WalletProvider>
       </body>
     </html>
   );

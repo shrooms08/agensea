@@ -456,3 +456,35 @@ header nav .navlink[data-active='true']::after {
   .agent-card-grid { grid-template-columns: 1fr; gap: 20px; }
   .agent-card { padding: 26px 22px; }
 }
+
+/* ---------------------------------------------------------------------------
+   Wallet control (header, all pages) + the blocking wrong-chain banner.
+--------------------------------------------------------------------------- */
+.wallet-slot { width: 128px; height: 34px; display: inline-block; }
+.wallet-connect {
+  font: 500 10px/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--text); background: transparent; border: 1px solid var(--border-strong);
+  padding: 10px 14px; cursor: pointer; white-space: nowrap;
+}
+.wallet-connect:hover { border-color: var(--text-faint); }
+.wallet-chip { display: flex; align-items: center; gap: 12px; }
+.wallet-bal { font: 500 11px/1 var(--mono); color: var(--text-muted); white-space: nowrap; }
+.wallet-addr {
+  font: 500 11px/1 var(--mono); color: var(--text); background: var(--surface-raised);
+  border: 1px solid var(--border); padding: 9px 12px; cursor: pointer;
+}
+.wallet-addr:hover { border-color: var(--border-strong); }
+.chain-banner {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 60;
+  display: flex; align-items: center; justify-content: center; gap: 18px; flex-wrap: wrap;
+  background: var(--surface-raised); box-shadow: inset 0 -2px 0 var(--danger);
+  padding: 14px 20px;
+}
+@media (max-width: 767px) {
+  .wallet-bal { display: none; }   /* balances live in the preflight box on mobile */
+}
+
+/* Preflight box on /marketplace/[id] — wallet funding state before a hire. */
+.preflight { margin-top: 14px; padding: 14px 18px; background: var(--surface); border: 1px solid var(--border); }
+.preflight-short { box-shadow: inset 2px 0 0 var(--warn); }
+.preflight-rows { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 12px; }

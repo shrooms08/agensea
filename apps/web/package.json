@@ -10,12 +10,14 @@
   },
   "dependencies": {
     "@altananetwork/sdk": "^0.8.0",
+    "@tanstack/react-query": "^5.102.8",
     "js-sha3": "^0.13.0",
     "next": "^16.3.3",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "three": "^0.185.1",
-    "viem": "^2.56.0"
+    "viem": "^2.56.0",
+    "wagmi": "^3.7.7"
   },
   "devDependencies": {
     "@types/node": "^26.4.0",
