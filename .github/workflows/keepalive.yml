@@ -43,30 +43,6 @@ jobs:
           fi
           echo "::notice title=Database reachable::$(head -c 200 /tmp/health.json)"
 
-      - name: Demo wallet headroom (buyer $U and tBNB)
-        run: |
-          set -o pipefail
-          RPC=https://bsc-testnet-rpc.publicnode.com
-          BUYER=0x4C86C5d6972bBDDeF7aCf153899B40c6e572D066
-          UTOK=0xc70B8741B8B07A6d61E54fd4B20f22Fa648E5565
-          TBNB_HEX=$(curl -sS --max-time 30 "$RPC" -H 'content-type: application/json' \
-            -d '{"jsonrpc":"2.0","id":1,"method":"eth_getBalance","params":["'"$BUYER"'","latest"]}' | python3 -c "import sys,json;print(json.load(sys.stdin).get('result','0x0'))")
-          U_HEX=$(curl -sS --max-time 30 "$RPC" -H 'content-type: application/json' \
-            -d '{"jsonrpc":"2.0","id":1,"method":"eth_call","params":[{"to":"'"$UTOK"'","data":"0x70a082310000000000000000000000004c86c5d6972bbddef7acf153899b40c6e572d066"},"latest"]}' | python3 -c "import sys,json;print(json.load(sys.stdin).get('result','0x0'))")
-          python3 - "$TBNB_HEX" "$U_HEX" <<'EOF'
-          import sys
-          tbnb = int(sys.argv[1], 16) / 1e18
-          u = int(sys.argv[2], 16) / 1e18
-          print(f"buyer: {tbnb:.5f} tBNB, {u:.1f} $U")
-          bad = []
-          if u < 10: bad.append(f"$U={u:.1f} < 10")
-          if tbnb < 0.01: bad.append(f"tBNB={tbnb:.5f} < 0.01")
-          if bad:
-              print(f"::error title=Demo wallet low::{'; '.join(bad)} — the hire button will die mid-judging. Top up the buyer wallet.")
-              sys.exit(1)
-          print(f"::notice title=Demo headroom OK::{u:.0f} $U, {tbnb:.4f} tBNB")
-          EOF
-
       - name: Revalidate ISR paths
         env:
           REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET }}
@@ -96,3 +72,35 @@ jobs:
             esac
           done
           exit $FAIL
+
+      # Runs LAST on purpose: it exits 1 on a low balance, and GitHub skips every
+      # later step after a failure — so from any earlier position a low balance
+      # (or a hiccup here) would silently kill revalidation and cache warming.
+      # No continue-on-error: a low balance must still turn the run red.
+      #
+      # bsc-testnet-rpc.publicnode.com is a keyless public endpoint with no SLA:
+      # a red run here may be the endpoint rather than a real low balance. Check
+      # the buyer balance directly before topping up.
+      - name: Demo wallet headroom (buyer $U and tBNB)
+        run: |
+          set -o pipefail
+          RPC=https://bsc-testnet-rpc.publicnode.com
+          BUYER=0x4C86C5d6972bBDDeF7aCf153899B40c6e572D066
+          UTOK=0xc70B8741B8B07A6d61E54fd4B20f22Fa648E5565
+          TBNB_HEX=$(curl -sS --max-time 30 "$RPC" -H 'content-type: application/json' \
+            -d '{"jsonrpc":"2.0","id":1,"method":"eth_getBalance","params":["'"$BUYER"'","latest"]}' | python3 -c "import sys,json;print(json.load(sys.stdin).get('result','0x0'))")
+          U_HEX=$(curl -sS --max-time 30 "$RPC" -H 'content-type: application/json' \
+            -d '{"jsonrpc":"2.0","id":1,"method":"eth_call","params":[{"to":"'"$UTOK"'","data":"0x70a082310000000000000000000000004c86c5d6972bbddef7acf153899b40c6e572d066"},"latest"]}' | python3 -c "import sys,json;print(json.load(sys.stdin).get('result','0x0'))")
+          python3 - "$TBNB_HEX" "$U_HEX" <<'EOF'
+          import sys
+          tbnb = int(sys.argv[1], 16) / 1e18
+          u = int(sys.argv[2], 16) / 1e18
+          print(f"buyer: {tbnb:.5f} tBNB, {u:.1f} $U")
+          bad = []
+          if u < 10: bad.append(f"$U={u:.1f} < 10")
+          if tbnb < 0.01: bad.append(f"tBNB={tbnb:.5f} < 0.01")
+          if bad:
+              print(f"::error title=Demo wallet low::{'; '.join(bad)} — the hire button will die mid-judging. Top up the buyer wallet.")
+              sys.exit(1)
+          print(f"::notice title=Demo headroom OK::{u:.0f} $U, {tbnb:.4f} tBNB")
+          EOF
