@@ -68,7 +68,7 @@ export default async function FirstPartyAgent({ params }: { params: Promise<{ id
         )}
       </section>
 
-      <section className="sec">
+      <section className="sec" id="hire" style={{ scrollMarginTop: 76 }}>
         <HireDemo agentId={agent.agentId} completedCount={agent.jobs.filter((j) => j.status === 'COMPLETED').length} />
       </section>
 

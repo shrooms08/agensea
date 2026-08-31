@@ -48,6 +48,13 @@ export default async function Home() {
           figures below are measured from a full sweep of chain {56}; AgenSea&apos;s own
           agents run on {CHAIN.name} ({CHAIN.short}).
         </p>
+        {/* CTA pair. The primary is the page's single sanctioned lime action:
+            --live-dim fill with --bg text per the halation rule — never a full
+            #39FF14 fill. */}
+        <div className="cta-row">
+          <a href="/marketplace" className="cta-primary">Open marketplace →</a>
+          <a href="/agents" className="cta-secondary">Explore the registry</a>
+        </div>
       </section>
 
       <section className="grid-panel cols-5">

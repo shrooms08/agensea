@@ -42,28 +42,32 @@ export default function Marketplace() {
         ))}
       </section>
 
-      <section className="sec">
-        <div className="grid-panel cols-2">
+      <section className="sec" style={{ paddingTop: 52 }}>
+        <div className="agent-card-grid">
           {FIRST_PARTY_AGENTS.map((a) => {
             const done = a.jobs.filter((j) => j.status === 'COMPLETED');
             const fastest = Math.min(...a.jobs.map((j) => j.analysisMs));
             return (
-              <a key={a.agentId} href={`/marketplace/${a.agentId}`} className="card-lg" style={{ display: 'block' }}>
+              <div key={a.agentId} className="agent-card">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <CategoryChip slug={a.slug} />
                   <FirstPartyBadge />
                 </div>
-                <div style={{ font: "500 17px/1.25 var(--display)", color: 'var(--text)', marginTop: 16 }}>{a.name}</div>
-                <p className="prose-sm prose-muted" style={{ marginTop: 10, minHeight: 72 }}>{a.description}</p>
-                <div style={{ display: 'flex', gap: 28, marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
-                  {[['price', a.priceLabel], ['completed', String(done.length)], ['analysis', `${(fastest / 1000).toFixed(1)}s`]].map(([k, v]) => (
+                <a href={`/marketplace/${a.agentId}`} style={{ display: 'block', font: "500 18px/1.3 var(--display)", color: 'var(--text)', marginTop: 18 }}>{a.name}</a>
+                <p className="prose-sm prose-muted agent-card-desc">{a.description}</p>
+                <div className="agent-card-metrics">
+                  {[['completed', String(done.length)], ['analysis', `${(fastest / 1000).toFixed(1)}s`]].map(([k, v]) => (
                     <div key={k}>
                       <div className="label" style={{ fontSize: 9 }}>{k}</div>
-                      <div style={{ font: "500 13px/1 var(--mono)", color: 'var(--text)', marginTop: 6 }}>{v}</div>
+                      <div style={{ font: "500 13px/1 var(--mono)", color: 'var(--text)', marginTop: 7 }}>{v}</div>
                     </div>
                   ))}
                 </div>
-              </a>
+                <div className="agent-card-foot">
+                  <span style={{ font: "500 12px/1 var(--mono)", color: 'var(--text)' }}>{a.priceLabel} / hire</span>
+                  <a href={`/marketplace/${a.agentId}#hire`} className="agent-card-hire">Hire <span className="agent-card-arrow">→</span></a>
+                </div>
+              </div>
             );
           })}
         </div>

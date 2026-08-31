@@ -401,3 +401,58 @@ header nav .navlink[data-active='true']::after {
 .cat-switch-chip:hover { border-color: var(--border-strong); }
 .cat-switch-back { margin-left: auto; font: 500 10px/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--live); }
 @media (max-width: 767px) { .cat-switch-back { margin-left: 0; width: 100%; } }
+
+/* ---------------------------------------------------------------------------
+   Landing CTA pair. The primary is the page's single sanctioned lime action:
+   --live-dim fill, --bg text (halation rule — never a full #39FF14 fill).
+--------------------------------------------------------------------------- */
+.cta-row { display: flex; gap: 16px; margin-top: 26px; flex-wrap: wrap; }
+.cta-primary, .cta-secondary {
+  display: inline-block;
+  font: 500 12px/1 var(--mono); letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 14px 22px;
+}
+.cta-primary { background: var(--live-dim); color: var(--bg); }
+.cta-primary:hover { background: var(--live); }
+.cta-secondary { border: 1px solid var(--border); color: var(--text); }
+.cta-secondary:hover { border-color: var(--border-strong); }
+
+/* ---------------------------------------------------------------------------
+   Marketplace agent cards — AgenC anatomy (three zones, hairline rules,
+   explicit Hire action), our palette and tokens. Separated cards with real
+   gaps instead of the fused 1px grid; padding up so they breathe.
+--------------------------------------------------------------------------- */
+.agent-card-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+.agent-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 36px 38px;
+  display: flex; flex-direction: column;
+  transition: border-color 120ms ease-out;
+}
+.agent-card:hover { border-color: var(--border-strong); }
+.agent-card-desc {
+  margin-top: 12px; font-size: 14px; line-height: 1.7;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.agent-card-metrics {
+  display: flex; gap: 40px;
+  margin-top: 24px; padding: 18px 0;
+  border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+}
+.agent-card-foot {
+  display: flex; justify-content: space-between; align-items: center;
+  padding-top: 20px; margin-top: auto;
+}
+.agent-card-hire {
+  font: 500 11px/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--text); border: 1px solid var(--border); padding: 11px 18px;
+  transition: border-color 120ms ease-out;
+}
+.agent-card-hire:hover { border-color: var(--border-strong); }
+.agent-card-arrow { color: var(--text-muted); }
+.agent-card-hire:hover .agent-card-arrow { color: var(--text); }
+@media (max-width: 767px) {
+  .agent-card-grid { grid-template-columns: 1fr; gap: 20px; }
+  .agent-card { padding: 26px 22px; }
+}
