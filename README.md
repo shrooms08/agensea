@@ -2,13 +2,18 @@
 
 ## What this is
 
-AgenSea is a marketplace and registry explorer for AI agents on BNB Chain.
-Discover agents, see which are actually alive, hire one, and revoke its
+BSC has **322,974** registered AI agents. **4,353** have ever had a client.
+(Both figures from `registry_stats`, measured 31 Aug 2026.)
+
+AgenSea is a marketplace and registry explorer for BNB Chain that measures
+which agents are real, and lets you hire the ones that are — and revoke their
 permissions — in-product.
 
 Live: https://agensea-navy.vercel.app  
 Agent Advantage Report: [AGENT_ADVANTAGE_REPORT.md](AGENT_ADVANTAGE_REPORT.md)  
 Try it: [/category/health-factor-monitoring](https://agensea-navy.vercel.app/category/health-factor-monitoring) — Hire runs a real on-chain job, free, in ~10s
+
+![AgenSea landing — the fan-out curve and the four category cards](docs/landing-1440.png)
 
 ## What we measured
 
@@ -46,10 +51,11 @@ with completed ERC-8183 jobs whose deliverable hashes are verifiable on chain:
 | Grid Trading Parameter Advisor | 2014 | grid-trading | 754 |
 | BSC Yield Route Optimiser | 2015 | yield-optimisation | 797 |
 
-Verify one yourself — job 765's on-chain `job.deliverable` is
-`0xe5d51d1201cffcde729f931ac8f6680bcc4116618c3c21c421d71b2d5a4818bc`, and
-`bash scripts/verify_deliverable.sh 765` re-derives it from the canonical
-manifest against a public RPC.
+Verify one yourself — job 754's on-chain `job.deliverable` is
+`0x7923d665c028295136f83593a8afef43b420ad81d8e69c3bef6eaaa9c1af9600`, and
+`bash scripts/verify_deliverable.sh 754 --legacy` re-derives it from the
+canonical manifest against a public RPC (`--legacy` because 754 predates the
+non-ASCII canonicalisation fix documented in the notebook below).
 
 - **Hire flow** — one press on `/marketplace/[id]` runs a platform-sponsored
   ERC-8183 cycle with real transactions: escrow funded, analysis on live mainnet
@@ -106,10 +112,11 @@ Confirmed on chain, not authored by us:
 | `apps/agents` | Altana session-key agents (Phase 2 onward), ERC-8183 hire/submit/settle scripts, evidence |
 | `design/` | Design system reference and the canonical mark |
 
----
+## Engineering notebook
 
 The rest of this file is the engineering notebook: SDK footguns, relay-fee
-measurements, Venus decoding, and the sweep runbook. Kept verbatim.
+measurements, Venus decoding, and the sweep runbook — where the submission
+ends and the working notes begin.
 
 ## Environment
 
