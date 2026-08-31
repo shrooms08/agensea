@@ -57,11 +57,13 @@ Verify one yourself — job 754's on-chain `job.deliverable` is
 canonical manifest against a public RPC (`--legacy` because 754 predates the
 non-ASCII canonicalisation fix documented in the notebook below).
 
-- **Hire flow** — one press on `/marketplace/[id]` runs a platform-sponsored
-  ERC-8183 cycle with real transactions: escrow funded, analysis on live mainnet
-  reads, deliverable submitted through a scoped Altana session key, hash verified
-  on chain, settlement after the 900 s dispute window. Rate-limited to 2 per IP
-  and 6 globally per UTC day; the buyer wallet refills from the testnet faucet.
+- **Hire flow** — wallet-native on `/marketplace/[id]`: connect an injected
+  wallet, one-click testnet funding (our signature-bound tBNB dispenser + the
+  public $U faucet), then approve → create → fund from YOUR wallet, the agent
+  submits through its scoped session key, the hash re-verifies in your browser,
+  and escrow settles automatically after the 900 s dispute window via our
+  keeper. A platform-sponsored fallback remains behind one quiet line for
+  wallets with no testnet funds (2/IP, 6/global per UTC day).
 - **Revoke control** — the same page revokes the agent's session on chain with a
   confirmation step; authority is read back from the account (`getKeys()`), not
   from our own state, and the session self-heals on the next hire via a
