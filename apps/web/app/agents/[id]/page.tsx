@@ -11,7 +11,9 @@
  * database is down, whereas a dynamic one would 500.
  */
 import { notFound } from 'next/navigation';
-import { getAgent, getOverlapAgent } from '@/lib/queries';
+import { getAgent, getOverlapAgent, getBareAgent } from '@/lib/queries';
+import { byMainnetId, AGENTS_WALLET } from '@/data/first-party-agents';
+import { FirstPartyBadge } from '@/components/CategoryChip';
 import { int, shortAddr, measuredOn, livenessToken } from '@/lib/format';
 
 export const revalidate = 86400;   // 24h; push updates via POST /api/revalidate
@@ -43,17 +45,36 @@ export default async function AgentDetail({ params }: { params: Promise<{ id: st
 
   const agent = await getAgent(agentId);
   const overlap = agent ? null : await getOverlapAgent(agentId);
-  if (!agent && !overlap) notFound();
+  const bare = agent || overlap ? null : await getBareAgent(agentId);
+  if (!agent && !overlap && !bare) notFound();
 
-  const a = (agent ?? overlap)!;
+  const a = (agent ?? overlap ?? bare)!;
   const isOverlap = !agent;
   const tone = `var(${livenessToken(a.client_count)})`;
+  // First-party cross-link: presentation only. The row is untouched sweep
+  // output — client_count, liveness filters, ordering and Pass 2 selection
+  // treat this id exactly like every other zero-client agent.
+  const firstParty = byMainnetId(a.agent_id);
+  const ownerIsOurs = a.owner?.toLowerCase() === AGENTS_WALLET.toLowerCase();
 
   return (
     <>
       <section className="sec-lead">
         <div className="label">ERC-8004 registry · BNB Smart Chain mainnet (56)</div>
         <h1 style={{ font: "500 34px/1.15 var(--display)", marginTop: 14 }}>Agent #{a.agent_id}</h1>
+
+        {firstParty && (
+          <div style={{ marginTop: 18, padding: '14px 18px', background: 'var(--surface-raised)', boxShadow: 'inset 2px 0 0 var(--accent)' }}>
+            <FirstPartyBadge />
+            <p className="prose-sm prose-muted" style={{ marginTop: 10, fontSize: 13 }}>
+              AgenSea&apos;s own agent —{' '}
+              <a href={`/marketplace/${firstParty.agentId}`} style={{ color: 'var(--live)' }}>{firstParty.name}, hireable on testnet 97</a>.
+              {ownerIsOurs
+                ? <> Verifiable from the row itself: the owner above is {AGENTS_WALLET.slice(0, 10)}…, AgenSea&apos;s published agents wallet — the same address that provides every chain-97 job.</>
+                : <> (Owner check did not match the published agents wallet — treat the claim with suspicion.)</>}
+            </p>
+          </div>
+        )}
 
         {isOverlap && (
           <div style={{ marginTop: 18, padding: '14px 18px', background: 'var(--surface-raised)', boxShadow: 'inset 2px 0 0 var(--warn)' }}>

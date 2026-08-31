@@ -51,7 +51,8 @@ export default async function Home() {
       </section>
 
       <section className="grid-panel cols-5">
-        <Stat label="Agents minted" value={Number(s('agents_minted').value)} measuredAt={s('agents_minted').measured_at} note="chain 56" />
+        <Stat label="Agents minted" value={Number(s('agents_minted').value)} measuredAt={s('agents_minted').measured_at}
+              note={stats['minted_per_day'] ? `chain 56 · +${int(Math.round(Number(stats['minted_per_day'].value)))}/day` : 'chain 56'} />
         <Stat label="Ever had a client" value={Number(s('agents_with_client').value)} measuredAt={s('agents_with_client').measured_at}
               tone="var(--live)" note={pct(100 * Number(s('agents_with_client').value) / Number(s('agents_minted').value), 4)} />
         <Stat label="Client relationships" value={Number(s('client_edges').value)} measuredAt={s('client_edges').measured_at} />

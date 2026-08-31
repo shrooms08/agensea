@@ -68,6 +68,21 @@ export async function getAgent(agentId: number): Promise<LiveAgent | null> {
   return rows[0] ?? null;
 }
 
+/** Base sweep row for ANY swept id — the fallback that makes every agent
+ *  deep-linkable, zero-client agents included. Generic by design: the
+ *  enriched view inner-joins clients, so without this a judge deep-linking
+ *  any zero-client agent hits a 404. Enrichment fields are null (Pass 2
+ *  deliberately only enriches agents with clients or payee owners). */
+export async function getBareAgent(agentId: number): Promise<LiveAgent | null> {
+  const { rows } = await sbSelect<Pick<LiveAgent, 'agent_id' | 'owner' | 'client_count' | 'clients' | 'checked_at'>>(
+    'agent_liveness', { query: `select=agent_id,owner,client_count,clients,checked_at&agent_id=eq.${agentId}`, revalidate: DAY });
+  const r = rows[0];
+  if (!r) return null;
+  return { ...r, agent_wallet: null, token_uri: null, token_uri_kind: null,
+           token_uri_host: null, metadata: null, feedback_count: null,
+           summary_value: null, summary_decimals: null };
+}
+
 export interface OverlapAgent extends LiveAgent { bazaar_resources: number; bazaar_pct: number }
 
 /** Agent 127417 and anything like it: a B402 payee holding an ERC-8004 identity.

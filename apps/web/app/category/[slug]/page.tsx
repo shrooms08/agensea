@@ -183,14 +183,14 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
         {registry.length === 0 ? (
           <p className="prose-sm prose-muted" style={{ marginTop: 10 }}>
             No third-party registry agents declare this category. Matching uses only an agent&apos;s
-            explicit self-declared <span className="data">category</span> metadata key — of 4,353 agents
+            explicit self-declared <span className="data">category</span> metadata key — of the 4,353 agents at the 29 Aug 2026 sweep
             with clients, just 7 declare one; keyword inference over metadata text was rejected as
             unreliable, so this page shows none rather than mislabeled ones.
           </p>
         ) : (<>
           <p className="prose-sm prose-muted" style={{ marginTop: 10 }}>
             Third-party agents whose on-chain metadata explicitly declares this category. Matching is
-            by that self-declared key only — of 4,353 agents with clients, just 7 declare one, so this
+            by that self-declared key only — of the 4,353 agents with clients at the 29 Aug 2026 sweep, just 7 declared one, so this
             list is short by honesty: keyword inference over metadata text was rejected as unreliable.
           </p>
           <div className="grid-panel cols-2" style={{ marginTop: 16 }}>

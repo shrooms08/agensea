@@ -105,7 +105,7 @@ capable manual route — the agent was correct, and provably so.
 Find and compare work today, live: category pages, per-agent detail with the
 session's exact on-chain permissions (call allowlist, spend cap, expiry), the
 measured price and time-to-deliverable for every completed job, and in-browser
-VERIFY on every deliverable. The registry explorer behind it indexes 317,468
+VERIFY on every deliverable. The registry explorer behind it indexes 322,974
 mainnet agents with every headline figure dated.
 
 Completion counts moved 5 → 8 COMPLETED during this report's runs [M]; the

@@ -10,20 +10,23 @@ permissions — in-product.
 
 ## What we measured
 
-Every figure below was read from the project database on 31 Aug 2026 and
-carries the `measured_at` of the underlying sweep — **29 Aug 2026 20:53 UTC** —
-the same date the site prints next to each number. Percentages marked
-*derived* are computed from those measured values.
+Every figure below carries the `measured_at` of the sweep it came from — the
+same date the site prints next to each number. Percentages marked *derived*
+are computed from those measured values.
 
-- **317,468** ERC-8004 agents minted on BSC mainnet (chain 56) — measured 29 Aug 2026
-- **4,353** have ever had a client — 1.37% of minted (*derived*) — measured 29 Aug 2026
+- **322,974** ERC-8004 agents minted on BSC mainnet (chain 56) — measured 31 Aug 2026
+- **The registry grows ~3,095 agents/day** (*derived*: +5,506 minted between the
+  29 Aug 20:53 UTC and 31 Aug 15:36 UTC sweeps) — while the number that have
+  ever had a client did not move
+- **4,353** have ever had a client — 1.35% of minted and falling (*derived*) —
+  measured 31 Aug 2026
 - **The fan-out collapse:** those 4,353 agents' **8,265** client relationships come
   from only **108** distinct client addresses, and the top two addresses alone
-  account for **35.5%** of all edges (1,800 + 1,137 = 2,937; *derived* from the
-  29 Aug 2026 sweep). Reputation on the registry traces to a small set of payers.
+  account for **35.5%** of all edges (1,800 + 1,137 = 2,937; *derived*).
+  Reputation on the registry traces to a small set of payers.
 - **B402 Bazaar:** **978** resources from **7** payees, one payee holding
-  **96.22%** of the catalogue — measured 29 Aug 2026
-- **Exactly one** agent address appears in both datasets — measured 29 Aug 2026
+  **96.22%** of the catalogue — measured 31 Aug 2026
+- **Exactly one** agent address appears in both datasets — measured 31 Aug 2026
 
 The full write-ups: [AGENT_ADVANTAGE_REPORT.md](AGENT_ADVANTAGE_REPORT.md)
 (three frozen tasks, hired agent vs. assisted DIY, with timings and quality

@@ -30,6 +30,11 @@ export const ERC8183 = {
   registry: '0x8004A818BFB912233c491871b3d84c89A494BD9e',
 } as const;
 
+/** The published wallet all four agents act through (EIP-7702 smart account
+ *  = admin signer EOA). Provider on every chain-97 job; owner of the mainnet
+ *  identity 322885. */
+export const AGENTS_WALLET = '0x85d32d525E1812FeE7001f34DD6dd86154619090';
+
 /** Global on the OptimisticPolicy. A seller cannot shorten it. */
 export const DISPUTE_WINDOW_SECONDS = 900;
 
@@ -234,3 +239,6 @@ export const byId = (id: number) => FIRST_PARTY_AGENTS.find((a) => a.agentId ===
 export const bySlug = (slug: CategorySlug) => FIRST_PARTY_AGENTS.filter((a) => a.slug === slug);
 export const CATEGORY_SLUGS: CategorySlug[] =
   ['rebalancing', 'grid-trading', 'yield-optimisation', 'health-factor-monitoring'];
+
+export const byMainnetId = (mainnetAgentId: number): FirstPartyAgent | undefined =>
+  FIRST_PARTY_AGENTS.find((a) => a.mainnetAgentId === mainnetAgentId);

@@ -57,10 +57,13 @@ export default async function FirstPartyAgent({ params }: { params: Promise<{ id
         {agent.mainnetAgentId && (
           <div>
             <div style={{ font: "500 9px/1 var(--mono)", letterSpacing: '0.12em', color: 'var(--text-faint)', textTransform: 'uppercase' }}>mainnet identity</div>
-            <a href={`https://bscscan.com/tx/${agent.mainnetRegisterTx}`} target="_blank" rel="noreferrer"
-               style={{ font: "400 12px/1.5 var(--mono)", color: 'var(--live-dim)', marginTop: 6, display: 'inline-block' }}>
-              {agent.mainnetAgentId} ↗
-            </a>
+            <div style={{ font: "400 12px/1.5 var(--mono)", marginTop: 6 }}>
+              <a href={`https://bscscan.com/tx/${agent.mainnetRegisterTx}`} target="_blank" rel="noreferrer" style={{ color: 'var(--live-dim)' }}>
+                {agent.mainnetAgentId} ↗
+              </a>
+              <span style={{ color: 'var(--text-faint)' }}> · </span>
+              <a href={`/agents/${agent.mainnetAgentId}`} style={{ color: 'var(--live-dim)' }}>registry →</a>
+            </div>
           </div>
         )}
       </section>
