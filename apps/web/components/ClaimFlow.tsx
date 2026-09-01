@@ -176,6 +176,19 @@ export function ClaimFlow() {
             wallet you just connected. If you minted one after our last sweep, it will appear once
             the next sweep runs.
           </p>
+          <p className="prose-sm prose-muted" style={{ fontSize: 13, marginTop: 12 }}>
+            If you do not have one yet, there are two routes to registering one:
+          </p>
+          <p className="prose-sm prose-muted" style={{ fontSize: 13, marginTop: 10 }}>
+            <a href="https://www.bnbchain.org/en/bnb-agent-studio" target="_blank" rel="noreferrer" style={{ color: 'var(--live)' }}>
+              BNB Agent Studio — the supported path to scaffolding and registering an agent →
+            </a>
+          </p>
+          <p className="prose-sm prose-muted" style={{ fontSize: 13, marginTop: 6 }}>
+            <a href="https://bscscan.com/address/0x8004A169FB4a3325136EB29fA0ceB6D2e539a432" target="_blank" rel="noreferrer" style={{ color: 'var(--live)' }}>
+              The IdentityRegistry on BscScan — for registering directly →
+            </a>
+          </p>
           <p className="prose-sm prose-muted" style={{ fontSize: 13, marginTop: 10 }}>
             <a href="/docs#how-we-measure" style={{ color: 'var(--live)' }}>How we measure the registry →</a>
           </p>
