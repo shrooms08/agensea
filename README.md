@@ -425,6 +425,10 @@ the SDK as `Rpc.ExecutionError ... Reason: 0x` at `prepareCalls` — a pre-fligh
 simulation failure, not a session-permission failure. Do not misread it as a
 scope problem.
 
+The tBNB gas dispenser's per-IP daily cap is keyed on `x-forwarded-for`, so
+judges behind one NAT or a shared conference network share a single grant
+between them; the sponsored path is the fallback when it refuses.
+
 ## Running things
 
 ```bash

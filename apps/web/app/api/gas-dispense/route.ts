@@ -8,9 +8,12 @@
  *    the only possible recipient. curl without the key gets nothing.
  *  - Eligibility, all server-side, in order: signature + nonce freshness,
  *    recovered address balance < 0.003 tBNB (read from OUR rpc at request
- *    time), never-dispensed-before (permanent, demo_gas_permit),
- *    1/IP/day, 8/global/day, and a hard floor: refuse when the platform
- *    wallet would drop below 0.03 tBNB.
+ *    time), then the hard floor — refuse when the platform wallet would drop
+ *    below 0.03 tBNB — and only then the permit: never-dispensed-before
+ *    (permanent, demo_gas_permit), 1/IP/day, 8/global/day. The floor comes
+ *    BEFORE the permit deliberately: the permit WRITES the grant row, and a
+ *    floor refusal after it would consume a one-time grant and a daily slot
+ *    while sending nothing.
  *  - Fixed amount: 0.005 tBNB. Every dispense is logged (address, ip hash,
  *    tx) to the runtime log; the permit row is the durable ledger.
  */
@@ -72,7 +75,23 @@ export async function POST(req: Request) {
     return Response.json({ error: `this wallet already holds ${Number(formatEther(bal)).toFixed(4)} tBNB — the dispenser is for empty wallets (below 0.003)`, reason: 'not-needy' }, { status: 409 });
   }
 
-  // permanent + daily limits, atomically
+  // HARD FLOOR ON THE PLATFORM WALLET — CHECKED BEFORE THE PERMIT IS TAKEN.
+  // The permit row is the durable ledger and is written by demo_gas_permit
+  // itself, so taking it first would mean a floor refusal burned the address's
+  // PERMANENT one-time grant and a global slot while sending nothing. The floor
+  // exists for exactly the moment the wallet runs low, which is when a wasted
+  // grant costs most. Nothing below this point can refuse for a reason we could
+  // have known before spending the grant.
+  const key = process.env.DEMO_ADMIN_KEY?.trim();
+  if (!key) return Response.json({ error: 'dispenser not configured' }, { status: 503 });
+  const platform = privateKeyToAccount(key as `0x${string}`);
+  const platformBal = await pub.getBalance({ address: platform.address });
+  if (platformBal - AMOUNT < FLOOR) {
+    return Response.json({ error: 'the gas dispenser is exhausted — it refuses to drop below its reserve; ask us to top it up', reason: 'floor' }, { status: 503 });
+  }
+
+  // permanent + daily limits, atomically. This WRITES the grant row, so it is
+  // the last thing that can fail before the transfer is attempted.
   const ip = (req.headers.get('x-forwarded-for') ?? 'unknown').split(',')[0]!.trim();
   const ipHash = createHash('sha256').update('agensea-demo:' + ip).digest('hex');
   const base = process.env.SUPABASE_URL!.replace(/\/$/, '');
@@ -94,15 +113,6 @@ export async function POST(req: Request) {
       : permit.reason === 'global' ? 'the gas dispenser is empty for today (8 grants per day) — try again tomorrow'
       : 'request refused';
     return Response.json({ error: msg, reason: permit.reason }, { status: 429 });
-  }
-
-  // hard floor on the platform wallet
-  const key = process.env.DEMO_ADMIN_KEY?.trim();
-  if (!key) return Response.json({ error: 'dispenser not configured' }, { status: 503 });
-  const platform = privateKeyToAccount(key as `0x${string}`);
-  const platformBal = await pub.getBalance({ address: platform.address });
-  if (platformBal - AMOUNT < FLOOR) {
-    return Response.json({ error: 'the gas dispenser is exhausted — it refuses to drop below its reserve; ask us to top it up', reason: 'floor' }, { status: 503 });
   }
 
   try {
