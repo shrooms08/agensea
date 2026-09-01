@@ -12,19 +12,19 @@
  * would accuse a valid deliverable of being wrong because someone's network hiccuped.
  */
 import { useState } from 'react';
-import { manifestHash, readOnChainDeliverable, CANONICALISATION, type VerifyState } from '@/lib/verify';
+import { manifestHash, readOnChainDeliverable, CANONICALISATION, type Canon, type VerifyState } from '@/lib/verify';
 
 const BOX = { padding: '18px 20px', border: '1px solid var(--border)', background: 'var(--surface)' } as const;
 const MONO9 = { font: "500 9px/1 var(--mono)", letterSpacing: '0.12em', textTransform: 'uppercase' } as const;
 
-export function VerifyDeliverable({ jobId, manifest }: { jobId: string; manifest: unknown }) {
+export function VerifyDeliverable({ jobId, manifest, canon }: { jobId: string; manifest: unknown; canon: Canon }) {
   const [state, setState] = useState<VerifyState>({ kind: 'idle' });
 
   async function run() {
     setState({ kind: 'checking' });
     let computed: string;
     try {
-      computed = manifestHash(manifest);
+      computed = manifestHash(manifest, canon);
     } catch (e) {
       setState({ kind: 'unreachable', detail: `could not hash the manifest: ${(e as Error).message}` });
       return;
@@ -47,7 +47,7 @@ export function VerifyDeliverable({ jobId, manifest }: { jobId: string; manifest
         <div>
           <div style={{ ...MONO9, color: 'var(--text-faint)' }}>Deliverable · job {jobId}</div>
           <div style={{ font: "400 11px/1.5 var(--mono)", color: 'var(--text-muted)', marginTop: 8, maxWidth: 460 }}>
-            {CANONICALISATION}
+            {CANONICALISATION(canon)}
           </div>
         </div>
         <button onClick={run} disabled={state.kind === 'checking'}

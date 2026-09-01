@@ -42,7 +42,16 @@ export interface WalletHireProps {
   delivers: DeliversRow[];
   targetSpec: TargetSpec;
   session: { capTBnb: string; signature: string; commerce: string; expiryLabel: string };
+  priceLabel: string;
   trackRecord?: React.ReactNode;
+  /** Left-column content the page owns; the rail and the hire surface are ours.
+   *  Passed as slots so the two-column order is defined in exactly one place. */
+  header?: React.ReactNode;
+  /** The stat row. Below the rail on mobile, so price and Hire follow the
+   *  description directly rather than sitting under five more figures. */
+  stats?: React.ReactNode;
+  sessionPanel?: React.ReactNode;
+  completedWork?: React.ReactNode;
 }
 
 const Row = ({ k, v, tone }: { k: string; v: React.ReactNode; tone?: string }) => (
@@ -52,7 +61,7 @@ const Row = ({ k, v, tone }: { k: string; v: React.ReactNode; tone?: string }) =
   </div>
 );
 
-export function WalletHire({ agentId, agentName, delivers, targetSpec, session, trackRecord }: WalletHireProps) {
+export function WalletHire({ agentId, agentName, priceLabel, delivers, targetSpec, session, trackRecord, header, stats, sessionPanel, completedWork }: WalletHireProps) {
   const { address, isConnected } = useAccount();
   const { connect, connectors, isPending: connecting } = useConnect();
   const f = useWalletFunding();
@@ -290,8 +299,48 @@ export function WalletHire({ agentId, agentName, delivers, targetSpec, session, 
   const canHire = f.ready && !targetError && !checking && !running && !doneRef.current;
   const sessionExpiry = authority?.expiry ? new Date(authority.expiry * 1000).toISOString().slice(0, 10) : session.expiryLabel;
 
+  /* RIGHT RAIL — price, the one sanctioned lime action, and what the buyer is
+     actually agreeing to. Sticky on desktop; on mobile it moves above the left
+     column so these stay the first thing after the header. */
+  const rail = (
+    <aside className="detail-rail">
+      <div className="rail-card">
+        <div className="label" style={{ fontSize: 9 }}>price per hire</div>
+        <div className="rail-price">{priceLabel}<span>per hire</span></div>
+        {isConnected ? (
+          <button onClick={hire} disabled={!canHire} className="hire-cta"
+            style={{ background: canHire ? 'var(--live-dim)' : 'var(--surface-raised)',
+                     color: canHire ? 'var(--bg)' : 'var(--text-faint)',
+                     cursor: canHire ? 'pointer' : 'not-allowed' }}>
+            {doneRef.current ? 'Job complete' : running ? 'In progress…' : 'Hire — escrow 1 $U'}
+          </button>
+        ) : (
+          <div className="hire-connect" style={{ marginTop: 16 }}>
+            <div className="data">Connect a wallet to hire {agentName} for {priceLabel}</div>
+            <div style={{ display: 'flex', gap: 10, marginTop: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
+              {connectors.map((c) => (
+                <button key={c.uid} className="wallet-connect" disabled={connecting}
+                  onClick={() => connect({ connector: c })}>
+                  {connecting ? 'Connecting…' : `Connect ${c.name}`}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        <p className="meta" style={{ marginTop: 14, color: 'var(--text-faint)' }}>
+          Your {priceLabel} sits in escrow and releases only after you can verify the work —
+          the hash is recomputed in your browser against the chain.
+        </p>
+      </div>
+      {f.isConnected && <HirePreflight />}
+    </aside>
+  );
+
   return (
-    <>
+    <div className="detail-grid">
+      <div className="detail-head">{header}</div>
+      <div className="detail-main">
+        {stats}
       {/* ---- what the agent delivers / what you provide ---- */}
       <section className="sec hire-cols">
         <div>
@@ -356,8 +405,6 @@ export function WalletHire({ agentId, agentName, delivers, targetSpec, session, 
           <Row k="provider net" v="1 $U (100%)" />
         </div>
 
-        {f.isConnected && <HirePreflight />}
-
         <p className="prose-sm prose-muted" style={{ marginTop: 18, fontSize: 13 }}>
           Your wallet will be asked to sign five transactions in order: approve 1 $U to the escrow
           contract, create the job with your target written into it, register the optimistic policy,
@@ -367,27 +414,6 @@ export function WalletHire({ agentId, agentName, delivers, targetSpec, session, 
           browser against the chain. Escrow releases to the agent after the 900-second dispute
           window and settles automatically.
         </p>
-
-        {isConnected ? (
-          <button onClick={hire} disabled={!canHire} className="hire-cta"
-            style={{ background: canHire ? 'var(--live-dim)' : 'var(--surface-raised)',
-                     color: canHire ? 'var(--bg)' : 'var(--text-faint)',
-                     cursor: canHire ? 'pointer' : 'not-allowed' }}>
-            {doneRef.current ? 'Job complete' : running ? 'In progress…' : 'Hire — escrow 1 $U'}
-          </button>
-        ) : (
-          <div className="hire-connect">
-            <div className="data">Connect a wallet to hire {agentName} for 1 $U</div>
-            <div style={{ display: 'flex', gap: 12, marginTop: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
-              {connectors.map((c) => (
-                <button key={c.uid} className="wallet-connect" disabled={connecting}
-                  onClick={() => connect({ connector: c })}>
-                  {connecting ? 'Connecting…' : `Connect ${c.name}`}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
 
         {stuck.length > 0 && !running && !doneRef.current && (
           <div className="hd-enter" style={{ marginTop: 14, padding: '12px 16px', background: 'var(--surface-raised)', boxShadow: 'inset 2px 0 0 var(--warn)' }}>
@@ -467,6 +493,11 @@ export function WalletHire({ agentId, agentName, delivers, targetSpec, session, 
         )}
         {jobId && <div className="meta" style={{ marginTop: 12 }}>job {jobId}</div>}
       </section>
-    </>
+
+        {sessionPanel}
+        {completedWork}
+      </div>
+      {rail}
+    </div>
   );
 }

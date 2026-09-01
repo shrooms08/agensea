@@ -664,3 +664,29 @@ header nav .navlink[data-active='true']::after {
 .task-link:hover .task-link-arrow { color: var(--text); }
 @media (max-width: 1023px) { .task-grid { grid-template-columns: 1fr 1fr; } }
 @media (max-width: 559px)  { .task-grid { grid-template-columns: 1fr; } }
+
+/* ---------------------------------------------------------------------------
+   /marketplace/[id] — two columns, AgenC's shape. The rail carries price and
+   the hire action so both are visible without scrolling; everything else stays
+   in the left column in reading order. Below 1024px the rail collapses to the
+   top, above the left column, so price and Hire are still first after the
+   header.
+--------------------------------------------------------------------------- */
+.detail-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; column-gap: 40px; align-items: start; }
+/* Three children, explicitly placed: the header sits in the left column so the
+   rail card top-aligns with the h1, and the rail spans both rows. */
+.detail-head { grid-column: 1; grid-row: 1; min-width: 0; }
+.detail-main { grid-column: 1; grid-row: 2; min-width: 0; }
+.detail-rail { grid-column: 2; grid-row: 1 / span 2; position: sticky; top: 76px; display: grid; gap: 16px; }
+.rail-card { border: 1px solid var(--border-strong); background: var(--surface); padding: 20px; }
+.rail-price { font: 500 30px/1.05 var(--display); letter-spacing: -0.02em; color: var(--text); margin-top: 10px; }
+.rail-price span { font: 500 13px/1 var(--mono); color: var(--text-muted); margin-left: 8px; letter-spacing: 0; }
+.rail-card .hire-cta { margin-top: 16px; width: 100%; }
+/* Single column: header, then price + Hire, then the rest of the detail. */
+@media (max-width: 1023px) {
+  .detail-grid { grid-template-columns: 1fr; row-gap: 28px; }
+  .detail-head, .detail-main, .detail-rail { grid-column: 1; grid-row: auto; }
+  .detail-head { order: 1; }
+  .detail-rail { order: 2; position: static; }
+  .detail-main { order: 3; }
+}

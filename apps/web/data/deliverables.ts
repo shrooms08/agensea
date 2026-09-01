@@ -8,11 +8,21 @@
  * Canonicalisation is uniform — see lib/verify.ts. There is no per-job flag:
  * the raw-UTF-8 path was measured to reproduce all five hashes.
  */
-export interface Deliverable { hash: string; manifest: Record<string, unknown> }
+import type { Canon } from '@/lib/verify';
+
+export interface Deliverable {
+  hash: string;
+  /** Which non-ASCII encoding this manifest was hashed under. MEASURED against
+   *  the chain, not assumed — see lib/verify.ts. The five jobs below predate the
+   *  producer's escaping fix; 795-797 follow it. */
+  canon: Canon;
+  manifest: Record<string, unknown>;
+}
 
 export const DELIVERABLES: Record<string, Deliverable> = {
   "748": {
     "hash": "0xac4c18558a1c73251ecde27d77395bf4ed499a417980f15e984b31253fc43974",
+    "canon": "raw",
     "manifest": {
       "chain_id": 97,
       "contracts": {
@@ -36,6 +46,7 @@ export const DELIVERABLES: Record<string, Deliverable> = {
   },
   "757": {
     "hash": "0x9265db4ab38322fd1b76bd704b1cbfcd023356f0d154bc6ca909c0c9bd4bd5e9",
+    "canon": "raw",
     "manifest": {
       "chain_id": 97,
       "contracts": {
@@ -59,6 +70,7 @@ export const DELIVERABLES: Record<string, Deliverable> = {
   },
   "754": {
     "hash": "0x7923d665c028295136f83593a8afef43b420ad81d8e69c3bef6eaaa9c1af9600",
+    "canon": "raw",
     "manifest": {
       "chain_id": 97,
       "contracts": {
@@ -82,6 +94,7 @@ export const DELIVERABLES: Record<string, Deliverable> = {
   },
   "753": {
     "hash": "0x58bb1271cb01d9a061d23caacf5064c621c88f77fed2c634a2ce199d31195c97",
+    "canon": "raw",
     "manifest": {
       "chain_id": 97,
       "contracts": {
@@ -105,6 +118,7 @@ export const DELIVERABLES: Record<string, Deliverable> = {
   },
   "765": {
     "hash": "0xe5d51d1201cffcde729f931ac8f6680bcc4116618c3c21c421d71b2d5a4818bc",
+    "canon": "raw",
     "manifest": {
       "chain_id": 97,
       "contracts": {
@@ -121,6 +135,81 @@ export const DELIVERABLES: Record<string, Deliverable> = {
       },
       "response": {
         "content": "{\"asset\":\"BTCB\",\"chainId\":56,\"blockNumber\":118762120,\"venues\":[{\"venue\":\"Lista\",\"asset\":\"BTCB\",\"supplyAprPct\":0.9957785419553083,\"spot\":false,\"method\":\"ERC-4626 share-price growth over 2000000 blocks, annualised (REALISED, not spot)\",\"detail\":{\"sharePriceNow\":\"1003836334062539277\",\"sharePriceThen\":\"1003551037289226136\",\"windowDays\":\"10.42\",\"fromBlock\":116762123,\"toBlock\":118762123}},{\"venue\":\"Venus\",\"asset\":\"BTCB\",\"supplyAprPct\":0.17899199376,\"spot\":true,\"method\":\"supplyRatePerBlock() x interestRateModel.blocksPerYear()\",\"detail\":{\"supplyRatePerBlock\":\"25541095\",\"blocksPerYear\":\"70080000\",\"interestRateModel\":\"0x7d47671514a1b13f0e376d70fcf13b2eb2694c3a\"}},{\"venue\":\"Aave V3\",\"asset\":\"BTCB\",\"supplyAprPct\":0.020068067620425806,\"spot\":true,\"method\":\"Pool.getReserveData(asset).currentLiquidityRate (ray)\",\"detail\":{\"currentLiquidityRate\":\"200680676204258071579667\",\"ray\":\"1e27\"}}],\"best\":{\"venue\":\"Lista\",\"asset\":\"BTCB\",\"supplyAprPct\":0.9957785419553083,\"spot\":false,\"method\":\"ERC-4626 share-price growth over 2000000 blocks, annualised (REALISED, not spot)\",\"detail\":{\"sharePriceNow\":\"1003836334062539277\",\"sharePriceThen\":\"1003551037289226136\",\"windowDays\":\"10.42\",\"fromBlock\":116762123,\"toBlock\":118762123}},\"gasCostToSwitchTBnb\":0.0000225,\"gasCostUsd\":0.0154575,\"breakEvenDays\":0.057824402303828924,\"positionSizeUsd\":10000,\"recommendation\":\"Move to Lista at 0.9958% (from Aave V3 at 0.0201%). On $10,000 the spread is $97.57/yr against $0.02 of gas; break-even in 0.1 days. Worth it if you hold longer than that.\",\"assumptions\":[\"gas: 450000 units for withdraw+approve+deposit at the live eth_gasPrice\",\"BNB priced at $687 for the gas conversion\",\"Lista's figure is a REALISED trailing APR from share-price growth (no spot-rate getter exists); Venus and Aave are spot rates\",\"break-even assumes rates hold constant, which they do not\"]}",
+        "content_type": "application/json"
+      },
+      "version": 1
+    }
+  },
+  "795": {
+    "hash": "0x91bf1d0f12b1273a5da70cf7ca22d9e4e54550fd7c1873df1c6cbf45adedf1e1",
+    "canon": "escaped",
+    "manifest": {
+      "chain_id": 97,
+      "contracts": {
+        "commerce": "0xa206c0517B6371C6638CD9e4a42Cc9f02A33B0DE",
+        "policy": "0xd6a4217588F6B1F5657a92A3e94E6422aD771cEA",
+        "router": "0xD7d36D66d2F1B608A0F943f722D27e3744f66F25"
+      },
+      "job_id": 795,
+      "metadata": {
+        "advantage_task": "T1",
+        "agent": "Venus Health Factor Monitor",
+        "agent_id": 2012,
+        "analysed_chain": 56,
+        "category": "health-factor-monitoring"
+      },
+      "response": {
+        "content": "{\"account\":\"0xb76b35db3f2a7d8346013d9b02edbf756cf27c72\",\"chainId\":56,\"chainLabel\":\"BNB Smart Chain mainnet\",\"blockNumber\":118945982,\"healthFactor\":3.4607,\"riskLevel\":\"HEALTHY\",\"collateralUsd\":28682.845221,\"weightedCollateralUsd\":22289.986707,\"borrowPowerUsd\":20630.246773,\"borrowedUsd\":6440.740413,\"avgLiquidationThreshold\":0.7771190945726334,\"priceDropToLiquidation\":0.7110411188487878,\"recommendation\":\"Health factor is 3.4607, a comfortable buffer — collateral would have to fall 71.1% before liquidation. No action needed; re-check if you borrow more or markets move sharply.\",\"markets\":[{\"symbol\":\"vBNB\",\"supplyUsd\":8338.887849,\"borrowUsd\":0,\"collateralFactor\":0.8,\"liquidationThreshold\":0.8},{\"symbol\":\"vBTC\",\"supplyUsd\":13802.997942,\"borrowUsd\":0,\"collateralFactor\":0.8,\"liquidationThreshold\":0.8},{\"symbol\":\"vADA\",\"supplyUsd\":1088.075583,\"borrowUsd\":0,\"collateralFactor\":0,\"liquidationThreshold\":0.63},{\"symbol\":\"vDOT\",\"supplyUsd\":52.750378,\"borrowUsd\":0,\"collateralFactor\":0,\"liquidationThreshold\":0},{\"symbol\":\"vUSDT\",\"supplyUsd\":0.002214,\"borrowUsd\":6440.740413,\"collateralFactor\":0.8,\"liquidationThreshold\":0.8},{\"symbol\":\"vLINK\",\"supplyUsd\":1222.036054,\"borrowUsd\":0,\"collateralFactor\":0,\"liquidationThreshold\":0.63},{\"symbol\":\"vXRP\",\"supplyUsd\":569.10337,\"borrowUsd\":0,\"collateralFactor\":0.5,\"liquidationThreshold\":0.65},{\"symbol\":\"vSOL\",\"supplyUsd\":1700.058522,\"borrowUsd\":0,\"collateralFactor\":0.65,\"liquidationThreshold\":0.72},{\"symbol\":\"vETH\",\"supplyUsd\":1908.933304,\"borrowUsd\":0,\"collateralFactor\":0.8,\"liquidationThreshold\":0.8}]}",
+        "content_type": "application/json"
+      },
+      "version": 1
+    }
+  },
+  "796": {
+    "hash": "0x4f873233aa4443e65a2507b9c8dcc3f00c6b6a2926530ebc2adb73c04b99d0ad",
+    "canon": "escaped",
+    "manifest": {
+      "chain_id": 97,
+      "contracts": {
+        "commerce": "0xa206c0517B6371C6638CD9e4a42Cc9f02A33B0DE",
+        "policy": "0xd6a4217588F6B1F5657a92A3e94E6422aD771cEA",
+        "router": "0xD7d36D66d2F1B608A0F943f722D27e3744f66F25"
+      },
+      "job_id": 796,
+      "metadata": {
+        "advantage_task": "T2",
+        "agent": "PancakeSwap V3 Rebalancing Monitor",
+        "agent_id": 2013,
+        "analysed_chain": 56,
+        "category": "rebalancing"
+      },
+      "response": {
+        "content": "{\"tokenId\":\"6801109\",\"pool\":\"0x7e58f160b5b77b8b24cd9900c09a3e730215ac47\",\"fee\":500,\"token0\":{\"address\":\"0x000ae314e2a2172a039b26378814c252734f556a\",\"symbol\":\"ASTER\",\"decimals\":18},\"token1\":{\"address\":\"0x55d398326f99059ff775485246999027b3197955\",\"symbol\":\"USDT\",\"decimals\":18},\"tickLower\":47100,\"tickUpper\":48040,\"currentTick\":-3579,\"inRange\":false,\"liquidity\":\"2375811483877499950463887\",\"priceCurrent\":0.6992209200464146,\"priceLower\":111.02601194421,\"priceUpper\":121.96813425826302,\"amount0\":10351.667400001563,\"amount1\":0,\"uncollectedFees0\":0,\"uncollectedFees1\":0,\"tokensOwed0\":0,\"tokensOwed1\":0,\"rangeWidthPct\":1564.9020217139214,\"distanceToEdgePct\":0,\"recommendedLower\":-4050,\"recommendedUpper\":-3110,\"recommendation\":\"OUT OF RANGE — price is below the position's band, so it is earning NO fees and sits entirely in ASTER. Re-centre to ticks [-4050, -3110] (same width, centred on the current tick -3579) to resume earning. Re-entering realises the divergence loss already incurred; holding does not recover it while out of range.\",\"blockNumber\":118946049}",
+        "content_type": "application/json"
+      },
+      "version": 1
+    }
+  },
+  "797": {
+    "hash": "0x0ee064d6b1ca9403f58daa793e7391c017279066a1594ab9f4dba8285368c654",
+    "canon": "escaped",
+    "manifest": {
+      "chain_id": 97,
+      "contracts": {
+        "commerce": "0xa206c0517B6371C6638CD9e4a42Cc9f02A33B0DE",
+        "policy": "0xd6a4217588F6B1F5657a92A3e94E6422aD771cEA",
+        "router": "0xD7d36D66d2F1B608A0F943f722D27e3744f66F25"
+      },
+      "job_id": 797,
+      "metadata": {
+        "advantage_task": "T3",
+        "agent": "BSC Yield Route Optimiser",
+        "agent_id": 2015,
+        "analysed_chain": 56,
+        "category": "yield-optimisation"
+      },
+      "response": {
+        "content": "{\"asset\":\"BTCB\",\"chainId\":56,\"blockNumber\":118946099,\"venues\":[{\"venue\":\"Lista\",\"asset\":\"BTCB\",\"supplyAprPct\":0.9200174595790848,\"spot\":false,\"method\":\"ERC-4626 share-price growth over 2000000 blocks, annualised (REALISED, not spot)\",\"detail\":{\"sharePriceNow\":\"1003846807665138131\",\"sharePriceThen\":\"1003583208757922803\",\"windowDays\":\"10.42\",\"fromBlock\":116946102,\"toBlock\":118946102}},{\"venue\":\"Venus\",\"asset\":\"BTCB\",\"supplyAprPct\":0.177073091232,\"spot\":true,\"method\":\"supplyRatePerBlock() x interestRateModel.blocksPerYear()\",\"detail\":{\"supplyRatePerBlock\":\"25267279\",\"blocksPerYear\":\"70080000\",\"interestRateModel\":\"0x7d47671514a1b13f0e376d70fcf13b2eb2694c3a\"}},{\"venue\":\"Aave V3\",\"asset\":\"BTCB\",\"supplyAprPct\":0.019856689056882336,\"spot\":true,\"method\":\"Pool.getReserveData(asset).currentLiquidityRate (ray)\",\"detail\":{\"currentLiquidityRate\":\"198566890568823374301501\",\"ray\":\"1e27\"}}],\"best\":{\"venue\":\"Lista\",\"asset\":\"BTCB\",\"supplyAprPct\":0.9200174595790848,\"spot\":false,\"method\":\"ERC-4626 share-price growth over 2000000 blocks, annualised (REALISED, not spot)\",\"detail\":{\"sharePriceNow\":\"1003846807665138131\",\"sharePriceThen\":\"1003583208757922803\",\"windowDays\":\"10.42\",\"fromBlock\":116946102,\"toBlock\":118946102}},\"gasCostToSwitchTBnb\":0.0000225,\"gasCostUsd\":0.0154575,\"breakEvenDays\":0.06267755366329686,\"positionSizeUsd\":10000,\"recommendation\":\"Move to Lista at 0.9200% (from Aave V3 at 0.0199%). On $10,000 the spread is $90.02/yr against $0.02 of gas; break-even in 0.1 days. Worth it if you hold longer than that.\",\"assumptions\":[\"gas: 450000 units for withdraw+approve+deposit at the live eth_gasPrice\",\"BNB priced at $687 for the gas conversion\",\"Lista's figure is a REALISED trailing APR from share-price growth (no spot-rate getter exists); Venus and Aave are spot rates\",\"break-even assumes rates hold constant, which they do not\"]}",
         "content_type": "application/json"
       },
       "version": 1
