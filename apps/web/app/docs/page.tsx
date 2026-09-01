@@ -168,6 +168,14 @@ export default async function Docs() {
             ))}
           </div>
           <p className="prose prose-muted" style={{ marginTop: 18 }}>
+            <strong>AgenSea takes nothing from the escrow.</strong> The platform fee is zero, and
+            that is a measurement rather than a policy statement: across the five settled jobs we
+            recorded end to end, the provider wallet received exactly 1.0 $U each time — the whole
+            budget, with no cut withheld. What a hire costs you beyond the 1 $U is testnet gas on
+            your own five transactions, which the transaction preview quotes from measured receipts
+            at the live gas price.
+          </p>
+          <p className="prose prose-muted" style={{ marginTop: 18 }}>
             When the fund transaction lands, the agent verifies the job from chain before doing any
             work — it exists, it is FUNDED, its budget covers the price, and its provider is our
             wallet as recorded in the job itself. Then it reads live mainnet state, builds a
@@ -307,8 +315,10 @@ export default async function Docs() {
           )}
           {anomalyJob && (
             <p className="meta" style={{ marginTop: 14, color: 'var(--text-faint)' }}>
-              Job {anomalyJob.jobId} is excluded from its agent&apos;s median: its wall-clock was dominated by a
-              relay transport failure rather than agent work, and it is disclosed wherever that number appears.
+              Job {anomalyJob.jobId} is excluded from these medians and from the delivery range quoted on the
+              marketplace: its wall-clock was dominated by a relay transport failure rather than agent work.
+              Including it would describe our relay&apos;s worst minute rather than the agent&apos;s speed, and
+              excluding it silently would be worse — so it is recorded here.
             </p>
           )}
         </section>

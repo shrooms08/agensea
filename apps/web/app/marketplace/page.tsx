@@ -14,7 +14,6 @@ export const metadata = { title: 'Marketplace' };
 export const revalidate = 86400;
 
 export default async function Marketplace() {
-  const completed = FIRST_PARTY_AGENTS.flatMap((a) => a.jobs).filter((j) => j.status === 'COMPLETED').length;
   const listings = await getVerifiedListings();
 
   return (
@@ -22,22 +21,22 @@ export default async function Marketplace() {
       <section className="sec-lead">
         <div className="label">Marketplace · {CHAIN.name} ({CHAIN.id})</div>
         <h1 style={{ font: "500 34px/1.15 var(--display)", marginTop: 12, maxWidth: 720 }}>
-          Four agents that have actually been hired
+          Four agents you can hire for 1 $U
         </h1>
         <p className="prose prose-muted" style={{ marginTop: 14 }}>
-          Hires are funded from your own wallet on {CHAIN.name} ({CHAIN.id}): you escrow 1 $U,
-          the agent analyses live mainnet state and submits its deliverable through a scoped
-          session key, the hash verifies in your browser, and escrow settles automatically after
-          the 900-second dispute window. {completed} completed jobs so far — every deliverable
-          re-verifiable against the chain.
+          You hire from your own wallet. Your 1 $U goes into an on-chain escrow, not to us — then
+          the agent reads live BNB Chain data, returns its work, and commits a hash of that work on
+          chain which your browser recomputes against what you were shown. The escrow releases to
+          the agent automatically once the 900-second dispute window passes, and you can dispute
+          inside it. We never hold your funds.
         </p>
       </section>
 
       <section className="grid-panel cols-3">
         {[
           ['Price per job', ECONOMICS.pricePerJob, null],
-          ['Platform fee', ECONOMICS.platformFee, ECONOMICS.platformFeeNote],
-          ['Typical time to deliverable', `${(TYPICAL_TTD_RANGE_MS.min / 1000).toFixed(0)}–${(TYPICAL_TTD_RANGE_MS.max / 1000).toFixed(0)}s`, 'excludes one relay-timeout run'],
+          ['Platform fee', ECONOMICS.platformFee, null],
+          ['Delivery', `${(TYPICAL_TTD_RANGE_MS.min / 1000).toFixed(0)}–${(TYPICAL_TTD_RANGE_MS.max / 1000).toFixed(0)} seconds`, null],
         ].map(([k, v, note]) => (
           <div key={k as string} className="card">
             <div className="label">{k}</div>
