@@ -48,17 +48,81 @@ export interface LiveAgent {
   summary_value: string | null; summary_decimals: number | null;
 }
 
+/** One row of the /agents index. Deliberately NOT LiveAgent: the index pulls
+ *  only `metadata->>name` rather than the whole metadata JSON, which for the
+ *  top agents is a full inline data: URI payload we would parse and discard. */
+export interface LiveAgentRow {
+  agent_id: number; owner: string; client_count: number; checked_at: string;
+  feedback_count: string | null; summary_value: string | null;
+  metadata_name: string | null;
+}
+
 /** Server-side pagination. The full table — tracks
  *  registry_stats.agents_minted (317,468 as of 29 Aug 2026) — never reaches
  *  the client. */
 export async function getLiveAgents(opts: { page: number; perPage: number; minFanout?: number }) {
   const from = opts.page * opts.perPage;
-  return sbSelect<LiveAgent>('agent_liveness_with_clients', {
-    query: 'select=agent_id,owner,client_count,checked_at,token_uri_kind,token_uri_host,feedback_count,summary_value&order=client_count.desc,agent_id.asc',
+  return sbSelect<LiveAgentRow>('agent_liveness_with_clients', {
+    query: 'select=agent_id,owner,client_count,checked_at,feedback_count,summary_value,metadata_name:metadata->>name&order=client_count.desc,agent_id.asc',
     count: true,
     range: [from, from + opts.perPage - 1],
     revalidate: DAY,
   });
+}
+
+/** Recovered names for a specific set of agents, for the index's NAME column.
+ *  One request for the whole page rather than one per row. */
+export async function getEnrichmentNames(agentIds: number[]): Promise<Map<number, string>> {
+  if (agentIds.length === 0) return new Map();
+  const { rows } = await sbSelect<{ agent_id: number; name: string }>('agent_enrichment', {
+    query: `select=agent_id,name&agent_id=in.(${agentIds.join(',')})&name=not.is.null`,
+    revalidate: DAY,
+  });
+  return new Map(rows.map((r) => [r.agent_id, r.name]));
+}
+
+export interface Fleet { name: string; count: number }
+export interface FleetShare { fleets: Fleet[]; topN: number; total: number }
+
+/**
+ * Operator concentration among the agents that have ever had a client.
+ *
+ * Grouped by the metadata name, folded on " · " to its trailing segment. That
+ * fold is a general rule, not a special case: one operator names each agent
+ * "@handle · Brand", so 332 distinct names are one fleet, and without the fold
+ * it disappears from the ranking entirely. Measured on the current sweep it
+ * rewrites 332 names into exactly one group and merges nothing else — the other
+ * fleets are already exact repeats of a single name.
+ *
+ * Owner address does NOT work as the grouping key: the largest fleet is spread
+ * across many addresses, and the top three owners account for only 10.6%.
+ *
+ * Unnamed agents are not a fleet and are excluded from the groups; the
+ * denominator is still every agent with a client, read from Content-Range.
+ */
+export async function getFleetShare(topN = 3): Promise<FleetShare> {
+  const { rows, total } = await sbSelect<{ metadata_name: string | null }>('agent_liveness_with_clients', {
+    query: 'select=metadata_name:metadata->>name&client_count=gt.0',
+    count: true,
+    revalidate: DAY,
+  });
+  const counts = new Map<string, number>();
+  for (const r of rows) {
+    const raw = r.metadata_name?.trim();
+    if (!raw) continue;
+    const name = raw.includes(' · ') ? raw.slice(raw.lastIndexOf(' · ') + 3).trim() : raw;
+    if (name) counts.set(name, (counts.get(name) ?? 0) + 1);
+  }
+  const fleets = [...counts.entries()]
+    .map(([name, count]) => ({ name, count }))
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name))
+    .slice(0, topN);
+  return {
+    fleets,
+    topN: fleets.reduce((n, f) => n + f.count, 0),
+    // rows.length is never a count: the denominator is PostgREST's exact total.
+    total: total ?? rows.length,
+  };
 }
 
 export async function getAgent(agentId: number): Promise<LiveAgent | null> {

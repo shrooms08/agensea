@@ -10,7 +10,7 @@
  * ISR, not dynamic: no searchParams, so this stays a static render that keeps
  * serving from the CDN while Supabase is paused (free plan).
  */
-import { getLiveAgents, getRegistryStats } from '@/lib/queries';
+import { getLiveAgents, getRegistryStats, getEnrichmentNames, getFleetShare } from '@/lib/queries';
 import { Stat } from '@/components/Stat';
 import { AgentJump } from '@/components/AgentJump';
 import { int, pct, shortAddr, measuredOn, livenessToken } from '@/lib/format';
@@ -21,10 +21,13 @@ export const revalidate = 86400;
 const PER_PAGE = 100;
 
 export default async function Agents() {
-  const [{ rows, total }, stats] = await Promise.all([
+  const [{ rows, total }, stats, fleetShare] = await Promise.all([
     getLiveAgents({ page: 0, perPage: PER_PAGE }),
     getRegistryStats(),
+    getFleetShare(3),
   ]);
+  // Recovered names only for the rows actually rendered — one request, not 100.
+  const recovered = await getEnrichmentNames(rows.map((a) => a.agent_id));
   const s = (k: string) => stats[k]!;
   const minted = Number(s('agents_minted').value);
   const withClient = Number(s('agents_with_client').value);
@@ -65,21 +68,48 @@ export default async function Agents() {
           </span>
         </div>
 
+        {/* Concentration, derived at render from the same set the table pages
+            through — never typed in, so it tracks the next sweep. */}
+        {fleetShare.fleets.length > 0 && (
+          <p className="prose-sm prose-muted" style={{ marginTop: 10, fontSize: 13, maxWidth: 720 }}>
+            {int(fleetShare.fleets.length)} operators account for{' '}
+            <span className="data" style={{ color: 'var(--text)' }}>
+              {pct((100 * fleetShare.topN) / fleetShare.total, 0)}
+            </span>{' '}
+            of every agent that has ever had a client —{' '}
+            {fleetShare.fleets.map((f, i) => (
+              <span key={f.name}>
+                {i > 0 ? ', ' : ''}{f.name} <span className="data">{int(f.count)}</span>
+              </span>
+            ))}
+            , of {int(fleetShare.total)}.
+          </p>
+        )}
+
         <div className="agent-table">
           <div className="agent-table-head">
-            <span>agent</span><span>clients</span><span>feedback</span><span>metadata host</span><span>owner</span>
+            <span>agent</span><span>clients</span><span>feedback</span><span>name</span><span>owner</span>
           </div>
-          {rows.map((a) => (
-            <a key={a.agent_id} href={`/agents/${a.agent_id}`} className="agent-table-row">
-              <span className="data">#{a.agent_id}</span>
-              <span className="data" style={{ color: `var(${livenessToken(a.client_count)})` }}>{int(a.client_count)}</span>
-              <span className="data">{a.feedback_count ? int(a.feedback_count) : '0'}</span>
-              <span className="data" style={{ color: a.token_uri_host ? 'var(--text-muted)' : 'var(--text-faint)' }}>
-                {a.token_uri_host ?? (a.token_uri_kind === 'data' ? 'inline data: URI' : '—')}
-              </span>
-              <span className="data" style={{ color: 'var(--text-muted)' }}>{shortAddr(a.owner)}</span>
-            </a>
-          ))}
+          {rows.map((a) => {
+            /* The column used to report the tokenURI transport, which is a
+               data: URI for 79% of the set and has no host by construction —
+               so it printed one identical string down the whole first page
+               while the name that URI carries was thrown away. Own name, then
+               the recovered one, then nothing to claim. */
+            const own = a.metadata_name?.trim() || null;
+            const name = own ?? recovered.get(a.agent_id) ?? null;
+            return (
+              <a key={a.agent_id} href={`/agents/${a.agent_id}`} className="agent-table-row">
+                <span className="data">#{a.agent_id}</span>
+                <span className="data" style={{ color: `var(${livenessToken(a.client_count)})` }}>{int(a.client_count)}</span>
+                <span className="data">{a.feedback_count ? int(a.feedback_count) : '0'}</span>
+                <span className="data" style={{ color: name ? 'var(--text-muted)' : 'var(--text-faint)' }}>
+                  {name ?? 'unnamed'}
+                </span>
+                <span className="data" style={{ color: 'var(--text-muted)' }}>{shortAddr(a.owner)}</span>
+              </a>
+            );
+          })}
         </div>
 
         <p className="prose-sm prose-muted" style={{ marginTop: 18, fontSize: 13 }}>
