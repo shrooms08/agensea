@@ -65,7 +65,7 @@ export default async function FirstPartyAgent({ params }: { params: Promise<{ id
 
       <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 20, padding: '20px 0', borderTop: '1px solid var(--border)', borderBottom: '1px solid var(--border)' }}>
         <Field k="price" v={agent.priceLabel} tone={CAT_TOKEN[agent.slug]} />
-        <Field k="completed jobs" v={String(agent.jobs.filter((j) => j.status === 'COMPLETED').length)} />
+        <Field k="completed · this agent" v={String(agent.jobs.filter((j) => j.status === 'COMPLETED').length)} />
         <Field k="fastest analysis" v={`${(Math.min(...agent.jobs.map((j) => j.analysisMs)) / 1000).toFixed(1)}s`} />
         <Field k="dispute window" v={`${DISPUTE_WINDOW_SECONDS}s`} />
         {agent.mainnetAgentId && (
@@ -98,7 +98,7 @@ export default async function FirstPartyAgent({ params }: { params: Promise<{ id
             <section className="sec">
               <div className="label" style={{ fontSize: 9 }}>provider track record</div>
               <div className="track-bar">
-                <div><div className="track-num">{track.completed}</div><div className="label" style={{ fontSize: 9 }}>completed jobs</div></div>
+                <div><div className="track-num">{track.completed}</div><div className="label" style={{ fontSize: 9 }}>completed · all four agents</div></div>
                 <div><div className="track-num">{track.distinctBuyers}</div><div className="label" style={{ fontSize: 9 }}>distinct buyers</div></div>
                 <div><div className="track-num">{track.disputes}</div><div className="label" style={{ fontSize: 9 }}>disputes</div></div>
                 {track.medianTtdMs !== null && (
