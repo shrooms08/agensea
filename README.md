@@ -366,6 +366,46 @@ incentive is `w4` (`1.1e18` = a 10% liquidator bonus).
   calldata through the relay (`client.execute` to the router) settles fine.
   See `apps/agents/src/scripts/settle_ids.ts`.
 
+### 8. Two canonicalisation rules exist in the deliverable corpus
+
+Every deliverable's keccak256 is stored on chain, and the hash depends on how a
+non-ASCII character is encoded before hashing. Our corpus contains **both**
+rules, split by *when the job was submitted*, not by what it contains:
+
+| rule | encoding | jobs |
+|---|---|---|
+| `raw` | the character as UTF-8, what `JSON.stringify` emits | 748, 754, 757 |
+| `escaped` | one `\uXXXX` per UTF-16 code unit (Python `ensure_ascii=True`) | 795, 796 |
+
+Jobs 753, 765 and 797 are pure ASCII, so they reproduce under either.
+
+The producer changed rule partway through the project. `apps/web/lib/verify.ts`
+implemented `raw` only, and its header asserted that the single path was "proven
+against all five deliverables". **That assertion was true and still useless**:
+of the five published at the time, three predate the change and two are pure
+ASCII, so the test set could not distinguish the rules at all. A green suite
+proved nothing about the property it claimed.
+
+It surfaced only when jobs 795 and 796 were recovered from chain and refused to
+reproduce. Publishing them under the old assumption would have rendered a
+**false MISMATCH** — the page telling a reader not to trust a deliverable that
+is provably correct, which is strictly worse than publishing no manifest at all.
+
+The fix has two halves, and the second is the one that matters:
+
+1. Each deliverable records the rule it was hashed under; `manifestHash` takes
+   it as an argument; the VERIFY block and its copy-paste reproduce command both
+   state the rule they used, so the page cannot describe one rule and run
+   another.
+2. `apps/web/tests/deliverables-canon.test.mjs` asserts every deliverable
+   reproduces under its declared rule **and that the non-ASCII ones fail under
+   the other one**. Without that second assertion the per-job label decays into
+   decoration the moment someone mislabels an entry.
+
+If a hash depends on an encoding choice, a test set with no non-ASCII cases
+cannot tell you the encoding is right. Add a case that fails under the wrong
+rule, or you have not tested it.
+
 ## Verified contracts (chain 97)
 
 | Contract | Address | Bytecode |

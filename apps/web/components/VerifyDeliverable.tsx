@@ -69,8 +69,8 @@ cast call ${'0xa206c0517B6371C6638CD9e4a42Cc9f02A33B0DE'} \\
   "getJob(uint256)" ${jobId} \\
   --rpc-url https://bsc-testnet-rpc.publicnode.com
 
-# recompute from the manifest
-python3 -c "import json,sys;print(json.dumps(json.load(sys.stdin),sort_keys=True,separators=(',',':'),ensure_ascii=False),end='')" \\
+# recompute from the manifest, under THIS deliverable's rule
+python3 -c "import json,sys;print(json.dumps(json.load(sys.stdin),sort_keys=True,separators=(',',':'),ensure_ascii=${canon === 'escaped' ? 'True' : 'False'}),end='')" \\
   < manifest.json | cast keccak`}
         </pre>
       </details>
