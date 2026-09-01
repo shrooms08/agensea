@@ -112,6 +112,9 @@ export default async function Marketplace() {
             );
           })}
         </div>
+        <p style={{ marginTop: 24 }}>
+          <a href="/compare" className="data" style={{ color: 'var(--live)' }}>Compare all four →</a>
+        </p>
       </section>
 
       <section className="sec sec-rule">

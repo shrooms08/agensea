@@ -86,6 +86,9 @@ export interface FirstPartyAgent {
     expiryUnix: number;
   };
   jobs: CompletedJob[];
+  /** The protocol(s) this agent reads, in one clause. Lives here rather than in
+   *  a page so /compare and the agent pages cannot describe it differently. */
+  reads: string;
   /** What the agent reads. Analysis may target mainnet even though the agent
    *  itself settles on testnet — state both. */
   analysisChainId: 56 | 97;
@@ -98,6 +101,7 @@ const SUBMIT_ONLY: CallPermission[] = [
 export const FIRST_PARTY_AGENTS: FirstPartyAgent[] = [
   {
     agentId: 2012,
+    reads: 'Venus Protocol',
     mainnetAgentId: 322885,
     mainnetRegisterTx: '0x381cff9788d7c6866f56609035a49fa9dca78ed01540884b0557beec4b377807',
     slug: 'health-factor-monitoring',
@@ -129,6 +133,7 @@ export const FIRST_PARTY_AGENTS: FirstPartyAgent[] = [
   },
   {
     agentId: 2013,
+    reads: 'PancakeSwap V3',
     slug: 'rebalancing',
     name: 'PancakeSwap V3 Rebalancing Monitor',
     description:
@@ -161,6 +166,7 @@ export const FIRST_PARTY_AGENTS: FirstPartyAgent[] = [
   },
   {
     agentId: 2014,
+    reads: "PancakeSwap V3's own TWAP oracle",
     slug: 'grid-trading',
     name: 'Grid Trading Parameter Advisor',
     description:
@@ -184,6 +190,7 @@ export const FIRST_PARTY_AGENTS: FirstPartyAgent[] = [
   },
   {
     agentId: 2015,
+    reads: 'Venus, Aave V3 and Lista',
     slug: 'yield-optimisation',
     name: 'BSC Yield Route Optimiser',
     description:

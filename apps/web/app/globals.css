@@ -690,3 +690,56 @@ header nav .navlink[data-active='true']::after {
   .detail-rail { order: 2; position: static; }
   .detail-main { order: 3; }
 }
+
+/* ---------------------------------------------------------------------------
+   /compare — four agents as columns, attributes as rows.
+
+   MOBILE: horizontal scroll with the row-label column pinned, NOT four stacked
+   blocks. Stacking would put one agent per screen and destroy the only thing
+   this page does — you cannot compare what you cannot see at the same time.
+   Scrolling keeps the label and two agent columns in view together, and the
+   scroll is confined to .cmp-scroll so the page itself never moves sideways.
+--------------------------------------------------------------------------- */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+.cmp-scroll { overflow-x: auto; border: 1px solid var(--border); background: var(--surface); }
+.cmp-table { border-collapse: collapse; width: 100%; min-width: 860px; }
+.cmp-table th, .cmp-table td {
+  text-align: left; vertical-align: top; padding: 16px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.cmp-table tr:last-child th, .cmp-table tr:last-child td { border-bottom: none; }
+/* the pinned label column */
+.cmp-rowhead {
+  position: sticky; left: 0; z-index: 1;
+  width: 168px; min-width: 168px;
+  background: var(--surface-raised);
+  border-right: 1px solid var(--border);
+  font-weight: 400;
+}
+.cmp-corner { background: var(--surface-raised); }
+.cmp-agent { min-width: 210px; background: var(--surface-raised); border-bottom: 1px solid var(--border-strong); }
+.cmp-agent a { display: block; font: 500 14px/1.3 var(--display); color: var(--text); }
+.cmp-agent a:hover { color: var(--live); }
+.cmp-agent .meta { display: block; margin-top: 6px; color: var(--text-faint); }
+.cmp-delivers { list-style: none; display: grid; gap: 6px; margin: 0; padding: 0; }
+.cmp-delivers li { color: var(--text-muted); }
+.cmp-hire {
+  display: inline-block; font: 500 11px/1 var(--mono); letter-spacing: 0.1em;
+  text-transform: uppercase; padding: 10px 14px;
+  background: var(--live-dim); color: var(--bg);
+}
+.cmp-hire:hover { background: var(--live); }
+.cmp-hint { display: none; }
+@media (max-width: 1023px) { .cmp-hint { display: block; } }
+/* Narrow: tighten both columns so part of the NEXT agent is visible. Two
+   partial columns compare; one full column is just a page with extra steps,
+   and the sliver is what tells you the table scrolls. */
+@media (max-width: 559px) {
+  .cmp-table th, .cmp-table td { padding: 14px 14px; }
+  .cmp-rowhead { width: 116px; min-width: 116px; }
+  .cmp-agent { min-width: 186px; }
+  .cmp-table { min-width: 860px; }
+}
