@@ -43,6 +43,15 @@ export interface WalletHireProps {
   targetSpec: TargetSpec;
   session: { capTBnb: string; signature: string; commerce: string; expiryLabel: string };
   priceLabel: string;
+  /** 'listing' renders /marketplace/[id]; 'hire' renders /marketplace/[id]/hire.
+   *  ONE component so the hire machinery has one home — the JSX below is moved
+   *  between the two surfaces, never duplicated or rewritten. */
+  mode: 'listing' | 'hire';
+  /** The hire route's ?target=, so a shared or reloaded URL analyses the same
+   *  thing. Falls back to the spec's prefill. */
+  initialTarget?: string;
+  /** Rendered under the confirm action on the hire route. */
+  sponsored?: React.ReactNode;
   trackRecord?: React.ReactNode;
   /** Left-column content the page owns; the rail and the hire surface are ours.
    *  Passed as slots so the two-column order is defined in exactly one place. */
@@ -61,7 +70,7 @@ const Row = ({ k, v, tone }: { k: string; v: React.ReactNode; tone?: string }) =
   </div>
 );
 
-export function WalletHire({ agentId, agentName, priceLabel, delivers, targetSpec, session, trackRecord, header, stats, sessionPanel, completedWork }: WalletHireProps) {
+export function WalletHire({ agentId, agentName, priceLabel, mode, initialTarget, sponsored, delivers, targetSpec, session, trackRecord, header, stats, sessionPanel, completedWork }: WalletHireProps) {
   const { address, isConnected } = useAccount();
   const { connect, connectors, isPending: connecting } = useConnect();
   const f = useWalletFunding();
@@ -76,7 +85,7 @@ export function WalletHire({ agentId, agentName, priceLabel, delivers, targetSpe
   const doneRef = useRef(false);
 
   // ---- the buyer's target ---------------------------------------------------
-  const [target, setTarget] = useState(targetSpec.prefill);
+  const [target, setTarget] = useState(initialTarget?.trim() || targetSpec.prefill);
   const [targetError, setTargetError] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
   const fmt = validateTarget(agentId, target);
@@ -299,6 +308,14 @@ export function WalletHire({ agentId, agentName, priceLabel, delivers, targetSpe
   const canHire = f.ready && !targetError && !checking && !running && !doneRef.current;
   const sessionExpiry = authority?.expiry ? new Date(authority.expiry * 1000).toISOString().slice(0, 10) : session.expiryLabel;
 
+  /* The Hire action on the listing is a LINK, not a submit. The hire route has
+     to be shareable and the back button has to return here, so the target rides
+     in the query string: a form POST is neither shareable nor re-enterable, and
+     back would re-post it. A hand-typed ?target= is not trusted — the hire route
+     runs the same on-chain check and Confirm stays disabled until it passes. */
+  const hireHref = `/marketplace/${agentId}/hire?target=${encodeURIComponent(target)}`;
+  const targetReady = !targetError && !checking && target.trim().length > 0;
+
   /* RIGHT RAIL — price, the one sanctioned lime action, and what the buyer is
      actually agreeing to. Sticky on desktop; on mobile it moves above the left
      column so these stay the first thing after the header. */
@@ -308,12 +325,17 @@ export function WalletHire({ agentId, agentName, priceLabel, delivers, targetSpe
         <div className="label" style={{ fontSize: 9 }}>price per hire</div>
         <div className="rail-price">{priceLabel}<span>per hire</span></div>
         {isConnected ? (
-          <button onClick={hire} disabled={!canHire} className="hire-cta"
-            style={{ background: canHire ? 'var(--live-dim)' : 'var(--surface-raised)',
-                     color: canHire ? 'var(--bg)' : 'var(--text-faint)',
-                     cursor: canHire ? 'pointer' : 'not-allowed' }}>
-            {doneRef.current ? 'Job complete' : running ? 'In progress…' : 'Hire — escrow 1 $U'}
-          </button>
+          targetReady ? (
+            <a href={hireHref} className="hire-cta"
+               style={{ background: 'var(--live-dim)', color: 'var(--bg)', display: 'block', textAlign: 'center' }}>
+              Hire — escrow {priceLabel}
+            </a>
+          ) : (
+            <button className="hire-cta" disabled
+              style={{ background: 'var(--surface-raised)', color: 'var(--text-faint)', cursor: 'not-allowed' }}>
+              {checking ? 'Checking the target…' : 'Enter a valid target'}
+            </button>
+          )
         ) : (
           <div className="hire-connect" style={{ marginTop: 16 }}>
             <div className="data">Connect a wallet to hire {agentName} for {priceLabel}</div>
@@ -336,53 +358,28 @@ export function WalletHire({ agentId, agentName, priceLabel, delivers, targetSpe
     </aside>
   );
 
-  return (
-    <div className="detail-grid">
-      <div className="detail-head">{header}</div>
-      <div className="detail-main">
-        {stats}
-      {/* ---- what the agent delivers / what you provide ---- */}
-      <section className="sec hire-cols">
-        <div>
-          <div className="label" style={{ fontSize: 9 }}>what the agent delivers</div>
-          <div className="delivers">
-            {delivers.map((d) => (
-              <div key={d.key} className="delivers-row">
-                <span className="data">{d.label}</span>
-                <span className="meta" style={{ color: 'var(--text-faint)' }}>{d.key}</span>
-              </div>
-            ))}
+  // ---- THE HIRE ROUTE: what you are about to sign, then the run view -------
+  if (mode === 'hire') {
+    return (
+      <>
+        <section className="sec-lead">
+          <a href={`/marketplace/${agentId}`} className="label" style={{ fontSize: 9, color: 'var(--text-muted)' }}>
+            ← {agentName}
+          </a>
+          <h1 style={{ font: "500 30px/1.15 var(--display)", marginTop: 14 }}>Hire {agentName}</h1>
+          <div className="hire-target">
+            <div className="label" style={{ fontSize: 9 }}>{targetSpec.label}</div>
+            <div className="data hire-target-value">{target}</div>
+            <div className="data" style={{ marginTop: 8, color: targetError ? 'var(--danger)' : 'var(--live)' }}>
+              {targetError ? targetError : checking ? <span style={{ color: 'var(--text-faint)' }}>checking on chain…</span> : 'checked on chain ✓'}
+            </div>
           </div>
-          <p className="meta" style={{ marginTop: 12, color: 'var(--text-faint)' }}>
-            Field names are the deliverable&apos;s own keys, as submitted on chain.
-          </p>
-        </div>
-        <div>
-          <div className="label" style={{ fontSize: 9 }}>what you provide</div>
-          <label className="data" style={{ display: 'block', marginTop: 14, color: 'var(--text-muted)' }}>{targetSpec.label}</label>
-          {targetSpec.kind === 'pool' ? (
-            <select className="target-input" value={target} onChange={(e) => setTarget(e.target.value)} disabled={running}>
-              {Object.keys(GRID_POOLS).map((k) => <option key={k} value={k}>{k}</option>)}
-            </select>
-          ) : (
-            <input className="target-input" value={target} spellCheck={false} disabled={running}
-              onChange={(e) => setTarget(e.target.value)} aria-label={targetSpec.label} />
-          )}
-          <p className="meta" style={{ marginTop: 10 }}>{targetSpec.hint}</p>
-          {targetSpec.fixed && <p className="meta" style={{ marginTop: 6, color: 'var(--text-faint)' }}>fixed for this agent: {targetSpec.fixed}</p>}
-          <div className="data" style={{ marginTop: 10, color: targetError ? 'var(--danger)' : 'var(--live)' }}>
-            {targetError ? targetError : checking ? <span style={{ color: 'var(--text-faint)' }}>checking on chain…</span> : 'checked on chain ✓'}
-          </div>
-        </div>
-      </section>
+        </section>
 
-      {trackRecord}
-
-      {/* ---- transaction preview ---- */}
-      <section className="sec">
-        <div className="tx-preview">
+        <section className="sec">
+          <div className="tx-preview">
           <div className="label" style={{ fontSize: 9, paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
-            transaction preview · BNB Smart Chain Testnet (97)
+          transaction preview · BNB Smart Chain Testnet (97)
           </div>
           <Row k="service" v={agentName} />
           <Row k="target" v={<span style={{ wordBreak: 'break-all' }}>{target}</span>} />
@@ -390,22 +387,22 @@ export function WalletHire({ agentId, agentName, priceLabel, delivers, targetSpe
           <Row k="platform fee" v="0 — measured: the provider receives exactly 1.0 $U" />
           <Row k="wallet transactions" v="5 — approve, createJob, registerJob, setBudget, fund" />
           <Row k="estimated gas" v={estGas !== null
-            ? `${estGas.toFixed(6)} tBNB — ${MEASURED_GAS.total.toLocaleString('en-GB')} gas at ${(Number(gasPrice) / 1e9).toFixed(2)} gwei`
-            : `${MEASURED_GAS.total.toLocaleString('en-GB')} gas (${MEASURED_GAS.source})`} />
+          ? `${estGas.toFixed(6)} tBNB — ${MEASURED_GAS.total.toLocaleString('en-GB')} gas at ${(Number(gasPrice) / 1e9).toFixed(2)} gwei`
+          : `${MEASURED_GAS.total.toLocaleString('en-GB')} gas (${MEASURED_GAS.source})`} />
           <Row k="your balance"
-            v={f.isConnected
-              ? (f.bnb !== undefined && f.u !== undefined
-                ? `${Number(formatEther(f.u)).toFixed(1)} $U / ${Number(formatEther(f.bnb)).toFixed(4)} tBNB`
-                : 'reading…')
-              : 'connect a wallet'}
-            tone={shortOfFunds ? 'var(--danger)' : undefined} />
+          v={f.isConnected
+          ? (f.bnb !== undefined && f.u !== undefined
+          ? `${Number(formatEther(f.u)).toFixed(1)} $U / ${Number(formatEther(f.bnb)).toFixed(4)} tBNB`
+          : 'reading…')
+          : 'connect a wallet'}
+          tone={shortOfFunds ? 'var(--danger)' : undefined} />
           <Row k="dispute policy" v="optimistic — escrow releases after the 900 s window, or you can dispute inside it" />
           <Row k="session key" v={`the agent submits through a key scoped to ${session.signature} only, cap ${session.capTBnb} tBNB/hour, expires ${sessionExpiry}${authority && !authority.active ? ' — currently revoked, re-granted on the next hire' : ''}`} />
           <Row k="settlement" v="automatic after the window, by our keeper" />
           <Row k="provider net" v="1 $U (100%)" />
-        </div>
+          </div>
 
-        <p className="prose-sm prose-muted" style={{ marginTop: 18, fontSize: 13 }}>
+          <p className="prose-sm prose-muted" style={{ marginTop: 18, fontSize: 13 }}>
           Your wallet will be asked to sign five transactions in order: approve 1 $U to the escrow
           contract, create the job with your target written into it, register the optimistic policy,
           set the budget, and fund the escrow. When the fund transaction lands, the agent reads live
@@ -413,87 +410,156 @@ export function WalletHire({ agentId, agentName, priceLabel, delivers, targetSpe
           nothing but <code className="data">submit</code>, and the hash is recomputed in your
           browser against the chain. Escrow releases to the agent after the 900-second dispute
           window and settles automatically.
-        </p>
+          </p>
 
-        {stuck.length > 0 && !running && !doneRef.current && (
+
+          {f.isConnected && <HirePreflight />}
+
+          {isConnected ? (
+            <button onClick={hire} disabled={!canHire} className="hire-cta"
+              style={{ background: canHire ? 'var(--live-dim)' : 'var(--surface-raised)',
+                       color: canHire ? 'var(--bg)' : 'var(--text-faint)',
+                       cursor: canHire ? 'pointer' : 'not-allowed' }}>
+              {doneRef.current ? 'Job complete' : running ? 'In progress…' : `Confirm — escrow ${priceLabel}`}
+            </button>
+          ) : (
+            <div className="hire-connect">
+              <div className="data">Connect a wallet to hire {agentName} for {priceLabel}</div>
+              <div style={{ display: 'flex', gap: 12, marginTop: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
+                {connectors.map((c) => (
+                  <button key={c.uid} className="wallet-connect" disabled={connecting}
+                    onClick={() => connect({ connector: c })}>
+                    {connecting ? 'Connecting…' : `Connect ${c.name}`}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {stuck.length > 0 && !running && !doneRef.current && (
           <div className="hd-enter" style={{ marginTop: 14, padding: '12px 16px', background: 'var(--surface-raised)', boxShadow: 'inset 2px 0 0 var(--warn)' }}>
-            {stuck.map((s) => (
-              <div key={s.jobId} style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-                <span className="data" style={{ color: 'var(--warn)' }}>
-                  Your 1 $U is escrowed in job {s.jobId} and the agent has not picked it up{s.expired ? ' — the job has expired' : ''}.
-                </span>
-                {!s.expired && <button className="wallet-connect" onClick={() => resume(s.jobId)}>Resume — run the agent</button>}
-                {s.expired && <button className="wallet-connect" onClick={() => reclaim(s.jobId)}>Reclaim 1 $U</button>}
-              </div>
-            ))}
+          {stuck.map((s) => (
+          <div key={s.jobId} style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+          <span className="data" style={{ color: 'var(--warn)' }}>
+          Your 1 $U is escrowed in job {s.jobId} and the agent has not picked it up{s.expired ? ' — the job has expired' : ''}.
+          </span>
+          {!s.expired && <button className="wallet-connect" onClick={() => resume(s.jobId)}>Resume — run the agent</button>}
+          {s.expired && <button className="wallet-connect" onClick={() => reclaim(s.jobId)}>Reclaim 1 $U</button>}
           </div>
-        )}
+          ))}
+          </div>
+          )}
 
-        {steps.length > 0 && (
+          {steps.length > 0 && (
           <div style={{ marginTop: 16, display: 'grid', gap: 8 }}>
-            {steps.map((s) => (
-              <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span className="data" style={{ width: 14, color: s.state === 'done' ? 'var(--live)' : s.state === 'failed' ? 'var(--danger)' : 'var(--text-faint)' }}>
-                  {s.state === 'done' ? '✓' : s.state === 'failed' ? '✕' : '·'}
-                </span>
-                <span className="data" style={{ color: s.state === 'failed' ? 'var(--danger)' : 'var(--text)' }}>{s.label}</span>
-                {s.state === 'confirming' && <span className="meta">confirming…</span>}
-                {s.tx && <a className="meta" style={{ color: 'var(--live-dim)' }} href={EXPLORER + s.tx} target="_blank" rel="noreferrer">tx ↗</a>}
-              </div>
-            ))}
+          {steps.map((s) => (
+          <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span className="data" style={{ width: 14, color: s.state === 'done' ? 'var(--live)' : s.state === 'failed' ? 'var(--danger)' : 'var(--text-faint)' }}>
+          {s.state === 'done' ? '✓' : s.state === 'failed' ? '✕' : '·'}
+          </span>
+          <span className="data" style={{ color: s.state === 'failed' ? 'var(--danger)' : 'var(--text)' }}>{s.label}</span>
+          {s.state === 'confirming' && <span className="meta">confirming…</span>}
+          {s.tx && <a className="meta" style={{ color: 'var(--live-dim)' }} href={EXPLORER + s.tx} target="_blank" rel="noreferrer">tx ↗</a>}
           </div>
-        )}
+          ))}
+          </div>
+          )}
 
-        {events.length > 0 && (
+          {events.length > 0 && (
           <div style={{ marginTop: 14, display: 'grid', gap: 8 }}>
-            {[['job-verified', 'Job verified on chain — provider is this agent'],
-              ['analysing', 'Analysis running (BSC mainnet reads)'],
-              ['analysed', 'Analysis complete'],
-              ['submitted', 'Deliverable submitted via session key'],
-              ['verified', 'Hash verified on chain'],
-              ['settlement-pending', 'Escrow releases after the 900-second dispute window and settles automatically'],
-            ].map(([k, label]) => {
-              const e = ev(k);
-              if (!e && k !== 'analysing') return null;
-              return (
-                <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span className="data" style={{ width: 14, color: e ? 'var(--live)' : 'var(--text-faint)' }}>{e ? '✓' : '·'}</span>
-                  <span className="data">{label}{k === 'analysed' && e ? ` — ${((e.ms as number) / 1000).toFixed(1)}s` : ''}</span>
-                  {k === 'submitted' && e?.tx ? <a className="meta" style={{ color: 'var(--live-dim)' }} href={EXPLORER + String(e.tx)} target="_blank" rel="noreferrer">tx ↗</a> : null}
-                </div>
-              );
-            })}
-            {ev('session-restored') && <div className="data" style={{ color: 'var(--live)' }}>Session re-granted before submit — <a className="meta" style={{ color: 'var(--live-dim)' }} href={EXPLORER + String(ev('session-restored')!.tx)} target="_blank" rel="noreferrer">tx ↗</a></div>}
-            {verifyState && (
-              <div className="hd-enter" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--surface-raised)', boxShadow: `inset 2px 0 0 var(${verifyState === 'match' ? '--verified' : '--danger'})` }}>
-                <span className="label" style={{ fontSize: 9, color: verifyState === 'match' ? 'var(--verified)' : 'var(--danger)' }}>verify</span>
-                <span className="data">
-                  {verifyState === 'match'
-                    ? `keccak256 recomputed in your browser matches the chain — ${localHash.slice(0, 14)}…`
-                    : 'recomputed hash does NOT match the chain — do not trust this deliverable'}
-                </span>
-              </div>
-            )}
-            {pending && !settled && remaining !== null && remaining > 0 && (
-              <div className="data" style={{ color: 'var(--text-muted)' }}>settles in {Math.floor(remaining / 60)}:{String(remaining % 60).padStart(2, '0')} — keep the tab open to watch it complete</div>
-            )}
-            {settled && (
-              <div className="hd-enter data" style={{ color: 'var(--live)' }}>
-                COMPLETED — escrow settled by our keeper{settled.tx ? <> — <a className="meta" style={{ color: 'var(--live-dim)' }} href={EXPLORER + String(settled.tx)} target="_blank" rel="noreferrer">settle tx ↗</a></> : null}
-              </div>
-            )}
-            {ev('settle-note') && <div className="data" style={{ color: 'var(--text-muted)' }}>{String((ev('settle-note') as { message?: string }).message)}</div>}
+          {[['job-verified', 'Job verified on chain — provider is this agent'],
+          ['analysing', 'Analysis running (BSC mainnet reads)'],
+          ['analysed', 'Analysis complete'],
+          ['submitted', 'Deliverable submitted via session key'],
+          ['verified', 'Hash verified on chain'],
+          ['settlement-pending', 'Escrow releases after the 900-second dispute window and settles automatically'],
+          ].map(([k, label]) => {
+          const e = ev(k);
+          if (!e && k !== 'analysing') return null;
+          return (
+          <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span className="data" style={{ width: 14, color: e ? 'var(--live)' : 'var(--text-faint)' }}>{e ? '✓' : '·'}</span>
+          <span className="data">{label}{k === 'analysed' && e ? ` — ${((e.ms as number) / 1000).toFixed(1)}s` : ''}</span>
+          {k === 'submitted' && e?.tx ? <a className="meta" style={{ color: 'var(--live-dim)' }} href={EXPLORER + String(e.tx)} target="_blank" rel="noreferrer">tx ↗</a> : null}
           </div>
-        )}
+          );
+          })}
+          {ev('session-restored') && <div className="data" style={{ color: 'var(--live)' }}>Session re-granted before submit — <a className="meta" style={{ color: 'var(--live-dim)' }} href={EXPLORER + String(ev('session-restored')!.tx)} target="_blank" rel="noreferrer">tx ↗</a></div>}
+          {verifyState && (
+          <div className="hd-enter" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--surface-raised)', boxShadow: `inset 2px 0 0 var(${verifyState === 'match' ? '--verified' : '--danger'})` }}>
+          <span className="label" style={{ fontSize: 9, color: verifyState === 'match' ? 'var(--verified)' : 'var(--danger)' }}>verify</span>
+          <span className="data">
+          {verifyState === 'match'
+          ? `keccak256 recomputed in your browser matches the chain — ${localHash.slice(0, 14)}…`
+          : 'recomputed hash does NOT match the chain — do not trust this deliverable'}
+          </span>
+          </div>
+          )}
+          {pending && !settled && remaining !== null && remaining > 0 && (
+          <div className="data" style={{ color: 'var(--text-muted)' }}>settles in {Math.floor(remaining / 60)}:{String(remaining % 60).padStart(2, '0')} — keep the tab open to watch it complete</div>
+          )}
+          {settled && (
+          <div className="hd-enter data" style={{ color: 'var(--live)' }}>
+          COMPLETED — escrow settled by our keeper{settled.tx ? <> — <a className="meta" style={{ color: 'var(--live-dim)' }} href={EXPLORER + String(settled.tx)} target="_blank" rel="noreferrer">settle tx ↗</a></> : null}
+          </div>
+          )}
+          {ev('settle-note') && <div className="data" style={{ color: 'var(--text-muted)' }}>{String((ev('settle-note') as { message?: string }).message)}</div>}
+          </div>
+          )}
 
-        {fatal && (
+          {fatal && (
           <div className="hd-enter" style={{ marginTop: 12, padding: '10px 14px', background: 'var(--surface-raised)', boxShadow: 'inset 2px 0 0 var(--danger)' }}>
-            <span className="data" style={{ color: 'var(--danger)' }}>{fatal}</span>
+          <span className="data" style={{ color: 'var(--danger)' }}>{fatal}</span>
           </div>
-        )}
-        {jobId && <div className="meta" style={{ marginTop: 12 }}>job {jobId}</div>}
-      </section>
+          )}
+          {jobId && <div className="meta" style={{ marginTop: 12 }}>job {jobId}</div>}
+        </section>
+        {sponsored}
+      </>
+    );
+  }
 
+  // ---- THE LISTING: what the service is. No preview, no five-signature note.
+  return (
+    <div className="detail-grid">
+      <div className="detail-head">{header}</div>
+      <div className="detail-main">
+        {stats}
+        <section className="sec hire-cols">
+        <div>
+        <div className="label" style={{ fontSize: 9 }}>what the agent delivers</div>
+        <div className="delivers">
+        {delivers.map((d) => (
+        <div key={d.key} className="delivers-row">
+        <span className="data">{d.label}</span>
+        <span className="meta" style={{ color: 'var(--text-faint)' }}>{d.key}</span>
+        </div>
+        ))}
+        </div>
+        <p className="meta" style={{ marginTop: 12, color: 'var(--text-faint)' }}>
+        Field names are the deliverable&apos;s own keys, as submitted on chain.
+        </p>
+        </div>
+        <div>
+        <div className="label" style={{ fontSize: 9 }}>what you provide</div>
+        <label className="data" style={{ display: 'block', marginTop: 14, color: 'var(--text-muted)' }}>{targetSpec.label}</label>
+        {targetSpec.kind === 'pool' ? (
+        <select className="target-input" value={target} onChange={(e) => setTarget(e.target.value)} disabled={running}>
+        {Object.keys(GRID_POOLS).map((k) => <option key={k} value={k}>{k}</option>)}
+        </select>
+        ) : (
+        <input className="target-input" value={target} spellCheck={false} disabled={running}
+        onChange={(e) => setTarget(e.target.value)} aria-label={targetSpec.label} />
+        )}
+        <p className="meta" style={{ marginTop: 10 }}>{targetSpec.hint}</p>
+        {targetSpec.fixed && <p className="meta" style={{ marginTop: 6, color: 'var(--text-faint)' }}>fixed for this agent: {targetSpec.fixed}</p>}
+        <div className="data" style={{ marginTop: 10, color: targetError ? 'var(--danger)' : 'var(--live)' }}>
+        {targetError ? targetError : checking ? <span style={{ color: 'var(--text-faint)' }}>checking on chain…</span> : 'checked on chain ✓'}
+        </div>
+        </div>
+        </section>
+
+        {trackRecord}
         {sessionPanel}
         {completedWork}
       </div>

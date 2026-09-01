@@ -743,3 +743,7 @@ header nav .navlink[data-active='true']::after {
   .cmp-agent { min-width: 186px; }
   .cmp-table { min-width: 860px; }
 }
+
+/* The target being paid for, stated once and prominently on the hire route. */
+.hire-target { margin-top: 20px; padding: 16px 18px; border: 1px solid var(--border); background: var(--surface); }
+.hire-target-value { margin-top: 8px; color: var(--text); word-break: break-all; font-size: 13px; }
