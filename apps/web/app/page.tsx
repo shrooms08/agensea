@@ -2,7 +2,7 @@
  * Landing: five statistics, then four category cards.
  * Every count renders with its measured_at from registry_stats.
  */
-import { getRegistryStats, getFanoutCurve, getClientConcentration } from '@/lib/queries';
+import { getRegistryStats, getFanoutCurve, getClientConcentration, getFleetShare } from '@/lib/queries';
 import { ParticleHero, MobileParticleHero } from '@/components/ParticleHero';
 import { Stat } from '@/components/Stat';
 import { ParticleCreature } from '@/components/ParticleCreature';
@@ -22,7 +22,11 @@ const CAT_TOKEN: Record<string, string> = {
 const clipWords = (s: string, n: number) => (s.length <= n ? s : s.slice(0, n).replace(/\s+\S*$/, '') + '…');
 
 export default async function Home() {
-  const [stats, curve, conc] = await Promise.all([getRegistryStats(), getFanoutCurve(), getClientConcentration()]);
+  const [stats, curve, conc, fleetShare] = await Promise.all([
+    getRegistryStats(), getFanoutCurve(), getClientConcentration(),
+    // Same function /agents reads, so the two concentration figures cannot disagree.
+    getFleetShare(3),
+  ]);
   const s = (k: string) => stats[k]!;
 
   return (
@@ -73,9 +77,11 @@ export default async function Home() {
         <h2 style={{ font: "500 21px/1.2 var(--display)" }}>Liveness is not binary</h2>
         <p className="prose-sm prose-muted" style={{ marginTop: 8 }}>
           {pct(100 * Number(s('agents_with_client').value) / Number(s('agents_minted').value), 2)} of
-          agents have a client. But {int(conc.totalEdges)} relationships come from{' '}
-          {int(conc.distinctClients)} addresses, and two of them account for {pct(conc.top2Pct, 1)}.
-          Filter those out and the number collapses.
+          agents have a client. Both sides of that are concentrated:{' '}
+          {int(conc.totalEdges)} relationships come from {int(conc.distinctClients)} addresses, two
+          of which account for {pct(conc.top2Pct, 1)}, and {int(fleetShare.fleets.length)} operators
+          account for {pct((100 * fleetShare.topN) / fleetShare.total, 0)} of the agents.
+          Filter the clients out and the number collapses.
         </p>
         <div style={{ marginTop: 14, background: 'var(--bg)' }}>
           <ThresholdSlider curve={curve} measuredAt={s('agents_with_client').measured_at} />
