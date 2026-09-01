@@ -558,3 +558,39 @@ header nav .navlink[data-active='true']::after {
   .agent-table-head { display: none; }
   .agent-table-row { grid-template-columns: 1fr 1fr; gap: 6px 14px; padding: 14px 0; }
 }
+
+/* ---------------------------------------------------------------------------
+   /docs — one page, left rail + content. Same tokens as everything else; the
+   rail is sticky on desktop and collapses above the content on mobile.
+--------------------------------------------------------------------------- */
+.docs-layout { display: grid; grid-template-columns: 232px 1fr; gap: 56px; padding-top: 40px; }
+.docs-rail { position: sticky; top: 88px; align-self: start; }
+.docs-rail-link {
+  display: flex; gap: 10px; align-items: baseline;
+  font: 400 13px/1.5 var(--display); color: var(--text-muted);
+  padding: 7px 0; border-bottom: 1px solid var(--border);
+}
+.docs-rail-link:hover { color: var(--text); }
+.docs-h { font: 500 22px/1.2 var(--display); display: flex; gap: 12px; align-items: baseline; margin-bottom: 16px; }
+.docs-h-n { font: 500 10px/1 var(--mono); color: var(--text-faint); }
+.docs-code { font-size: 12px; color: var(--text); background: var(--surface-raised); padding: 1px 5px; }
+.docs-block { margin-top: 16px; border-top: 1px solid var(--border); }
+.docs-block-row {
+  display: grid; grid-template-columns: 210px 1fr; gap: 20px;
+  padding: 12px 0; border-bottom: 1px solid var(--border);
+}
+.docs-block-k {
+  font: 500 9px/1.6 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-faint);
+}
+.docs-block-v { font: 400 14px/1.65 var(--display); color: var(--text-muted); }
+.docs-pre {
+  margin-top: 14px; padding: 16px 18px; overflow-x: auto;
+  font: 400 12px/1.65 var(--mono); color: var(--text-muted);
+  background: var(--surface); border: 1px solid var(--border);
+}
+.docs-agent { margin-top: 26px; padding-top: 22px; border-top: 1px solid var(--border); }
+@media (max-width: 767px) {
+  .docs-layout { grid-template-columns: 1fr; gap: 26px; }
+  .docs-rail { position: static; }
+  .docs-block-row { grid-template-columns: 1fr; gap: 4px; }
+}

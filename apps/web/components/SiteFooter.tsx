@@ -58,6 +58,7 @@ export async function SiteFooter() {
             <a href="/marketplace">Marketplace</a>
             <a href="/agents">Registry</a>
             <a href="/bazaar">Bazaar</a>
+            <a href="/docs">Docs</a>
             <a href="https://github.com/shrooms08/agensea" target="_blank" rel="noreferrer">GitHub</a>
             <a href="https://x.com/shroomsgotsol" target="_blank" rel="noreferrer">X</a>
           </nav>
