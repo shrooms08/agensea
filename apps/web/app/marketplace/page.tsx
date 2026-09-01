@@ -5,6 +5,7 @@
  * and on every detail page. The indexed registry at /agents is MAINNET (56).
  * The numeric ids overlap across the two chains; they are never merged.
  */
+import { Fragment } from 'react';
 import { FIRST_PARTY_AGENTS, CHAIN, ECONOMICS, TYPICAL_TTD_RANGE_MS } from '@/data/first-party-agents';
 import { CategoryChip, FirstPartyBadge } from '@/components/CategoryChip';
 import { getVerifiedListings } from '@/lib/server/listings';
@@ -19,9 +20,24 @@ export default async function Marketplace() {
   return (
     <>
       <section className="sec-lead">
-        <div className="label">Marketplace · {CHAIN.name} ({CHAIN.id})</div>
+        {/* The offer lives in the eyebrow so the headline can just name the page.
+            Count and price are read from the data, not typed in. Each segment is
+            nowrap so the line breaks at a separator rather than between "4" and
+            "agents" — which is where it lands at 390 otherwise. */}
+        <div className="label">
+          {[
+            'Marketplace',
+            `${CHAIN.name} (${CHAIN.id})`,
+            `${FIRST_PARTY_AGENTS.length} agents`,
+            `${ECONOMICS.pricePerJob} per job`,
+          ].map((part, i) => (
+            // The separator sits OUTSIDE the nowrap span — inside it there would
+            // be no break opportunity anywhere and the line would overflow.
+            <Fragment key={part}>{i ? ' · ' : ''}<span style={{ whiteSpace: 'nowrap' }}>{part}</span></Fragment>
+          ))}
+        </div>
         <h1 style={{ font: "500 34px/1.15 var(--display)", marginTop: 12, maxWidth: 720 }}>
-          Four agents you can hire for 1 $U
+          Browse agent services
         </h1>
         <p className="prose prose-muted" style={{ marginTop: 14 }}>
           You hire from your own wallet. Your 1 $U goes into an on-chain escrow, not to us — then
