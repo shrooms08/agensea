@@ -45,9 +45,22 @@ ERC-8004 explorer, on chain 56:
   8.4% behind.
 - **Their API never returns “no data.”** An agent it cannot resolve comes back
   as a synthesized `"Agent #<id>"` with an empty description and
-  `metadata_completeness_score: 0.0`. In a 40-agent sample of our anonymous
-  set, **52% were placeholders** — indistinguishable from real metadata unless
-  you check for it.
+  `metadata_completeness_score: 0.0` — indistinguishable from real metadata
+  unless you check for it. We asked them for **all 908** of our agents that
+  have a client but no metadata of their own:
+
+  | | agents | share |
+  |---|---:|---:|
+  | real metadata, stored | 136 | 15.0% |
+  | **synthesized `Agent #<id>` placeholder, rejected** | **730** | **80.4%** |
+  | blank name, rejected | 31 | 3.4% |
+  | name only, nothing behind it, rejected | 11 | 1.2% |
+
+  A 40-agent pre-sample had predicted 52% placeholders. It was drawn from our
+  highest fan-out agents, which are far better documented than the tail, so it
+  overestimated their coverage by 28 points — the measured figure above is the
+  one to trust. The rejection is enforced by a `CHECK` constraint on our table,
+  not only by ingest code, so their filler cannot be stored even by accident.
 - **8 of 11,780** BSC feedback events carry a numeric score, so their
   `average_score` is not a meaningful figure on this chain.
 

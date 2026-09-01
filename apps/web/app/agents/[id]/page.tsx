@@ -11,7 +11,7 @@
  * database is down, whereas a dynamic one would 500.
  */
 import { notFound } from 'next/navigation';
-import { getAgent, getOverlapAgent, getBareAgent } from '@/lib/queries';
+import { getAgent, getOverlapAgent, getBareAgent, getAgentEnrichment } from '@/lib/queries';
 import { byMainnetId, AGENTS_WALLET } from '@/data/first-party-agents';
 import { FirstPartyBadge } from '@/components/CategoryChip';
 import { int, shortAddr, measuredOn, livenessToken } from '@/lib/format';
@@ -46,6 +46,9 @@ export default async function AgentDetail({ params }: { params: Promise<{ id: st
   const agent = await getAgent(agentId);
   const overlap = agent ? null : await getOverlapAgent(agentId);
   const bare = agent || overlap ? null : await getBareAgent(agentId);
+  // Third-party metadata for agents our own sweep could not resolve. Read from
+  // our table; their API is never called at runtime.
+  const enrichment = await getAgentEnrichment(agentId);
   if (!agent && !overlap && !bare) notFound();
 
   const a = (agent ?? overlap ?? bare)!;
@@ -115,6 +118,44 @@ export default async function AgentDetail({ params }: { params: Promise<{ id: st
         )}
         <div className="meta" style={{ marginTop: 22 }}>measured {measuredOn(a.checked_at)}</div>
       </section>
+
+      {enrichment && (
+        <section className="sec">
+          <div className="enrich-block">
+            <div className="enrich-head">
+              <span className="label" style={{ fontSize: 9, color: 'var(--text-muted)' }}>
+                third-party metadata — not our measurement
+              </span>
+              <span className="meta" style={{ color: 'var(--text-faint)' }}>
+                Enriched from {enrichment.source}, ingested {measuredOn(enrichment.ingested_at)}
+              </span>
+            </div>
+            <div style={{ font: "500 15px/1.3 var(--display)", color: 'var(--text)', marginTop: 14 }}>{enrichment.name}</div>
+            {enrichment.description && (
+              <p className="prose-sm prose-muted" style={{ marginTop: 10, fontSize: 13 }}>{enrichment.description}</p>
+            )}
+            <div className="enrich-rows">
+              {enrichment.protocols && enrichment.protocols.length > 0 && (
+                <div><span className="label" style={{ fontSize: 9 }}>protocols</span>
+                  <div className="data" style={{ marginTop: 6 }}>{enrichment.protocols.join(' · ')}</div></div>
+              )}
+              {enrichment.agent_url && (
+                <div><span className="label" style={{ fontSize: 9 }}>endpoint</span>
+                  <div className="data" style={{ marginTop: 6, wordBreak: 'break-all' }}>{enrichment.agent_url}</div></div>
+              )}
+              {enrichment.is_verified !== null && (
+                <div><span className="label" style={{ fontSize: 9 }}>verified by them</span>
+                  <div className="data" style={{ marginTop: 6, color: 'var(--text-muted)' }}>{enrichment.is_verified ? 'yes' : 'no'}</div></div>
+              )}
+            </div>
+            <p className="meta" style={{ marginTop: 16, color: 'var(--text-faint)' }}>
+              Our own sweep found no usable metadata for this agent. The above is what 8004scan
+              held when we ingested it, shown as received and stored once — we do not call their
+              API at page load, and none of it feeds the client or liveness figures above.
+            </p>
+          </div>
+        </section>
+      )}
 
       <section className="sec sec-rule">
         <p className="prose-sm prose-muted" style={{ fontSize: 13 }}>

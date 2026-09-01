@@ -83,6 +83,24 @@ export async function getBareAgent(agentId: number): Promise<LiveAgent | null> {
            summary_value: null, summary_decimals: null };
 }
 
+/** Third-party metadata ingested from 8004scan (013_agent_enrichment).
+ *  Read from OUR table — their API is never called at runtime, by design: the
+ *  Pro key expires 9 Sep 2026 and judging runs to 23 Sep. Always displayed
+ *  with attribution, never merged into our measured figures. */
+export interface AgentEnrichment {
+  agent_id: number; name: string; description: string | null;
+  protocols: string[] | null; agent_url: string | null;
+  is_verified: boolean | null; source: string; ingested_at: string;
+}
+
+export async function getAgentEnrichment(agentId: number): Promise<AgentEnrichment | null> {
+  const { rows } = await sbSelect<AgentEnrichment>('agent_enrichment', {
+    query: `select=agent_id,name,description,protocols,agent_url,is_verified,source,ingested_at&agent_id=eq.${agentId}`,
+    revalidate: DAY,
+  });
+  return rows[0] ?? null;
+}
+
 export interface OverlapAgent extends LiveAgent { bazaar_resources: number; bazaar_pct: number }
 
 /** Agent 127417 and anything like it: a B402 payee holding an ERC-8004 identity.

@@ -598,3 +598,12 @@ header nav .navlink[data-active='true']::after {
   .docs-rail { position: static; }
   .docs-block-row { grid-template-columns: 1fr; gap: 4px; }
 }
+
+/* ---------------------------------------------------------------------------
+   Third-party enrichment block on /agents/[id]. Deliberately NOT in the
+   liveness palette: this is somebody else's data, attributed on its face, and
+   must never read as one of our own measured figures.
+--------------------------------------------------------------------------- */
+.enrich-block { border: 1px dashed var(--border-strong); background: var(--surface); padding: 20px 22px; }
+.enrich-head { display: flex; justify-content: space-between; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.enrich-rows { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 18px; margin-top: 18px; }
