@@ -753,7 +753,7 @@ header nav .navlink[data-active='true']::after {
 @media (max-width: 1023px) {
   .hire-confirm-bar {
     position: sticky; bottom: 0; z-index: 5;
-    margin: 16px -20px 0; padding: 12px 20px calc(12px + env(safe-area-inset-bottom));
+    margin: 16px 0 0; padding: 12px 0 calc(12px + env(safe-area-inset-bottom));
     background: var(--bg); border-top: 1px solid var(--border);
   }
   .hire-confirm-bar .hire-cta { margin-top: 0; }
