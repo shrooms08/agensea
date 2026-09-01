@@ -8,6 +8,7 @@ import { Stat } from '@/components/Stat';
 import { ParticleCreature } from '@/components/ParticleCreature';
 import { ThresholdSlider } from '@/components/ThresholdSlider';
 import { FIRST_PARTY_AGENTS, CATEGORY_SLUGS, CHAIN } from '@/data/first-party-agents';
+import type { CategorySlug } from '@/data/first-party-agents';
 import { pct, int } from '@/lib/format';
 import { CAT_LABEL } from '@/components/CategoryChip';
 
@@ -17,6 +18,20 @@ const CAT_TOKEN: Record<string, string> = {
   'yield-optimisation': 'var(--cat-yield)',
   'health-factor-monitoring': 'var(--cat-health)',
 };
+
+/** Plain-language door to each category, ordered most concrete first. The
+ *  Record type makes the mapping exhaustive: adding a CategorySlug without a
+ *  task here is a type error, not a missing link. */
+const TASK: Record<CategorySlug, string> = {
+  'health-factor-monitoring': 'Check a lending position',
+  'rebalancing': 'Review an LP range',
+  'yield-optimisation': 'Compare yield routes',
+  'grid-trading': 'Plan a grid strategy',
+};
+/** Ordered by CATEGORY_SLUGS, the same order the cards use, so each task sits
+ *  directly above its own card and the colour squares line up in a column.
+ *  Two rows of the same palette in different orders reads as a rendering bug. */
+const TASKS = CATEGORY_SLUGS.map((slug) => ({ slug, task: TASK[slug] }));
 
 /** Truncate at a word boundary — a mid-word cut ("unco…") reads as broken rendering. */
 const clipWords = (s: string, n: number) => (s.length <= n ? s : s.slice(0, n).replace(/\s+\S*$/, '') + '…');
@@ -90,6 +105,21 @@ export default async function Home() {
 
       <section className="sec sec-rule">
         <h2 style={{ font: "500 21px/1.2 var(--display)" }}>Four categories, one hireable agent in each</h2>
+
+        {/* The same four routes, named by the job rather than the label we file
+            it under. Typed as Record<CategorySlug, string>, so a new category
+            fails the build here rather than silently missing a door. */}
+        <div className="task-grid">
+          {TASKS.map(({ task, slug }) => (
+            <a key={slug} href={`/category/${slug}`} className="task-link"
+               aria-label={`${task} — ${CAT_LABEL[slug]}`}>
+              <span style={{ width: 8, height: 8, background: CAT_TOKEN[slug], flex: 'none' }} aria-hidden="true" />
+              {task}
+              <span className="task-link-arrow" aria-hidden="true">→</span>
+            </a>
+          ))}
+        </div>
+
         <div className="grid-panel cols-4" style={{ marginTop: 18 }}>
           {CATEGORY_SLUGS.map((slug) => {
             const a = FIRST_PARTY_AGENTS.find((x) => x.slug === slug)!;
