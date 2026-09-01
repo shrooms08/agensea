@@ -128,7 +128,12 @@ Authored by `shrooms08` (GitHub shows the authorship):
   merged 1 Sep 2026, which adds `submitErc8183Deliverable`, `buildSubmitCall`,
   `erc8183SubmitPermissions` and a manifest codec. Our manifest and submit path
   in `apps/agents/src/erc8183` exists because the SDK had none when we built
-  it; that gap is now closed upstream. It is not yet in a published release —
+  it; that gap is now closed upstream. The PR cites our own submit transaction
+  through generic `execute` (chain 97, block 127889442) as its on-chain
+  confirmation that the `submit(uint256,bytes32,bytes)` selector works, and
+  credits the cross-language hash trap we reported — which it found in its own
+  demo script: a hand-rolled canonicaliser missing the `\uXXXX` escaping,
+  hashing a report containing an em dash. It is not yet in a published release —
   npm latest is still 0.8.0 (18 Aug), and the change sits under `[Unreleased]`
   on `staging` — so our path is still the only one available to anyone on a
   release, and we have not migrated.
@@ -322,24 +327,32 @@ and asserts `router.policyWhitelist(policy)` at startup — so the override beco
 a harmless no-op once upstream ships the fix, and the assert catches any future
 drift either way.
 
-### 5. `hireErc8183Agent()` ignores your overridden addresses — the trap inside footgun 4
+### 5. The builders are the override seam — not the high-level functions
 
-This one cost us a failed transaction *after* the override was already in place.
-`hireErc8183Agent()` and `settleErc8183Job()` resolve contract addresses through
-the SDK's own internal `erc8183Addresses(chainId)`. They do **not** accept an
-addresses argument, so a corrected struct never reaches them:
+This cost us a failed transaction *after* the override in footgun 4 was already
+in place. `hireErc8183Agent()` and `settleErc8183Job()` resolve contract
+addresses through the SDK's own internal `erc8183Addresses(chainId)`. They do
+**not** accept an addresses argument, so a corrected struct never reaches them.
+
+**This is by design, not a bug.** The maintainer stated it plainly in
+[altana-sdk #68](https://github.com/altananetwork/altana-sdk/pull/68): the
+high-level functions bind to the bundled registry deliberately, and the
+low-level builders are where you inject addresses. We found that the hard way
+rather than from the docs, which is why it is recorded here — the seam is real
+and correct once you know where it is:
 
 ```ts
-// WRONG: silently uses the SDK's broken policy, reverts 0xc94463e3
+// BINDS TO THE BUNDLED REGISTRY: uses the SDK's policy, reverts 0xc94463e3
 await hireErc8183Agent(wallet, signer, params, { network: BNB_TESTNET });
 
-// RIGHT: buildHireCalls takes an explicit `addresses`
+// THE SEAM: buildHireCalls takes an explicit `addresses`
 const calls = buildHireCalls({ addresses: erc8183For(97), jobId, provider, description, budget, expiredAt });
 await client.execute({ wallet, signer, calls });
 ```
 
-Asserting the policy you *built* proves nothing about the policy the SDK *uses*.
-Assert, then make sure the asserted value is actually on the wire.
+The lesson is unchanged and is the general one: asserting the value you *built*
+proves nothing about the value the SDK *uses*. Assert, then make sure the
+asserted value is actually on the wire.
 
 ### 6. Venus `markets()` returns seven words, and CF is not the liquidation threshold
 
