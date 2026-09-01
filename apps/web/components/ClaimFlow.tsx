@@ -19,6 +19,15 @@ type Owned = { agent_id: number; client_count: number; checked_at: string };
 type Step = 'connect' | 'choose' | 'claimed';
 const CATEGORIES: CategorySlug[] = ['health-factor-monitoring', 'rebalancing', 'grid-trading', 'yield-optimisation'];
 
+/**
+ * EIP-6963 surfaces every injected wallet the browser has. Phantom advertises
+ * EVM support and shows up here, but we could not verify it on chain 56 from
+ * this environment — so it is not offered rather than shipped unverified on a
+ * path an operator is asked to trust. Injected, Rabby, MetaMask and OKX remain.
+ */
+const OFFERED_CONNECTOR = (c: { id: string; name: string }) =>
+  !/phantom/i.test(c.id) && !/phantom/i.test(c.name);
+
 export function ClaimFlow() {
   const { address, isConnected } = useAccount();
   const { connect, connectors, isPending } = useConnect();
@@ -101,7 +110,7 @@ export function ClaimFlow() {
           when you sign. Signing authorises no transaction.
         </p>
         <div style={{ display: 'flex', gap: 12, marginTop: 16, justifyContent: 'center', flexWrap: 'wrap' }}>
-          {connectors.map((c) => (
+          {connectors.filter(OFFERED_CONNECTOR).map((c) => (
             <button key={c.uid} className="wallet-connect" disabled={isPending} onClick={() => connect({ connector: c })}>
               {isPending ? 'Connecting…' : `Connect ${c.name}`}
             </button>

@@ -78,19 +78,33 @@ export default async function Marketplace() {
         </div>
       </section>
 
-      {listings.length > 0 && (
-        <section className="sec sec-rule">
-          <h2 style={{ font: "500 20px/1.2 var(--display)" }}>Listed by their operators</h2>
-          <p className="prose-sm prose-muted" style={{ marginTop: 10, fontSize: 13, maxWidth: 640 }}>
-            ERC-8004 agents whose owner proved control of them on chain 56 and listed them here.
-            They are not hireable through AgenSea yet — execution opens after the hackathon — and
-            nothing below has been run or vouched for by us.
-          </p>
+      <section className="sec sec-rule">
+        <h2 style={{ font: "500 20px/1.2 var(--display)" }}>Listed by their operators</h2>
+        <p className="prose-sm prose-muted" style={{ marginTop: 10, fontSize: 13, maxWidth: 640 }}>
+          ERC-8004 agents whose owner proved control of them on chain 56 and listed them here.
+          Listings are not hireable through AgenSea yet — execution opens after the hackathon — and
+          nothing here has been run or vouched for by us.
+        </p>
+        {listings.length > 0 ? (
           <div className="listing-grid">
             {listings.map((l) => <ListingCard key={l.agent_id} l={l} />)}
           </div>
-        </section>
-      )}
+        ) : (
+          <div style={{ marginTop: 18, padding: '20px 22px', border: '1px dashed var(--border)', background: 'var(--surface)' }}>
+            <div className="data" style={{ color: 'var(--text-muted)' }}>
+              No external operator has listed an agent yet.
+            </div>
+            <p className="prose-sm prose-muted" style={{ marginTop: 10, fontSize: 13, maxWidth: 620 }}>
+              The mechanism is live: any operator who owns an ERC-8004 agent on chain 56 can prove
+              it with a signature and list it. Nothing is seeded here — this section stays empty
+              until somebody outside AgenSea uses it.
+            </p>
+            <a href="/claim" className="wallet-connect" style={{ display: 'inline-block', marginTop: 14 }}>
+              List an agent you own →
+            </a>
+          </div>
+        )}
+      </section>
     </>
   );
 }

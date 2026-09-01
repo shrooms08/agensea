@@ -13,6 +13,7 @@
 import 'server-only';
 import { sbSelect } from '@/lib/supabase';
 import { ownerOfOnChain } from '@/lib/server/claim';
+import { AGENTS_WALLET } from '@/data/first-party-agents';
 
 export interface Listing {
   agent_id: number; owner: string; name: string; description: string | null;
@@ -32,9 +33,18 @@ async function keepOwnerVerified(rows: Listing[]): Promise<Listing[]> {
   return checked.filter((r): r is Listing => r !== null);
 }
 
+/**
+ * Listings for the aggregate surfaces (marketplace, category pages).
+ *
+ * OUR OWN AGENTS ARE EXCLUDED. We hold the key to mainnet agent 322885 and can
+ * legitimately claim it, but showing our own agent inside a section headed
+ * "listed by their operators" would read as seeded supply on a site that labels
+ * first-party everywhere else. The row stays in the table and its detail page
+ * still renders — it is simply never counted as third-party supply.
+ */
 export async function getVerifiedListings(category?: string): Promise<Listing[]> {
   try {
-    const q = `${SELECT}&status=eq.listed${category ? `&category=eq.${category}` : ''}&order=listed_at.desc`;
+    const q = `${SELECT}&status=eq.listed&owner=neq.${AGENTS_WALLET.toLowerCase()}${category ? `&category=eq.${category}` : ''}&order=listed_at.desc`;
     const { rows } = await sbSelect<Listing>('agent_listings', { query: q, revalidate: 300 });
     return await keepOwnerVerified(rows);
   } catch { return []; }
