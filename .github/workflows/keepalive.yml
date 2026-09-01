@@ -135,16 +135,24 @@ jobs:
             -d '{"jsonrpc":"2.0","id":1,"method":"eth_getBalance","params":["'"$BUYER"'","latest"]}' | python3 -c "import sys,json;print(json.load(sys.stdin).get('result','0x0'))")
           U_HEX=$(curl -sS --max-time 30 "$RPC" -H 'content-type: application/json' \
             -d '{"jsonrpc":"2.0","id":1,"method":"eth_call","params":[{"to":"'"$UTOK"'","data":"0x70a082310000000000000000000000004c86c5d6972bbddef7acf153899b40c6e572d066"},"latest"]}' | python3 -c "import sys,json;print(json.load(sys.stdin).get('result','0x0'))")
-          python3 - "$TBNB_HEX" "$U_HEX" <<'EOF'
+          # The agents/platform wallet carries dispenses (0.005 each, floor 0.03),
+          # session-key submits and keeper settles — it must stay above the
+          # dispenser floor with room for fees.
+          AGENTS=0x85d32d525E1812FeE7001f34DD6dd86154619090
+          AGENTS_HEX=$(curl -sS --max-time 30 "$RPC" -H 'content-type: application/json' \
+            -d '{"jsonrpc":"2.0","id":1,"method":"eth_getBalance","params":["'"$AGENTS"'","latest"]}' | python3 -c "import sys,json;print(json.load(sys.stdin).get('result','0x0'))")
+          python3 - "$TBNB_HEX" "$U_HEX" "$AGENTS_HEX" <<'EOF'
           import sys
           tbnb = int(sys.argv[1], 16) / 1e18
           u = int(sys.argv[2], 16) / 1e18
-          print(f"buyer: {tbnb:.5f} tBNB, {u:.1f} $U")
+          agents = int(sys.argv[3], 16) / 1e18
+          print(f"buyer: {tbnb:.5f} tBNB, {u:.1f} $U | agents/platform: {agents:.5f} tBNB")
           bad = []
-          if u < 10: bad.append(f"$U={u:.1f} < 10")
-          if tbnb < 0.01: bad.append(f"tBNB={tbnb:.5f} < 0.01")
+          if u < 10: bad.append(f"buyer $U={u:.1f} < 10")
+          if tbnb < 0.01: bad.append(f"buyer tBNB={tbnb:.5f} < 0.01")
+          if agents < 0.04: bad.append(f"agents/platform tBNB={agents:.5f} < 0.04 (dispenser floor 0.03 + fees)")
           if bad:
-              print(f"::error title=Demo wallet low::{'; '.join(bad)} — the hire button will die mid-judging. Top up the buyer wallet.")
+              print(f"::error title=Demo wallet low::{'; '.join(bad)} — top up before judging.")
               sys.exit(1)
-          print(f"::notice title=Demo headroom OK::{u:.0f} $U, {tbnb:.4f} tBNB")
+          print(f"::notice title=Demo headroom OK::buyer {u:.0f} $U / {tbnb:.4f} tBNB · agents/platform {agents:.4f} tBNB")
           EOF
