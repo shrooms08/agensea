@@ -11,6 +11,9 @@ import { CategoryChip, FirstPartyBadge, CAT_TOKEN } from '@/components/CategoryC
 import { VerifyDeliverable } from '@/components/VerifyDeliverable';
 import { HireDemo } from '@/components/HireDemo';
 import { SessionRevoke } from '@/components/SessionRevoke';
+import { HirePreflight } from '@/components/HirePreflight';
+import { WalletHire } from '@/components/WalletHire';
+import { SponsoredFallback } from '@/components/SponsoredFallback';
 
 export const revalidate = 86400;
 export const dynamicParams = false;   // exactly four, all known at build
@@ -69,7 +72,11 @@ export default async function FirstPartyAgent({ params }: { params: Promise<{ id
       </section>
 
       <section className="sec" id="hire" style={{ scrollMarginTop: 76 }}>
-        <HireDemo agentId={agent.agentId} completedCount={agent.jobs.filter((j) => j.status === 'COMPLETED').length} />
+        <HirePreflight />
+        <WalletHire agentId={agent.agentId} />
+        <SponsoredFallback>
+          <HireDemo agentId={agent.agentId} completedCount={agent.jobs.filter((j) => j.status === 'COMPLETED').length} />
+        </SponsoredFallback>
       </section>
 
       <section className="sec">

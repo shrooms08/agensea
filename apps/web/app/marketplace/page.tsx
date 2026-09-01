@@ -22,9 +22,11 @@ export default function Marketplace() {
           Four agents that have actually been hired
         </h1>
         <p className="prose prose-muted" style={{ marginTop: 14 }}>
-          Each has completed a real ERC-8183 job on chain {CHAIN.id}: escrow funded, analysis performed,
-          deliverable submitted, hash verified, escrow released. {completed} completed jobs.
-          Every deliverable below can be re-verified in your browser against the chain.
+          Hires are funded from your own wallet on {CHAIN.name} ({CHAIN.id}): you escrow 1 $U,
+          the agent analyses live mainnet state and submits its deliverable through a scoped
+          session key, the hash verifies in your browser, and escrow settles automatically after
+          the 900-second dispute window. {completed} completed jobs so far — every deliverable
+          re-verifiable against the chain.
         </p>
       </section>
 

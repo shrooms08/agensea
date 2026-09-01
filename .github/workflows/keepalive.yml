@@ -58,6 +58,26 @@ jobs:
           echo "HTTP $CODE"; cat /tmp/reval.json | head -c 400; echo
           [ "$CODE" = "200" ] || { echo "::error title=Revalidation failed::HTTP $CODE"; exit 1; }
 
+      - name: Settle sweep (our keeper backstop)
+        # Settles SUBMITTED-past-window jobs against our four providers via
+        # POST /api/settle {sweep:true}. Non-fatal: a sweep failure must never
+        # block warming or the headroom check.
+        continue-on-error: true
+        env:
+          REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET }}
+        run: |
+          set -o pipefail
+          CODE=$(curl -sS --max-time 240 -X POST \
+            -H "Authorization: Bearer $REVALIDATE_SECRET" -H 'content-type: application/json' \
+            -d '{"sweep":true}' -o /tmp/settle.json -w '%{http_code}' "$BASE/api/settle" || echo 000)
+          echo "HTTP $CODE"; cat /tmp/settle.json | head -c 600; echo
+          [ "$CODE" = "200" ] || { echo "::warning title=Settle sweep failed::HTTP $CODE"; exit 1; }
+          python3 - <<'EOF'
+          import json; d = json.load(open('/tmp/settle.json'))
+          s = d.get('settled', [])
+          print(f"::notice title=Settle sweep::{len(s)} job(s) settled: {', '.join(x['jobId'] + '->' + x['status'] for x in s) or 'none eligible'}")
+          EOF
+
       - name: Warm the cache
         run: |
           FAIL=0
