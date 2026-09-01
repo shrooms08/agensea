@@ -10,11 +10,13 @@
  * buyer against our provider, read from chain state.
  */
 import { createHash } from 'node:crypto';
-import { runAgentWork, verifyJobOnChain, findFundedJobs } from '@/lib/server/agent-work';
+import { runAgentWork, verifyJobOnChain, findFundedJobs, validateTargetOnChain } from '@/lib/server/agent-work';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 export const maxDuration = 300;
+
+const VALID_AGENTS = new Set([2012, 2013, 2014, 2015]);
 
 export async function GET(req: Request) {
   const address = new URL(req.url).searchParams.get('address') ?? '';
@@ -24,6 +26,21 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+  // Validate-only mode: the hire page calls this BEFORE offering any wallet
+  // transaction, so a bad target fails with plain copy and nothing is spent.
+  let peek: { validate?: { agentId?: unknown; target?: unknown } } = {};
+  const cloned = req.clone();
+  try { peek = (await cloned.json()) as typeof peek; } catch { /* fall through */ }
+  if (peek.validate) {
+    const agentId = Number(peek.validate.agentId);
+    const target = String(peek.validate.target ?? '');
+    if (!VALID_AGENTS.has(agentId)) return Response.json({ ok: false, error: 'unknown agent' }, { status: 400 });
+    if (target.length > 128) return Response.json({ ok: false, error: 'target is too long' }, { status: 400 });
+    const r = await validateTargetOnChain(agentId, target);
+    return Response.json(r.ok ? { ok: true, value: r.value } : { ok: false, error: r.error },
+      { status: r.ok ? 200 : 422, headers: { 'cache-control': 'no-store' } });
+  }
+
   let jobId: bigint;
   try {
     const body = (await req.json()) as { jobId?: string | number };

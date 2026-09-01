@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start -p 3111",
     "typecheck": "tsc --noEmit",
-    "test": "node tests/verify-canonical.test.mjs"
+    "test": "node tests/verify-canonical.test.mjs && node tests/hire-spec.test.mjs"
   },
   "dependencies": {
     "@altananetwork/sdk": "^0.8.0",

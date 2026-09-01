@@ -487,3 +487,54 @@ header nav .navlink[data-active='true']::after {
 .preflight { margin-top: 14px; padding: 14px 18px; background: var(--surface); border: 1px solid var(--border); }
 .preflight-short { box-shadow: inset 2px 0 0 var(--warn); }
 .preflight-rows { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 12px; }
+
+/* ---------------------------------------------------------------------------
+   Hire page detail: delivers/provides columns, provider track record, and the
+   transaction preview. Mono throughout; every value comes from data.
+--------------------------------------------------------------------------- */
+.hire-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 44px; }
+.delivers { margin-top: 14px; border-top: 1px solid var(--border); }
+.delivers-row {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 16px;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.target-input {
+  width: 100%; margin-top: 8px; padding: 12px 14px;
+  font: 400 13px/1.4 var(--mono); color: var(--text);
+  background: var(--bg); border: 1px solid var(--border-strong);
+}
+.target-input:focus { outline: 1px solid var(--live); outline-offset: 1px; }
+.target-input:disabled { color: var(--text-faint); }
+
+.track-bar {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px;
+  margin-top: 14px; padding: 20px 0;
+  border-top: 1px solid var(--border); border-bottom: 1px solid var(--border);
+}
+.track-num { font: 500 26px/1 var(--display); color: var(--text); margin-bottom: 8px; }
+
+.tx-preview { border: 1px solid var(--border-strong); background: var(--surface); padding: 20px 22px; }
+.tx-row {
+  display: grid; grid-template-columns: 190px 1fr; gap: 18px;
+  padding: 10px 0; border-bottom: 1px solid var(--border);
+}
+.tx-row:last-child { border-bottom: none; }
+.tx-key {
+  font: 500 9px/1.6 var(--mono); letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--text-faint);
+}
+.tx-val { font: 400 12px/1.6 var(--mono); color: var(--text); }
+.hire-cta {
+  margin-top: 18px; width: 100%;
+  font: 500 12px/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase;
+  border: none; padding: 16px 20px;
+}
+.hire-connect {
+  margin-top: 18px; padding: 22px; text-align: center;
+  border: 1px solid var(--border); background: var(--surface);
+}
+@media (max-width: 767px) {
+  .hire-cols { grid-template-columns: 1fr; gap: 28px; }
+  .tx-row { grid-template-columns: 1fr; gap: 4px; }
+  .tx-preview { padding: 16px 14px; }
+}
