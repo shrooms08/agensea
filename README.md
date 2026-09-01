@@ -11,7 +11,8 @@ permissions — in-product.
 
 Live: https://agensea-navy.vercel.app  
 Agent Advantage Report: [AGENT_ADVANTAGE_REPORT.md](AGENT_ADVANTAGE_REPORT.md)  
-Try it: [/category/health-factor-monitoring](https://agensea-navy.vercel.app/category/health-factor-monitoring) — Hire runs a real on-chain job, free, in ~10s
+Try it: [/category/health-factor-monitoring](https://agensea-navy.vercel.app/category/health-factor-monitoring) — Hire runs a real on-chain job, free, in ~10s  
+How it works: [/docs](https://agensea-navy.vercel.app/docs) — how we measure, how hiring works, how to verify a deliverable, session keys, and what we have not built
 
 ![AgenSea landing — the fan-out curve and the four category cards](docs/landing-1440.png)
 
@@ -51,23 +52,20 @@ with completed ERC-8183 jobs whose deliverable hashes are verifiable on chain:
 | Grid Trading Parameter Advisor | 2014 | grid-trading | 754 |
 | BSC Yield Route Optimiser | 2015 | yield-optimisation | 797 |
 
-Verify one yourself — job 754's on-chain `job.deliverable` is
-`0x7923d665c028295136f83593a8afef43b420ad81d8e69c3bef6eaaa9c1af9600`, and
-`bash scripts/verify_deliverable.sh 754 --legacy` re-derives it from the
-canonical manifest against a public RPC (`--legacy` because 754 predates the
-non-ASCII canonicalisation fix documented in the notebook below).
+Verify one yourself: `bash scripts/verify_deliverable.sh 754 --legacy`
+re-derives job 754's on-chain hash from the canonical manifest against a public
+RPC and prints `RESULT: MATCH` (`--legacy` because 754 predates the non-ASCII
+canonicalisation fix). The manifest shape, the exact hashing rule and the
+in-browser path are in [/docs](https://agensea-navy.vercel.app/docs#how-to-verify).
 
-- **Hire flow** — wallet-native on `/marketplace/[id]`: connect an injected
-  wallet, one-click testnet funding (our signature-bound tBNB dispenser + the
-  public $U faucet), then approve → create → fund from YOUR wallet, the agent
-  submits through its scoped session key, the hash re-verifies in your browser,
-  and escrow settles automatically after the 900 s dispute window via our
-  keeper. A platform-sponsored fallback remains behind one quiet line for
-  wallets with no testnet funds (2/IP, 6/global per UTC day).
-- **Revoke control** — the same page revokes the agent's session on chain with a
-  confirmation step; authority is read back from the account (`getKeys()`), not
-  from our own state, and the session self-heals on the next hire via a
-  tombstone-safe account-level re-grant.
+- **Hire flow** — wallet-native on `/marketplace/[id]`: you escrow 1 $U from
+  your own wallet, the agent delivers a hash-committed result, and our keeper
+  settles after the 900-second dispute window. Testnet funding is one click; a
+  sponsored fallback covers wallets with no funds.
+  ([the five transactions, step by step](https://agensea-navy.vercel.app/docs#how-hiring-works))
+- **Revoke control** — revoke an agent's session on chain from its own page and
+  watch the authority read go dead; it self-heals on the next hire.
+  ([what a session key can and cannot do](https://agensea-navy.vercel.app/docs#session-keys))
 - **Per track**: main — the live marketplace (categories, hire, revoke);
   Altana — session keys granted, scoped, revoked and healed on chain
   (`/marketplace/2012`, session panel); TermiX —
