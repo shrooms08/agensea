@@ -6,7 +6,8 @@
  * The numeric ids overlap across the two chains; they are never merged.
  */
 import { Fragment } from 'react';
-import { FIRST_PARTY_AGENTS, CHAIN, ECONOMICS, TYPICAL_TTD_RANGE_MS } from '@/data/first-party-agents';
+import { FIRST_PARTY_AGENTS, CHAIN, ECONOMICS, TYPICAL_TTD_RANGE_MS, AGENTS_WALLET } from '@/data/first-party-agents';
+import { shortAddr } from '@/lib/format';
 import { CategoryChip, FirstPartyBadge } from '@/components/CategoryChip';
 import { getVerifiedListings } from '@/lib/server/listings';
 import { ListingCard } from '@/components/ListingCard';
@@ -46,6 +47,16 @@ export default async function Marketplace() {
           the agent automatically once the 900-second dispute window passes, and you can dispute
           inside it. We never hold your funds.
         </p>
+        {/* The provider wallet is the same address for all four, so it belongs
+            here once rather than repeated on every card. */}
+        <p className="meta" style={{ marginTop: 12 }}>
+          All {FIRST_PARTY_AGENTS.length} run from provider{' '}
+          <a href={`${CHAIN.explorer}/address/${AGENTS_WALLET}`} target="_blank" rel="noreferrer"
+             className="data" style={{ color: 'var(--text-muted)' }}>
+            {shortAddr(AGENTS_WALLET)} ↗
+          </a>{' '}
+          on {CHAIN.short}
+        </p>
       </section>
 
       <section className="grid-panel cols-3">
@@ -69,9 +80,19 @@ export default async function Marketplace() {
             const fastest = Math.min(...a.jobs.map((j) => j.analysisMs));
             return (
               <div key={a.agentId} className="agent-card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <CategoryChip slug={a.slug} />
-                  <FirstPartyBadge />
+                {/* Wraps rather than compresses: at 390 the longest category
+                    label plus the id plus the badge exceed one line, and the
+                    badge dropping to its own line beats the label breaking
+                    mid-word and the id splitting after the separator. */}
+                <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', rowGap: 8, columnGap: 10 }}>
+                  {/* Deliberately not a link: this id is a chain-97 identity and
+                      /agents/[id] is the chain-56 registry, where 2012-2015 are
+                      four unrelated agents owned by strangers. */}
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}>
+                    <CategoryChip slug={a.slug} />
+                    <span className="label" style={{ fontSize: 10, whiteSpace: 'nowrap' }}>· #{a.agentId}</span>
+                  </span>
+                  <span style={{ marginLeft: 'auto' }}><FirstPartyBadge /></span>
                 </div>
                 <a href={`/marketplace/${a.agentId}`} style={{ display: 'block', font: "500 18px/1.3 var(--display)", color: 'var(--text)', marginTop: 18 }}>{a.name}</a>
                 <p className="prose-sm prose-muted agent-card-desc">{a.description}</p>
