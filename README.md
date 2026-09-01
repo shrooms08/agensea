@@ -122,9 +122,16 @@ Authored by `shrooms08` (GitHub shows the authorship):
   docs say to persist the `Session` object verbatim, but `JSON.stringify` drops
   `signDigest` and keeps `_privateKey`
 - [altana-sdk #59](https://github.com/altananetwork/altana-sdk/issues/59) —
-  no ERC-8183 seller path: the SDK cannot submit a deliverable, only hire and
-  settle (our manifest and submit path in `apps/agents/src/erc8183` exists
-  because of this)
+  no ERC-8183 seller path: the SDK could hire and settle but not submit a
+  deliverable. **Filed; fixed upstream in
+  [altana-sdk #68](https://github.com/altananetwork/altana-sdk/pull/68)**,
+  merged 1 Sep 2026, which adds `submitErc8183Deliverable`, `buildSubmitCall`,
+  `erc8183SubmitPermissions` and a manifest codec. Our manifest and submit path
+  in `apps/agents/src/erc8183` exists because the SDK had none when we built
+  it; that gap is now closed upstream. It is not yet in a published release —
+  npm latest is still 0.8.0 (18 Aug), and the change sits under `[Unreleased]`
+  on `staging` — so our path is still the only one available to anyone on a
+  release, and we have not migrated.
 - [bnb-chain/bnbagent-sdk #82](https://github.com/bnb-chain/bnbagent-sdk/issues/82) —
   jobId race: provider + status cannot identify your own job, so a losing racer
   can submit a valid-hash deliverable for the wrong task (the hire route guards
