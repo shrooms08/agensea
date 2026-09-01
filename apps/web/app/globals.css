@@ -743,3 +743,18 @@ header nav .navlink[data-active='true']::after {
   .cmp-agent { min-width: 186px; }
   .cmp-table { min-width: 860px; }
 }
+
+/* The target being paid for, stated once and prominently on the hire route. */
+.hire-target { margin-top: 20px; padding: 16px 18px; border: 1px solid var(--border); background: var(--surface); }
+.hire-target-value { margin-top: 8px; color: var(--text); word-break: break-all; font-size: 13px; }
+
+/* Hire route: keep the confirm action in reach on mobile while the preview is
+   read. Desktop leaves it in flow. */
+@media (max-width: 1023px) {
+  .hire-confirm-bar {
+    position: sticky; bottom: 0; z-index: 5;
+    margin: 16px 0 0; padding: 12px 0 calc(12px + env(safe-area-inset-bottom));
+    background: var(--bg); border-top: 1px solid var(--border);
+  }
+  .hire-confirm-bar .hire-cta { margin-top: 0; }
+}
