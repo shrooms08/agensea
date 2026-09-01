@@ -81,7 +81,7 @@ jobs:
       - name: Warm the cache
         run: |
           FAIL=0
-          for P in / /docs /claim /bazaar /marketplace /agents /agents/2658 /agents/127417 /category/rebalancing /category/grid-trading /category/yield-optimisation /category/health-factor-monitoring; do
+          for P in / /docs /claim /bazaar /marketplace /compare /agents /agents/2658 /agents/127417 /category/rebalancing /category/grid-trading /category/yield-optimisation /category/health-factor-monitoring; do
             CODE=$(curl -sS --max-time 45 -o /dev/null -w '%{http_code}' "$BASE$P" || echo 000)
             printf '  %-22s %s\n' "$P" "$CODE"
             # /marketplace has shipped: every path is a hard failure now.
