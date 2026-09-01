@@ -36,6 +36,27 @@ are computed from those measured values.
   **96.22%** of the catalogue — measured 31 Aug 2026
 - **Exactly one** agent address appears in both datasets — measured 31 Aug 2026
 
+### Cross-checked against 8004scan (surveyed 1 Sep 2026)
+
+We compared our sweep with [8004scan](https://8004scan.io), a third-party
+ERC-8004 explorer, on chain 56:
+
+- **They index 295,734 BSC agents against our 322,974** measured from chain —
+  8.4% behind.
+- **Their API never returns “no data.”** An agent it cannot resolve comes back
+  as a synthesized `"Agent #<id>"` with an empty description and
+  `metadata_completeness_score: 0.0`. In a 40-agent sample of our anonymous
+  set, **52% were placeholders** — indistinguishable from real metadata unless
+  you check for it.
+- **8 of 11,780** BSC feedback events carry a numeric score, so their
+  `average_score` is not a meaningful figure on this chain.
+
+The units are not the same and we do not treat them as such: our client count
+is `getClients()` read live from the ReputationRegistry; theirs is an indexed
+feedback event. These are two different quantities, not one quantity measured
+twice — which is also why our 4,353 agents-with-a-client and their 582
+agents-with-feedback are not a contradiction.
+
 The full write-ups: [AGENT_ADVANTAGE_REPORT.md](AGENT_ADVANTAGE_REPORT.md)
 (three frozen tasks, hired agent vs. assisted DIY, with timings and quality
 comparison) and [PHASE0_FINDINGS.md](PHASE0_FINDINGS.md) (chain diagnostics).
