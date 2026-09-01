@@ -4,7 +4,7 @@
  *
  * The value is a BREAKPOINT INDEX, not a threshold. The 31 real thresholds are
  * wildly uneven — 1,2,3,4,6,8,14,16 then a jump to 96, then 254/924/1137/1800
- * (read live from agent_fanout_curve; 32 rows as of 29 Aug 2026) —
+ * (read live from agent_fanout_curve; 32 rows as of the 31 Aug 2026 sweep) —
  * so mapping position to value would leave most of the travel dead. Index
  * mapping gives even travel; the readout always shows the real threshold and
  * the real agent count, never the index. Index 0 is the (0,0) sentinel.
@@ -22,7 +22,13 @@ import { prefersReducedMotion, easeOut, useIsoLayoutEffect } from '@/lib/motion'
 export function ThresholdSlider({ curve, measuredAt }: { curve: CurvePoint[]; measuredAt: string }) {
   const pts = [...curve].sort((a, b) => a.threshold - b.threshold);
   const last = pts.length - 1;
-  const [index, setIndex] = useState(last);       // default: unrestricted
+  // Default to the breakpoint nearest fan-out 100 rather than the loosest one.
+  // At the loosest position the chart shows 4,353 and a flat line while the
+  // copy beside it says the number collapses — a reader who never drags the
+  // slider never sees the finding. Derived from the data, not an index literal.
+  const defaultIndex = pts.reduce(
+    (best, p, i) => (Math.abs(p.threshold - 100) < Math.abs(pts[best]!.threshold - 100) ? i : best), 0);
+  const [index, setIndex] = useState(defaultIndex);
   const cur = pts[index]!;
   const pctPos = last > 0 ? (index / last) * 100 : 0;
 
@@ -79,7 +85,7 @@ export function ThresholdSlider({ curve, measuredAt }: { curve: CurvePoint[]; me
       </div>
 
       {/* Readout tracks the thumb. Clamped so it never leaves the rail. */}
-      <div style={{ position: 'relative', height: 40, marginTop: 2, opacity: revealed ? 1 : 0, transition: 'opacity 240ms ease-out' }}>
+      <div style={{ position: 'relative', height: 56, marginTop: 2, opacity: revealed ? 1 : 0, transition: 'opacity 240ms ease-out' }}>
         <div style={{
           position: 'absolute', left: `clamp(0px, calc(${pctPos}% - 60px), calc(100% - 120px))`,
           width: 120, textAlign: pctPos < 8 ? 'left' : pctPos > 92 ? 'right' : 'center',
@@ -89,6 +95,9 @@ export function ThresholdSlider({ curve, measuredAt }: { curve: CurvePoint[]; me
           </div>
           <div className="tnum" style={{ font: "500 13px/1.2 var(--mono)", color: 'var(--live)', marginTop: 4 }}>
             {int(Math.round(display))}
+          </div>
+          <div className="meta" style={{ color: 'var(--text-faint)', marginTop: 2, whiteSpace: 'nowrap' }}>
+            of {int(pts[last]!.qualifying_agents)} unfiltered
           </div>
         </div>
       </div>
