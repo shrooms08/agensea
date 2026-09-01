@@ -13,6 +13,8 @@ import { notFound } from 'next/navigation';
 import { bySlug, CATEGORY_SLUGS, type CategorySlug, CHAIN } from '@/data/first-party-agents';
 import { CategoryChip, FirstPartyBadge, CAT_TOKEN, CAT_LABEL } from '@/components/CategoryChip';
 import { getRegistryAgentsForCategory } from '@/lib/queries';
+import { getVerifiedListings } from '@/lib/server/listings';
+import { ListingCard } from '@/components/ListingCard';
 import { readVenusRates, readRefPool, readRealisedVol, readYieldRoutes } from '@/lib/chain-reads';
 import { int } from '@/lib/format';
 
@@ -127,6 +129,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
   if (!CATEGORY_SLUGS.includes(slug)) notFound();
   const agent = bySlug(slug)[0]!;
   const registry = await getRegistryAgentsForCategory(slug);
+  const listings = await getVerifiedListings(slug);
   const completed = agent.jobs.filter((j) => j.status === 'COMPLETED').length;
   const fastest = Math.min(...agent.jobs.map((j) => j.analysisMs));
 
@@ -208,6 +211,18 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
           </div>
         </>)}
       </section>
+
+      {listings.length > 0 && (
+        <section className="sec sec-rule">
+          <h2 style={{ font: "500 20px/1.2 var(--display)" }}>Listed by their operators</h2>
+          <p className="prose-sm prose-muted" style={{ marginTop: 10, fontSize: 13 }}>
+            Owner-proven ERC-8004 agents in this category. Not hireable through AgenSea yet.
+          </p>
+          <div className="listing-grid">
+            {listings.map((l) => <ListingCard key={l.agent_id} l={l} />)}
+          </div>
+        </section>
+      )}
 
       <section className="sec sec-rule" style={{ paddingBottom: 72 }}>
         <div style={{ width: 8, height: 8, background: CAT_TOKEN[slug], display: 'inline-block', marginRight: 10 }} />

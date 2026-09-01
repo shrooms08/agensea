@@ -9,6 +9,7 @@
  */
 import { useAccount, useConnect, useDisconnect, useSwitchChain } from 'wagmi';
 import { useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
 import { bscTestnet97 } from '@/lib/wallet/config';
 
 
@@ -22,11 +23,16 @@ export function WalletButton() {
   const { disconnect } = useDisconnect();
   const { switchChain, isPending: switching } = useSwitchChain();
 
-  const wrongChain = isConnected && walletChainId !== bscTestnet97.id;
+  // Chain 97 is only required where we transact. The operator surfaces prove
+  // ownership of a chain-56 agent with an off-chain signature, so demanding a
+  // testnet switch there would be both useless and wrong advice.
+  const path = usePathname() ?? '/';
+  const needs97 = !(path.startsWith('/claim') || path.startsWith('/listing'));
+  const wrongChain = isConnected && needs97 && walletChainId !== bscTestnet97.id;
 
   // On connect, steer to 97 once, automatically; the banner covers refusal.
   useEffect(() => {
-    if (isConnected && wrongChain && !switching) switchChain({ chainId: bscTestnet97.id });
+    if (isConnected && needs97 && wrongChain && !switching) switchChain({ chainId: bscTestnet97.id });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isConnected, wrongChain]);
 

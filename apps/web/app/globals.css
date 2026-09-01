@@ -607,3 +607,41 @@ header nav .navlink[data-active='true']::after {
 .enrich-block { border: 1px dashed var(--border-strong); background: var(--surface); padding: 20px 22px; }
 .enrich-head { display: flex; justify-content: space-between; align-items: baseline; gap: 14px; flex-wrap: wrap; }
 .enrich-rows { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 18px; margin-top: 18px; }
+
+/* ---------------------------------------------------------------------------
+   Operator listings. Dashed border and a status chip so a listed third-party
+   agent is never mistaken for one of our four hireable agents.
+--------------------------------------------------------------------------- */
+.listing-card {
+  display: flex; flex-direction: column;
+  background: var(--surface); border: 1px dashed var(--border-strong);
+  padding: 28px 30px; transition: border-color 120ms ease-out;
+}
+.listing-card:hover { border-color: var(--text-faint); }
+.listing-chip {
+  font: 500 9px/1 var(--mono); letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--warn); border: 1px solid var(--warn); padding: 5px 7px; white-space: nowrap;
+}
+.listing-desc {
+  margin-top: 12px; font-size: 14px; line-height: 1.7;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.listing-foot {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 14px; flex-wrap: wrap;
+  margin-top: auto; padding-top: 18px;
+}
+.listing-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 18px; }
+@media (max-width: 767px) { .listing-grid { grid-template-columns: 1fr; gap: 20px; } }
+
+/* /claim — operator claim and listing form. */
+.claim-panel { border: 1px solid var(--border-strong); background: var(--surface); padding: 22px 24px; }
+.claim-list { margin-top: 14px; border-top: 1px solid var(--border); }
+.claim-row {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  padding: 12px 0; border-bottom: 1px solid var(--border);
+}
+.claim-row .wallet-connect { margin-left: auto; }
+.claim-form { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+.claim-field { display: flex; flex-direction: column; gap: 2px; }
+.claim-wide { grid-column: 1 / -1; }
+@media (max-width: 767px) { .claim-form { grid-template-columns: 1fr; } .claim-row .wallet-connect { margin-left: 0; } }
