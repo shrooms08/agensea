@@ -173,7 +173,9 @@ export function HireDemo({ agentId, completedCount }: { agentId: number; complet
           <div className="meta" style={{ marginBottom: 8 }}>
             completed jobs: <CountBump from={completedCount} to={completedCount + 1} /> (this job settles after the window)
           </div>
-          <VerifyDeliverable jobId={String((ev('funded') as Ev).jobId)} manifest={verified.manifest} />
+          {/* A job just produced by the live agent, so it follows the current
+              producer rule: non-ASCII escaped as \uXXXX. */}
+          <VerifyDeliverable jobId={String((ev('funded') as Ev).jobId)} manifest={verified.manifest} canon="escaped" />
         </div>
       )}
     </div>

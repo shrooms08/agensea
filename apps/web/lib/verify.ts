@@ -1,18 +1,46 @@
 /**
  * Deliverable verification, browser-side.
  *
- * CANONICALISATION — one path, proven against all five deliverables:
- *   recursive key sort -> JSON.stringify (no whitespace) -> UTF-8 -> keccak256
+ * TWO CANONICALISATIONS EXIST, and each deliverable records which one it used.
+ * Both sort keys recursively and emit JSON with no whitespace; they differ only
+ * in how a non-ASCII character is encoded before hashing:
  *
- * There is no escaping step and no per-job flag. Measured: jobs 748/757/754
- * each contain a U+2014 em dash and reproduce ONLY under raw UTF-8; jobs
- * 753/765 are pure ASCII and reproduce under either. So raw UTF-8 — which is
- * what JSON.stringify emits natively — serves all five.
+ *   'raw'      the character as UTF-8, which is what JSON.stringify emits
+ *   'escaped'  one \uXXXX per UTF-16 code unit (Python json ensure_ascii=True)
+ *
+ * The producer changed rule partway through: apps/agents' manifestHash escapes,
+ * and every job it has submitted since that fix reproduces ONLY under 'escaped'.
+ * Jobs submitted before it reproduce ONLY under 'raw'. A pure-ASCII manifest is
+ * identical either way, so it verifies under both.
+ *
+ * MEASURED against the chain for all eight published deliverables:
+ *   748 raw · 753 ascii · 754 raw · 757 raw · 765 ascii
+ *   795 escaped · 796 escaped · 797 ascii
+ *
+ * This file previously implemented 'raw' only and claimed one path served
+ * everything. That held for the five deliverables published at the time — three
+ * predate the producer fix and two are pure ASCII — and would have reported a
+ * FALSE MISMATCH on 795 and 796, which is worse than publishing nothing.
  */
 import { keccak256 } from 'js-sha3';
 
-export const CANONICALISATION =
-  'canonical JSON — recursively sorted keys, no whitespace, raw UTF-8 — keccak256';
+/** Which non-ASCII encoding a given deliverable was hashed under. */
+export type Canon = 'raw' | 'escaped';
+
+export const CANONICALISATION = (canon: Canon) =>
+  `canonical JSON — recursively sorted keys, no whitespace, ${
+    canon === 'escaped' ? 'non-ASCII escaped as \\uXXXX' : 'raw UTF-8'
+  } — keccak256`;
+
+/** One \uXXXX per UTF-16 code unit, matching the producer's escapeNonAscii. */
+function escapeNonAscii(s: string): string {
+  let out = '';
+  for (const ch of s) {
+    if (ch.codePointAt(0)! < 0x80) { out += ch; continue; }
+    for (let i = 0; i < ch.length; i++) out += '\\u' + ch.charCodeAt(i).toString(16).padStart(4, '0');
+  }
+  return out;
+}
 
 /** Sort object keys recursively. Arrays keep their order; only keys are sorted. */
 export function canonicalise(value: unknown): unknown {
@@ -27,9 +55,9 @@ export function canonicalise(value: unknown): unknown {
   return value;
 }
 
-export function manifestHash(manifest: unknown): string {
+export function manifestHash(manifest: unknown, canon: Canon): string {
   const json = JSON.stringify(canonicalise(manifest));
-  return '0x' + keccak256(new TextEncoder().encode(json));
+  return '0x' + keccak256(new TextEncoder().encode(canon === 'escaped' ? escapeNonAscii(json) : json));
 }
 
 export type VerifyState =
