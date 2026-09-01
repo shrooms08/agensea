@@ -5,13 +5,14 @@
  * numeric ids collide across chains and merging them would misrepresent both.
  */
 import { notFound } from 'next/navigation';
-import { FIRST_PARTY_AGENTS, byId, CHAIN, ERC8183, DISPUTE_WINDOW_SECONDS } from '@/data/first-party-agents';
+import { FIRST_PARTY_AGENTS, byId, CHAIN, ERC8183, DISPUTE_WINDOW_SECONDS, AGENTS_WALLET } from '@/data/first-party-agents';
+import { DELIVERS, TARGETS } from '@/data/hire-spec';
+import { readTrackRecord } from '@/lib/server/track-record';
 import { deliverableFor } from '@/data/deliverables';
 import { CategoryChip, FirstPartyBadge, CAT_TOKEN } from '@/components/CategoryChip';
 import { VerifyDeliverable } from '@/components/VerifyDeliverable';
 import { HireDemo } from '@/components/HireDemo';
 import { SessionRevoke } from '@/components/SessionRevoke';
-import { HirePreflight } from '@/components/HirePreflight';
 import { WalletHire } from '@/components/WalletHire';
 import { SponsoredFallback } from '@/components/SponsoredFallback';
 
@@ -35,20 +36,30 @@ export default async function FirstPartyAgent({ params }: { params: Promise<{ id
   if (!agent) notFound();
 
   const s = agent.session;
+  const track = await readTrackRecord();
   const expiry = new Date(s.expiryUnix * 1000).toISOString().replace('T', ' ').slice(0, 16) + ' UTC';
 
   return (
     <>
       <section className="sec-lead">
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <CategoryChip slug={agent.slug} />
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16 }}>
+          <div className="label" style={{ fontSize: 9 }}>
+            hire <span style={{ color: 'var(--text-faint)' }}>·</span> provider{' '}
+            <a href={`${CHAIN.explorer}/address/${AGENTS_WALLET}`} target="_blank" rel="noreferrer" style={{ color: 'var(--text-muted)' }}>
+              {AGENTS_WALLET.slice(0, 6)}…{AGENTS_WALLET.slice(-4)}
+            </a>{' '}
+            <span style={{ color: 'var(--text-faint)' }}>·</span> testnet {CHAIN.id}
+          </div>
           <FirstPartyBadge />
         </div>
-        <h1 style={{ font: "500 34px/1.15 var(--display)", marginTop: 18 }}>{agent.name}</h1>
-        <div className="label" style={{ marginTop: 10 }}>Agent #{agent.agentId} · {CHAIN.name} ({CHAIN.id})</div>
+        <h1 style={{ font: "500 34px/1.15 var(--display)", marginTop: 16 }}>{agent.name}</h1>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 12 }}>
+          <span style={{ font: "500 15px/1 var(--mono)", color: 'var(--text)' }}>{agent.priceLabel} per hire</span>
+          <CategoryChip slug={agent.slug} />
+        </div>
         <p className="prose prose-muted" style={{ marginTop: 16 }}>{agent.description}</p>
         <p className="prose-sm" style={{ color: 'var(--text-faint)', marginTop: 10, fontSize: 13 }}>
-          Settles on testnet {CHAIN.id}; reads live data from BNB Smart Chain mainnet ({agent.analysisChainId}) to do the analysis.
+          Settles on {CHAIN.name} ({CHAIN.id}); reads live data from BNB Smart Chain mainnet ({agent.analysisChainId}) to do the analysis.
         </p>
       </section>
 
@@ -71,13 +82,41 @@ export default async function FirstPartyAgent({ params }: { params: Promise<{ id
         )}
       </section>
 
-      <section className="sec" id="hire" style={{ scrollMarginTop: 76 }}>
-        <HirePreflight />
-        <WalletHire agentId={agent.agentId} />
+      <div id="hire" style={{ scrollMarginTop: 76 }}>
+        <WalletHire
+          agentId={agent.agentId}
+          agentName={agent.name}
+          delivers={DELIVERS[agent.agentId] ?? []}
+          targetSpec={TARGETS[agent.agentId]!}
+          session={{
+            capTBnb: (Number(s.spendCapWei) / 1e18).toFixed(6),
+            signature: s.calls[0]?.signature ?? 'submit(uint256,bytes32,bytes)',
+            commerce: ERC8183.commerce,
+            expiryLabel: new Date(s.expiryUnix * 1000).toISOString().slice(0, 10),
+          }}
+          trackRecord={track && (
+            <section className="sec">
+              <div className="label" style={{ fontSize: 9 }}>provider track record</div>
+              <div className="track-bar">
+                <div><div className="track-num">{track.completed}</div><div className="label" style={{ fontSize: 9 }}>completed jobs</div></div>
+                <div><div className="track-num">{track.distinctBuyers}</div><div className="label" style={{ fontSize: 9 }}>distinct buyers</div></div>
+                <div><div className="track-num">{track.disputes}</div><div className="label" style={{ fontSize: 9 }}>disputes</div></div>
+                {track.medianTtdMs !== null && (
+                  <div><div className="track-num">{(track.medianTtdMs / 1000).toFixed(1)}s</div><div className="label" style={{ fontSize: 9 }}>median time to deliverable</div></div>
+                )}
+              </div>
+              <p className="meta" style={{ marginTop: 12, color: 'var(--text-faint)' }}>
+                Counted from settled ERC-8183 jobs on chain by distinct buyer wallets — every job whose
+                provider is this wallet, scanned to job {track.scannedTo}. Time to deliverable is the job&apos;s
+                on-chain submittedAt minus the timestamp its buyer wrote into the job description.
+              </p>
+            </section>
+          )}
+        />
         <SponsoredFallback>
           <HireDemo agentId={agent.agentId} completedCount={agent.jobs.filter((j) => j.status === 'COMPLETED').length} />
         </SponsoredFallback>
-      </section>
+      </div>
 
       <section className="sec">
         <h2 style={{ font: "500 20px/1.2 var(--display)" }}>Session permissions</h2>

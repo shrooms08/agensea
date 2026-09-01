@@ -24,10 +24,11 @@ import { encodeFunctionData, parseAbi } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
 import SESSIONS from '@/data/demo-sessions.json';
 import { AGENTS_WALLET } from '@/data/first-party-agents';
+import { GRID_POOLS, TARGETS, validateTarget } from '@/data/hire-spec';
 import { readAuthority, healAgentSession } from './session-admin';
 
 export type WorkEvent =
-  | { stage: 'job-verified'; jobId: string; agentId: number; provider: string; buyer: string; budget: string }
+  | { stage: 'job-verified'; jobId: string; agentId: number; provider: string; buyer: string; budget: string; target: string }
   | { stage: 'analysing' }
   | { stage: 'analysed'; ms: number }
   | { stage: 'session-restored'; tx: string }
@@ -36,16 +37,77 @@ export type WorkEvent =
   | { stage: 'settlement-pending'; eligibleAt: number; note: string }
   | { stage: 'error'; kind: 'relay' | 'rpc' | 'verification' | 'internal'; message: string };
 
-const TASKS: Record<number, { run: () => Promise<unknown> }> = {
-  2012: { run: async () => analyzePosition(await readVenusPosition(56, '0xb76b35db3f2a7d8346013d9b02edbf756cf27c72')) },
-  2013: { run: () => analyzeLp(6801109n) },
-  2014: { run: () => planGrid('0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c', '0x55d398326f99059fF775485246999027B3197955', 500, 10000) },
-  2015: { run: () => compareYields(10000) },
+/** Each agent's work, parameterised by the buyer's validated target. */
+const TASKS: Record<number, { run: (target: string) => Promise<unknown> }> = {
+  2012: { run: async (t) => analyzePosition(await readVenusPosition(56, t)) },
+  2013: { run: (t) => analyzeLp(BigInt(t)) },
+  2014: { run: (t) => { const p = GRID_POOLS[t]!; return planGrid(p.token0, p.token1, p.fee, 10_000); } },
+  2015: { run: (t) => compareYields(Number(t)) },
 };
+
+/* ---------------------------------------------------------------- targets */
+const MAINNET_RPC = process.env.ALCHEMY_BSC ?? 'https://bsc-rpc.publicnode.com';
+const VENUS_COMPTROLLER_56 = '0xfD36E2c2a6789Db23113685031d7F16329158384'; // apps/agents/src/venus/addresses.ts
+const PCS_NFPM_56 = '0x46A15B0b27311cedF172AB29E4f4766fbE7F4364';          // apps/agents/src/pancake/lp.ts
+const PCS_FACTORY_56 = '0x0BFbCF9fa4f9C56B0F40a671Ad40E0805A091865';       // apps/agents/src/grid/analyze.ts
+const pad = (a: string) => a.replace(/^0x/, '').toLowerCase().padStart(64, '0');
+
+async function mainnetCall(to: string, data: string): Promise<string | null> {
+  try {
+    const r = await fetch(MAINNET_RPC, {
+      method: 'POST', headers: { 'content-type': 'application/json' }, cache: 'no-store',
+      signal: AbortSignal.timeout(12_000),
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_call', params: [{ to, data }, 'latest'] }),
+    });
+    const j = (await r.json()) as { result?: string; error?: unknown };
+    return j.error || typeof j.result !== 'string' ? null : j.result;
+  } catch { return null; }
+}
+
+/**
+ * Chain-state validation of the buyer's target. Runs BEFORE the wallet is
+ * asked to sign anything (the route exposes a validate-only mode the page
+ * calls first) and AGAIN inside runAgentWork, so a job funded around the
+ * check still cannot make the agent analyse a target that does not exist.
+ */
+export async function validateTargetOnChain(agentId: number, rawTarget: string): Promise<{ ok: true; value: string } | { ok: false; error: string }> {
+  const fmt = validateTarget(agentId, rawTarget);
+  if (!fmt.ok) return fmt;
+  const t = fmt.value;
+  if (agentId === 2012) {
+    const res = await mainnetCall(VENUS_COMPTROLLER_56, '0xabfceffc' + pad(t)); // getAssetsIn(address)
+    if (res === null) return { ok: false, error: 'could not reach BSC mainnet to check that address — try again in a moment' };
+    // dynamic address[]: length lives at word 1
+    const len = res.length >= 130 ? Number(BigInt('0x' + res.slice(66, 130))) : 0;
+    if (len === 0) return { ok: false, error: 'that address has no Venus position — it has entered no Venus markets, so there is no health factor to report' };
+    return { ok: true, value: t };
+  }
+  if (agentId === 2013) {
+    const res = await mainnetCall(PCS_NFPM_56, '0x99fbab88' + BigInt(t).toString(16).padStart(64, '0')); // positions(uint256)
+    if (res === null || res === '0x') return { ok: false, error: `position ${t} does not exist on PancakeSwap V3` };
+    return { ok: true, value: t };
+  }
+  if (agentId === 2014) {
+    const p = GRID_POOLS[t]!;
+    const res = await mainnetCall(PCS_FACTORY_56, '0x1698ee82' + pad(p.token0) + pad(p.token1) + p.fee.toString(16).padStart(64, '0'));
+    const pool = res && res !== '0x' ? '0x' + res.slice(26) : null;
+    if (!pool || /^0x0+$/.test(pool)) return { ok: false, error: `no PancakeSwap V3 pool for ${t}` };
+    return { ok: true, value: t };
+  }
+  return { ok: true, value: t }; // 2015: position size, format-checked only
+}
+
+/** The target as written into the job description by the buyer's own tx. */
+export function targetFromDescription(description: string): string | null {
+  try {
+    const d = JSON.parse(description) as { target?: unknown };
+    return typeof d.target === 'string' ? d.target : null;
+  } catch { return null; }
+}
 const PRICE = 10n ** 18n; // 1 $U
 
 export async function verifyJobOnChain(jobId: bigint): Promise<
-  { ok: true; agentId: number; provider: string; buyer: string; budget: bigint } | { ok: false; error: string }> {
+  { ok: true; agentId: number; provider: string; buyer: string; budget: bigint; target: string | null } | { ok: false; error: string }> {
   const job = await getErc8183Job(BNB_TESTNET, jobId);
   if (!job || job.client === '0x0000000000000000000000000000000000000000') return { ok: false, error: 'job does not exist' };
   if (job.statusName !== 'FUNDED') return { ok: false, error: `job is ${job.statusName}, not FUNDED` };
@@ -62,7 +124,7 @@ export async function verifyJobOnChain(jobId: bigint): Promise<
   let agentId = 0;
   try { agentId = Number((JSON.parse(job.description) as { agentId?: unknown }).agentId); } catch { /* fall through */ }
   if (!TASKS[agentId]) return { ok: false, error: 'job description does not name a hireable agent (2012-2015)' };
-  return { ok: true, agentId, provider: job.provider, buyer: job.client, budget: job.budget };
+  return { ok: true, agentId, provider: job.provider, buyer: job.client, budget: job.budget, target: targetFromDescription(job.description) };
 }
 
 const classify = (e: unknown): 'relay' | 'rpc' => {
@@ -74,7 +136,13 @@ export async function* runAgentWork(jobId: bigint): AsyncGenerator<WorkEvent> {
   const v = await verifyJobOnChain(jobId);
   if (!v.ok) { yield { stage: 'error', kind: 'verification', message: v.error }; return; }
   const { agentId } = v;
-  yield { stage: 'job-verified', jobId: jobId.toString(), agentId, provider: v.provider, buyer: v.buyer, budget: v.budget.toString() };
+  // The target is whatever the buyer's own createJob wrote on chain. Older
+  // jobs (before the input shipped) carry none and fall back to the prefill.
+  const rawTarget = v.target ?? TARGETS[agentId]!.prefill;
+  const checked = await validateTargetOnChain(agentId, rawTarget);
+  if (!checked.ok) { yield { stage: 'error', kind: 'verification', message: `the job's target is not analysable: ${checked.error}` }; return; }
+  const target = checked.value;
+  yield { stage: 'job-verified', jobId: jobId.toString(), agentId, provider: v.provider, buyer: v.buyer, budget: v.budget.toString(), target };
 
   const meta = (SESSIONS as { sessions: { agentId: number; publicKey: string; expiry: number; capWei: string; calls: { signature: string; to: string }[]; walletAddress: string }[] })
     .sessions.find((s) => s.agentId === agentId);
@@ -83,7 +151,7 @@ export async function* runAgentWork(jobId: bigint): AsyncGenerator<WorkEvent> {
 
   yield { stage: 'analysing' };
   let analysis: unknown; const tA = Date.now();
-  try { analysis = await TASKS[agentId]!.run(); }
+  try { analysis = await TASKS[agentId]!.run(target); }
   catch { yield { stage: 'error', kind: 'rpc', message: 'analysis read failed — could not reach BSC mainnet' }; return; }
   yield { stage: 'analysed', ms: Date.now() - tA };
 
@@ -100,7 +168,7 @@ export async function* runAgentWork(jobId: bigint): AsyncGenerator<WorkEvent> {
     version: 1, job_id: Number(jobId), chain_id: 97,
     contracts: { commerce: addrs.commerce, router: addrs.router, policy: addrs.policy },
     response: { content: JSON.stringify(analysis), content_type: 'application/json' },
-    metadata: { agent_id: agentId, wallet_hire: true, analysed_chain: 56 },
+    metadata: { agent_id: agentId, wallet_hire: true, target, analysed_chain: 56 },
   };
   const hash = manifestHash(manifest);
   const url = 'data:application/json;base64,' + Buffer.from(canonicalize(manifest), 'utf8').toString('base64');

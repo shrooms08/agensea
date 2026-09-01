@@ -1,6 +1,10 @@
 'use client';
 /**
- * Wallet-native hire — the PRIMARY path on /marketplace/[id].
+ * Wallet-native hire — the PRIMARY path on /marketplace/[id]. This component
+ * owns the whole interactive region: what the buyer provides, the transaction
+ * preview, and the hire itself. The static "what the agent delivers" column and
+ * the provider track record are rendered on the server and passed in, so every
+ * figure on this page comes from data rather than from the client.
  *
  * The buyer is the connected wallet, not the platform: approve -> create
  * (createJob + registerJob + setBudget) -> fund, as sequential wallet
@@ -9,18 +13,22 @@
  * reading jobCounter first and verified after createJob by matching our
  * unique description nonce (walking ±3 if a race lost the slot).
  *
+ * The buyer's target is validated for format in the browser and against chain
+ * state on the server BEFORE any transaction is offered, then written into the
+ * job description — so it is bound on chain and echoed in the manifest.
+ *
  * Stuck-funded recovery: on mount we scan chain state for FUNDED jobs from
  * this wallet against our provider — tab closed after funding, network drop —
  * and offer Resume (agent-work) or, past expiry, Reclaim (claimRefund from
  * their wallet). A judge's escrow must never sit silently stuck.
  */
-import { useAccount, useWriteContract, usePublicClient } from 'wagmi';
-import { formatEther } from 'viem';
+import { useAccount, useConnect, useWriteContract, usePublicClient } from 'wagmi';
+import { formatEther, keccak256, stringToHex } from 'viem';
 import { useEffect, useRef, useState } from 'react';
-import { keccak256, stringToHex } from 'viem';
 import { bscTestnet97, U_TOKEN } from '@/lib/wallet/config';
 import { COMMERCE_ABI, ROUTER_ABI, ERC20_APPROVE_ABI, ERC8183 } from '@/lib/wallet/erc8183';
-import { useWalletFunding } from '@/components/HirePreflight';
+import { HirePreflight, useWalletFunding } from '@/components/HirePreflight';
+import { GRID_POOLS, MEASURED_GAS, validateTarget, type DeliversRow, type TargetSpec } from '@/data/hire-spec';
 
 const PRICE = 10n ** 18n;
 const EXPLORER = 'https://testnet.bscscan.com/tx/';
@@ -28,8 +36,25 @@ type Ev = { stage: string; [k: string]: unknown };
 type TxStep = { id: number; label: string; tx?: string; state: 'pending' | 'confirming' | 'done' | 'failed' };
 type Funded = { jobId: string; agentId: number; expiredAt: number; expired: boolean };
 
-export function WalletHire({ agentId }: { agentId: number }) {
-  const { address } = useAccount();
+export interface WalletHireProps {
+  agentId: number;
+  agentName: string;
+  delivers: DeliversRow[];
+  targetSpec: TargetSpec;
+  session: { capTBnb: string; signature: string; commerce: string; expiryLabel: string };
+  trackRecord?: React.ReactNode;
+}
+
+const Row = ({ k, v, tone }: { k: string; v: React.ReactNode; tone?: string }) => (
+  <div className="tx-row">
+    <span className="tx-key">{k}</span>
+    <span className="tx-val" style={tone ? { color: tone } : undefined}>{v}</span>
+  </div>
+);
+
+export function WalletHire({ agentId, agentName, delivers, targetSpec, session, trackRecord }: WalletHireProps) {
+  const { address, isConnected } = useAccount();
+  const { connect, connectors, isPending: connecting } = useConnect();
   const f = useWalletFunding();
   const pub = usePublicClient({ chainId: bscTestnet97.id });
   const { writeContractAsync } = useWriteContract();
@@ -40,6 +65,41 @@ export function WalletHire({ agentId }: { agentId: number }) {
   const [running, setRunning] = useState(false);
   const [stuck, setStuck] = useState<Funded[]>([]);
   const doneRef = useRef(false);
+
+  // ---- the buyer's target ---------------------------------------------------
+  const [target, setTarget] = useState(targetSpec.prefill);
+  const [targetError, setTargetError] = useState<string | null>(null);
+  const [checking, setChecking] = useState(false);
+  const fmt = validateTarget(agentId, target);
+  useEffect(() => {
+    if (!fmt.ok) { setTargetError(fmt.error); setChecking(false); return; }
+    setTargetError(null); setChecking(true);
+    const t = setTimeout(async () => {
+      try {
+        const r = await fetch('/api/agent-work', { method: 'POST', headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ validate: { agentId, target } }) });
+        const j = (await r.json()) as { ok?: boolean; error?: string };
+        setTargetError(r.ok ? null : (j.error ?? 'that target could not be checked'));
+      } catch { setTargetError(null); /* network flake: the server re-checks before any work */ }
+      setChecking(false);
+    }, 500);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target, agentId]);
+
+  // ---- live numbers for the preview ----------------------------------------
+  const [gasPrice, setGasPrice] = useState<bigint | null>(null);
+  const [authority, setAuthority] = useState<{ active: boolean; expiry: number | null } | null>(null);
+  useEffect(() => {
+    void (async () => { try { setGasPrice(await pub!.getGasPrice()); } catch { /* preview shows measured gas only */ } })();
+    void (async () => {
+      try {
+        const r = await fetch(`/api/revoke/${agentId}`, { cache: 'no-store' });
+        setAuthority(((await r.json()) as { authority: { active: boolean; expiry: number | null } | null }).authority);
+      } catch { /* falls back to the granted expiry */ }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [agentId]);
 
   useEffect(() => {
     if (!address) { setStuck([]); return; }
@@ -101,14 +161,25 @@ export function WalletHire({ agentId }: { agentId: number }) {
 
   async function hire() {
     if (running || doneRef.current || !pub || !address) return;
+    const check = validateTarget(agentId, target);
+    if (!check.ok) { setTargetError(check.error); return; }
     setRunning(true); setFatal(null); setSteps([]); setEvents([]); setJobId(null);
     try {
+      // last word before any signature: the server checks the target on chain
+      const vr = await fetch('/api/agent-work', { method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ validate: { agentId, target: check.value } }) });
+      if (!vr.ok) {
+        const j = (await vr.json()) as { error?: string };
+        setTargetError(j.error ?? 'that target could not be checked');
+        setRunning(false);
+        return;
+      }
       // stage 1: approve
       await sendStep('Approve 1 $U', () => writeContractAsync({
         address: U_TOKEN, abi: ERC20_APPROVE_ABI, functionName: 'approve', args: [ERC8183.commerce, PRICE], chainId: bscTestnet97.id }));
       // stage 2: create (createJob + registerJob + setBudget)
       const nonce = crypto.randomUUID();
-      const description = JSON.stringify({ wallet: true, agentId, nonce, at: Date.now() });
+      const description = JSON.stringify({ wallet: true, agentId, target: check.value, nonce, at: Date.now() });
       const counter = (await pub.readContract({ address: ERC8183.commerce, abi: COMMERCE_ABI, functionName: 'jobCounter' })) as bigint;
       let expected = counter + 1n;
       await sendStep('Create job', () => writeContractAsync({
@@ -208,111 +279,194 @@ export function WalletHire({ agentId }: { agentId: number }) {
     let canon = '';
     for (const ch of sortStringify(verifiedEv.manifest)) {
       if (ch.codePointAt(0)! < 0x80) { canon += ch; continue; }
-      // one \uXXXX per UTF-16 code unit, matching the server's escapeNonAscii
       for (let i = 0; i < ch.length; i++) canon += '\\u' + ch.charCodeAt(i).toString(16).padStart(4, '0');
     }
     localHash = keccak256(stringToHex(canon));
     verifyState = localHash.toLowerCase() === verifiedEv.onChain.toLowerCase() ? 'match' : 'mismatch';
   }
 
-  if (!f.isConnected) return null;
+  const estGas = gasPrice ? Number(BigInt(MEASURED_GAS.total) * gasPrice) / 1e18 : null;
+  const shortOfFunds = f.isConnected && !f.ready && f.bnb !== undefined && f.u !== undefined;
+  const canHire = f.ready && !targetError && !checking && !running && !doneRef.current;
+  const sessionExpiry = authority?.expiry ? new Date(authority.expiry * 1000).toISOString().slice(0, 10) : session.expiryLabel;
 
   return (
-    <div style={{ marginTop: 14, border: '1px solid var(--border-strong)', background: 'var(--surface)', padding: '20px 22px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
+    <>
+      {/* ---- what the agent delivers / what you provide ---- */}
+      <section className="sec hire-cols">
         <div>
-          <div className="label">Hire from your wallet — 1 $U, BNB Smart Chain Testnet (97)</div>
-          <div className="prose-sm prose-muted" style={{ marginTop: 6, fontSize: 13 }}>
-            You fund the escrow from your own wallet; the agent analyses live mainnet state and submits
-            the deliverable through its scoped session key. Every step is a real transaction you sign.
+          <div className="label" style={{ fontSize: 9 }}>what the agent delivers</div>
+          <div className="delivers">
+            {delivers.map((d) => (
+              <div key={d.key} className="delivers-row">
+                <span className="data">{d.label}</span>
+                <span className="meta" style={{ color: 'var(--text-faint)' }}>{d.key}</span>
+              </div>
+            ))}
+          </div>
+          <p className="meta" style={{ marginTop: 12, color: 'var(--text-faint)' }}>
+            Field names are the deliverable&apos;s own keys, as submitted on chain.
+          </p>
+        </div>
+        <div>
+          <div className="label" style={{ fontSize: 9 }}>what you provide</div>
+          <label className="data" style={{ display: 'block', marginTop: 14, color: 'var(--text-muted)' }}>{targetSpec.label}</label>
+          {targetSpec.kind === 'pool' ? (
+            <select className="target-input" value={target} onChange={(e) => setTarget(e.target.value)} disabled={running}>
+              {Object.keys(GRID_POOLS).map((k) => <option key={k} value={k}>{k}</option>)}
+            </select>
+          ) : (
+            <input className="target-input" value={target} spellCheck={false} disabled={running}
+              onChange={(e) => setTarget(e.target.value)} aria-label={targetSpec.label} />
+          )}
+          <p className="meta" style={{ marginTop: 10 }}>{targetSpec.hint}</p>
+          {targetSpec.fixed && <p className="meta" style={{ marginTop: 6, color: 'var(--text-faint)' }}>fixed for this agent: {targetSpec.fixed}</p>}
+          <div className="data" style={{ marginTop: 10, color: targetError ? 'var(--danger)' : 'var(--live)' }}>
+            {targetError ? targetError : checking ? <span style={{ color: 'var(--text-faint)' }}>checking on chain…</span> : 'checked on chain ✓'}
           </div>
         </div>
-        <button onClick={hire} disabled={!f.ready || running || doneRef.current}
-          style={{ font: "500 11px/1 var(--mono)", letterSpacing: '0.12em', textTransform: 'uppercase',
-                   color: f.ready && !running && !doneRef.current ? 'var(--bg)' : 'var(--text-faint)',
-                   background: f.ready && !running && !doneRef.current ? 'var(--live-dim)' : 'var(--surface-raised)',
-                   border: 'none', padding: '12px 20px', cursor: f.ready && !running ? 'pointer' : 'not-allowed' }}>
-          {doneRef.current ? 'Job complete' : running ? 'In progress…' : 'Hire — sign in your wallet'}
-        </button>
-      </div>
+      </section>
 
-      {stuck.length > 0 && !running && !doneRef.current && (
-        <div className="hd-enter" style={{ marginTop: 14, padding: '12px 16px', background: 'var(--surface-raised)', boxShadow: 'inset 2px 0 0 var(--warn)' }}>
-          {stuck.map((s) => (
-            <div key={s.jobId} style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
-              <span className="data" style={{ color: 'var(--warn)' }}>
-                Your 1 $U is escrowed in job {s.jobId} and the agent has not picked it up{s.expired ? ' — the job has expired' : ''}.
-              </span>
-              {!s.expired && <button className="wallet-connect" onClick={() => resume(s.jobId)}>Resume — run the agent</button>}
-              {s.expired && <button className="wallet-connect" onClick={() => reclaim(s.jobId)}>Reclaim 1 $U</button>}
-            </div>
-          ))}
+      {trackRecord}
+
+      {/* ---- transaction preview ---- */}
+      <section className="sec">
+        <div className="tx-preview">
+          <div className="label" style={{ fontSize: 9, paddingBottom: 12, borderBottom: '1px solid var(--border)' }}>
+            transaction preview · BNB Smart Chain Testnet (97)
+          </div>
+          <Row k="service" v={agentName} />
+          <Row k="target" v={<span style={{ wordBreak: 'break-all' }}>{target}</span>} />
+          <Row k="escrow" v="1 $U" />
+          <Row k="platform fee" v="0 — measured: the provider receives exactly 1.0 $U" />
+          <Row k="wallet transactions" v="5 — approve, createJob, registerJob, setBudget, fund" />
+          <Row k="estimated gas" v={estGas !== null
+            ? `${estGas.toFixed(6)} tBNB — ${MEASURED_GAS.total.toLocaleString('en-GB')} gas at ${(Number(gasPrice) / 1e9).toFixed(2)} gwei`
+            : `${MEASURED_GAS.total.toLocaleString('en-GB')} gas (${MEASURED_GAS.source})`} />
+          <Row k="your balance"
+            v={f.isConnected
+              ? (f.bnb !== undefined && f.u !== undefined
+                ? `${Number(formatEther(f.u)).toFixed(1)} $U / ${Number(formatEther(f.bnb)).toFixed(4)} tBNB`
+                : 'reading…')
+              : 'connect a wallet'}
+            tone={shortOfFunds ? 'var(--danger)' : undefined} />
+          <Row k="dispute policy" v="optimistic — escrow releases after the 900 s window, or you can dispute inside it" />
+          <Row k="session key" v={`the agent submits through a key scoped to ${session.signature} only, cap ${session.capTBnb} tBNB/hour, expires ${sessionExpiry}${authority && !authority.active ? ' — currently revoked, re-granted on the next hire' : ''}`} />
+          <Row k="settlement" v="automatic after the window, by our keeper" />
+          <Row k="provider net" v="1 $U (100%)" />
         </div>
-      )}
 
-      {steps.length > 0 && (
-        <div style={{ marginTop: 16, display: 'grid', gap: 8 }}>
-          {steps.map((s) => (
-            <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span className="data" style={{ width: 14, color: s.state === 'done' ? 'var(--live)' : s.state === 'failed' ? 'var(--danger)' : 'var(--text-faint)' }}>
-                {s.state === 'done' ? '✓' : s.state === 'failed' ? '✕' : '·'}
-              </span>
-              <span className="data" style={{ color: s.state === 'failed' ? 'var(--danger)' : 'var(--text)' }}>{s.label}</span>
-              {s.state === 'confirming' && <span className="meta">confirming…</span>}
-              {s.tx && <a className="meta" style={{ color: 'var(--live-dim)' }} href={EXPLORER + s.tx} target="_blank" rel="noreferrer">tx ↗</a>}
+        {f.isConnected && <HirePreflight />}
+
+        <p className="prose-sm prose-muted" style={{ marginTop: 18, fontSize: 13 }}>
+          Your wallet will be asked to sign five transactions in order: approve 1 $U to the escrow
+          contract, create the job with your target written into it, register the optimistic policy,
+          set the budget, and fund the escrow. When the fund transaction lands, the agent reads live
+          BNB Smart Chain mainnet state, submits its deliverable through a session key that can call
+          nothing but <code className="data">submit</code>, and the hash is recomputed in your
+          browser against the chain. Escrow releases to the agent after the 900-second dispute
+          window and settles automatically.
+        </p>
+
+        {isConnected ? (
+          <button onClick={hire} disabled={!canHire} className="hire-cta"
+            style={{ background: canHire ? 'var(--live-dim)' : 'var(--surface-raised)',
+                     color: canHire ? 'var(--bg)' : 'var(--text-faint)',
+                     cursor: canHire ? 'pointer' : 'not-allowed' }}>
+            {doneRef.current ? 'Job complete' : running ? 'In progress…' : 'Hire — escrow 1 $U'}
+          </button>
+        ) : (
+          <div className="hire-connect">
+            <div className="data">Connect a wallet to hire {agentName} for 1 $U</div>
+            <div style={{ display: 'flex', gap: 12, marginTop: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
+              {connectors.map((c) => (
+                <button key={c.uid} className="wallet-connect" disabled={connecting}
+                  onClick={() => connect({ connector: c })}>
+                  {connecting ? 'Connecting…' : `Connect ${c.name}`}
+                </button>
+              ))}
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        )}
 
-      {events.length > 0 && (
-        <div style={{ marginTop: 14, display: 'grid', gap: 8 }}>
-          {[['job-verified', 'Job verified on chain — provider is this agent'],
-            ['analysing', 'Analysis running (BSC mainnet reads)'],
-            ['analysed', 'Analysis complete'],
-            ['submitted', 'Deliverable submitted via session key'],
-            ['verified', 'Hash verified on chain'],
-            ['settlement-pending', 'Escrow releases after the 900-second dispute window and settles automatically'],
-          ].map(([k, label]) => {
-            const e = ev(k);
-            if (!e && k !== 'analysing') return null;
-            return (
-              <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span className="data" style={{ width: 14, color: e ? 'var(--live)' : 'var(--text-faint)' }}>{e ? '✓' : '·'}</span>
-                <span className="data">{label}{k === 'analysed' && e ? ` — ${((e.ms as number) / 1000).toFixed(1)}s` : ''}</span>
-                {k === 'submitted' && e?.tx ? <a className="meta" style={{ color: 'var(--live-dim)' }} href={EXPLORER + String(e.tx)} target="_blank" rel="noreferrer">tx ↗</a> : null}
+        {stuck.length > 0 && !running && !doneRef.current && (
+          <div className="hd-enter" style={{ marginTop: 14, padding: '12px 16px', background: 'var(--surface-raised)', boxShadow: 'inset 2px 0 0 var(--warn)' }}>
+            {stuck.map((s) => (
+              <div key={s.jobId} style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+                <span className="data" style={{ color: 'var(--warn)' }}>
+                  Your 1 $U is escrowed in job {s.jobId} and the agent has not picked it up{s.expired ? ' — the job has expired' : ''}.
+                </span>
+                {!s.expired && <button className="wallet-connect" onClick={() => resume(s.jobId)}>Resume — run the agent</button>}
+                {s.expired && <button className="wallet-connect" onClick={() => reclaim(s.jobId)}>Reclaim 1 $U</button>}
               </div>
-            );
-          })}
-          {ev('session-restored') && <div className="data" style={{ color: 'var(--live)' }}>Session re-granted before submit — <a className="meta" style={{ color: 'var(--live-dim)' }} href={EXPLORER + String(ev('session-restored')!.tx)} target="_blank" rel="noreferrer">tx ↗</a></div>}
-          {verifyState && (
-            <div className="hd-enter" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--surface-raised)', boxShadow: `inset 2px 0 0 var(${verifyState === 'match' ? '--verified' : '--danger'})` }}>
-              <span className="label" style={{ fontSize: 9, color: verifyState === 'match' ? 'var(--verified)' : 'var(--danger)' }}>verify</span>
-              <span className="data">
-                {verifyState === 'match'
-                  ? `keccak256 recomputed in your browser matches the chain — ${localHash.slice(0, 14)}…`
-                  : 'recomputed hash does NOT match the chain — do not trust this deliverable'}
-              </span>
-            </div>
-          )}
-          {pending && !settled && remaining !== null && remaining > 0 && (
-            <div className="data" style={{ color: 'var(--text-muted)' }}>settles in {Math.floor(remaining / 60)}:{String(remaining % 60).padStart(2, '0')} — keep the tab open to watch it complete</div>
-          )}
-          {settled && (
-            <div className="hd-enter data" style={{ color: 'var(--live)' }}>
-              COMPLETED — escrow settled by our keeper{settled.tx ? <> — <a className="meta" style={{ color: 'var(--live-dim)' }} href={EXPLORER + String(settled.tx)} target="_blank" rel="noreferrer">settle tx ↗</a></> : null}
-            </div>
-          )}
-          {ev('settle-note') && <div className="data" style={{ color: 'var(--text-muted)' }}>{String((ev('settle-note') as { message?: string }).message)}</div>}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
 
-      {fatal && (
-        <div className="hd-enter" style={{ marginTop: 12, padding: '10px 14px', background: 'var(--surface-raised)', boxShadow: 'inset 2px 0 0 var(--danger)' }}>
-          <span className="data" style={{ color: 'var(--danger)' }}>{fatal}</span>
-        </div>
-      )}
-      {jobId && <div className="meta" style={{ marginTop: 12 }}>job {jobId}</div>}
-    </div>
+        {steps.length > 0 && (
+          <div style={{ marginTop: 16, display: 'grid', gap: 8 }}>
+            {steps.map((s) => (
+              <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span className="data" style={{ width: 14, color: s.state === 'done' ? 'var(--live)' : s.state === 'failed' ? 'var(--danger)' : 'var(--text-faint)' }}>
+                  {s.state === 'done' ? '✓' : s.state === 'failed' ? '✕' : '·'}
+                </span>
+                <span className="data" style={{ color: s.state === 'failed' ? 'var(--danger)' : 'var(--text)' }}>{s.label}</span>
+                {s.state === 'confirming' && <span className="meta">confirming…</span>}
+                {s.tx && <a className="meta" style={{ color: 'var(--live-dim)' }} href={EXPLORER + s.tx} target="_blank" rel="noreferrer">tx ↗</a>}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {events.length > 0 && (
+          <div style={{ marginTop: 14, display: 'grid', gap: 8 }}>
+            {[['job-verified', 'Job verified on chain — provider is this agent'],
+              ['analysing', 'Analysis running (BSC mainnet reads)'],
+              ['analysed', 'Analysis complete'],
+              ['submitted', 'Deliverable submitted via session key'],
+              ['verified', 'Hash verified on chain'],
+              ['settlement-pending', 'Escrow releases after the 900-second dispute window and settles automatically'],
+            ].map(([k, label]) => {
+              const e = ev(k);
+              if (!e && k !== 'analysing') return null;
+              return (
+                <div key={k} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span className="data" style={{ width: 14, color: e ? 'var(--live)' : 'var(--text-faint)' }}>{e ? '✓' : '·'}</span>
+                  <span className="data">{label}{k === 'analysed' && e ? ` — ${((e.ms as number) / 1000).toFixed(1)}s` : ''}</span>
+                  {k === 'submitted' && e?.tx ? <a className="meta" style={{ color: 'var(--live-dim)' }} href={EXPLORER + String(e.tx)} target="_blank" rel="noreferrer">tx ↗</a> : null}
+                </div>
+              );
+            })}
+            {ev('session-restored') && <div className="data" style={{ color: 'var(--live)' }}>Session re-granted before submit — <a className="meta" style={{ color: 'var(--live-dim)' }} href={EXPLORER + String(ev('session-restored')!.tx)} target="_blank" rel="noreferrer">tx ↗</a></div>}
+            {verifyState && (
+              <div className="hd-enter" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', background: 'var(--surface-raised)', boxShadow: `inset 2px 0 0 var(${verifyState === 'match' ? '--verified' : '--danger'})` }}>
+                <span className="label" style={{ fontSize: 9, color: verifyState === 'match' ? 'var(--verified)' : 'var(--danger)' }}>verify</span>
+                <span className="data">
+                  {verifyState === 'match'
+                    ? `keccak256 recomputed in your browser matches the chain — ${localHash.slice(0, 14)}…`
+                    : 'recomputed hash does NOT match the chain — do not trust this deliverable'}
+                </span>
+              </div>
+            )}
+            {pending && !settled && remaining !== null && remaining > 0 && (
+              <div className="data" style={{ color: 'var(--text-muted)' }}>settles in {Math.floor(remaining / 60)}:{String(remaining % 60).padStart(2, '0')} — keep the tab open to watch it complete</div>
+            )}
+            {settled && (
+              <div className="hd-enter data" style={{ color: 'var(--live)' }}>
+                COMPLETED — escrow settled by our keeper{settled.tx ? <> — <a className="meta" style={{ color: 'var(--live-dim)' }} href={EXPLORER + String(settled.tx)} target="_blank" rel="noreferrer">settle tx ↗</a></> : null}
+              </div>
+            )}
+            {ev('settle-note') && <div className="data" style={{ color: 'var(--text-muted)' }}>{String((ev('settle-note') as { message?: string }).message)}</div>}
+          </div>
+        )}
+
+        {fatal && (
+          <div className="hd-enter" style={{ marginTop: 12, padding: '10px 14px', background: 'var(--surface-raised)', boxShadow: 'inset 2px 0 0 var(--danger)' }}>
+            <span className="data" style={{ color: 'var(--danger)' }}>{fatal}</span>
+          </div>
+        )}
+        {jobId && <div className="meta" style={{ marginTop: 12 }}>job {jobId}</div>}
+      </section>
+    </>
   );
 }
