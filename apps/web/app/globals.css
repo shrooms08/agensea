@@ -538,3 +538,23 @@ header nav .navlink[data-active='true']::after {
   .tx-row { grid-template-columns: 1fr; gap: 4px; }
   .tx-preview { padding: 16px 14px; }
 }
+
+/* ---------------------------------------------------------------------------
+   Registry index table. Five columns at desktop; on mobile the last two drop
+   to their own line rather than squeezing the id and client count.
+--------------------------------------------------------------------------- */
+.agent-table { margin-top: 16px; border-top: 1px solid var(--border); }
+.agent-table-head, .agent-table-row {
+  display: grid; grid-template-columns: 110px 90px 90px 1fr 130px; gap: 16px; align-items: center;
+  padding: 11px 0; border-bottom: 1px solid var(--border);
+}
+.agent-table-head {
+  font: 500 9px/1 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-faint);
+}
+.agent-table-row { transition: background-color 120ms ease-out; }
+.agent-table-row:hover { background: var(--surface); }
+.agent-jump { padding: 18px 20px; border: 1px solid var(--border); background: var(--surface); }
+@media (max-width: 767px) {
+  .agent-table-head { display: none; }
+  .agent-table-row { grid-template-columns: 1fr 1fr; gap: 6px 14px; padding: 14px 0; }
+}
