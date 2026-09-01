@@ -415,6 +415,12 @@ export function WalletHire({ agentId, agentName, priceLabel, mode, initialTarget
 
           {f.isConnected && <HirePreflight />}
 
+          {/* On mobile the preview is 13 rows plus a paragraph, which put Confirm
+              1,583px down — you would scroll past everything to reach it, then
+              scroll back to read it. Pinned to the viewport bottom instead, so
+              the action stays in reach while the preview is read. Desktop is
+              unchanged: it sits in flow under the paragraph. */}
+          <div className="hire-confirm-bar">
           {isConnected ? (
             <button onClick={hire} disabled={!canHire} className="hire-cta"
               style={{ background: canHire ? 'var(--live-dim)' : 'var(--surface-raised)',
@@ -435,6 +441,7 @@ export function WalletHire({ agentId, agentName, priceLabel, mode, initialTarget
               </div>
             </div>
           )}
+          </div>
 
           {stuck.length > 0 && !running && !doneRef.current && (
           <div className="hd-enter" style={{ marginTop: 14, padding: '12px 16px', background: 'var(--surface-raised)', boxShadow: 'inset 2px 0 0 var(--warn)' }}>
