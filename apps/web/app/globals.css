@@ -645,3 +645,22 @@ header nav .navlink[data-active='true']::after {
 .claim-field { display: flex; flex-direction: column; gap: 2px; }
 .claim-wide { grid-column: 1 / -1; }
 @media (max-width: 767px) { .claim-form { grid-template-columns: 1fr; } .claim-row .wallet-connect { margin-left: 0; } }
+
+/* ---------------------------------------------------------------------------
+   Task-first entry points on the landing, above the category cards. A visitor
+   who does not know what "rebalancing" means still knows they have an LP range
+   to look at, so each category also gets a plain-language door.
+--------------------------------------------------------------------------- */
+.task-grid {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 18px;
+}
+.task-link {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 16px; border: 1px solid var(--border);
+  font: 500 14px/1.3 var(--display); color: var(--text);
+}
+.task-link:hover { border-color: var(--border-strong); }
+.task-link-arrow { margin-left: auto; font: 500 13px/1 var(--mono); color: var(--text-muted); }
+.task-link:hover .task-link-arrow { color: var(--text); }
+@media (max-width: 1023px) { .task-grid { grid-template-columns: 1fr 1fr; } }
+@media (max-width: 559px)  { .task-grid { grid-template-columns: 1fr; } }
