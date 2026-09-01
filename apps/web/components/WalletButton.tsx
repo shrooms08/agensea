@@ -3,16 +3,14 @@
  * Header wallet control, all pages. Connect (injected only) -> enforce chain
  * 97 via switchChain (wagmi falls back to wallet_addEthereumChain with the
  * full testnet params from the chain definition). Wrong chain renders a
- * BLOCKING banner, never a silent failure. Connected: truncated address +
- * live tBNB and $U balances.
+ * BLOCKING banner, never a silent failure. Connected: an inverse pill with the
+ * truncated address (click to disconnect). Balances live in the agent page's
+ * preflight box, where they are actionable — the header stays clean.
  */
-import { useAccount, useBalance, useConnect, useDisconnect, useReadContract, useSwitchChain } from 'wagmi';
-import { formatUnits, parseAbi } from 'viem';
+import { useAccount, useConnect, useDisconnect, useSwitchChain } from 'wagmi';
 import { useEffect, useState } from 'react';
-import { bscTestnet97, U_TOKEN } from '@/lib/wallet/config';
+import { bscTestnet97 } from '@/lib/wallet/config';
 
-const ERC20 = parseAbi(['function balanceOf(address) view returns (uint256)']);
-const fmt = (v: bigint | undefined, dp: number) => (v === undefined ? '…' : Number(formatUnits(v, 18)).toFixed(dp));
 
 export function WalletButton() {
   const [mounted, setMounted] = useState(false);
@@ -25,9 +23,6 @@ export function WalletButton() {
   const { switchChain, isPending: switching } = useSwitchChain();
 
   const wrongChain = isConnected && walletChainId !== bscTestnet97.id;
-  const { data: bnb } = useBalance({ address, chainId: bscTestnet97.id, query: { enabled: !!address, refetchInterval: 15_000 } });
-  const { data: u } = useReadContract({ address: U_TOKEN, abi: ERC20, functionName: 'balanceOf',
-    args: address ? [address] : undefined, chainId: bscTestnet97.id, query: { enabled: !!address, refetchInterval: 15_000 } });
 
   // On connect, steer to 97 once, automatically; the banner covers refusal.
   useEffect(() => {
@@ -48,13 +43,9 @@ export function WalletButton() {
 
   return (
     <>
-      <div className="wallet-chip" title={address}>
-        <span className="wallet-bal">{fmt(bnb?.value, 4)} tBNB</span>
-        <span className="wallet-bal">{fmt(u as bigint | undefined, 1)} $U</span>
-        <button className="wallet-addr" onClick={() => disconnect()} title="Disconnect">
-          {address?.slice(0, 6)}…{address?.slice(-4)}
-        </button>
-      </div>
+      <button className="wallet-pill" onClick={() => disconnect()} title={`${address} — click to disconnect`}>
+        {address?.slice(0, 6)}…{address?.slice(-4)}
+      </button>
       {wrongChain && (
         <div className="chain-banner" role="alert">
           <span className="data">
