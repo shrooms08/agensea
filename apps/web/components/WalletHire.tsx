@@ -30,11 +30,26 @@ import { bscTestnet97, U_TOKEN } from '@/lib/wallet/config';
 import { COMMERCE_ABI, ROUTER_ABI, ERC20_APPROVE_ABI, ERC8183 } from '@/lib/wallet/erc8183';
 import { HirePreflight, useWalletFunding } from '@/components/HirePreflight';
 import { GRID_POOLS, MEASURED_GAS, validateTarget, type DeliversRow, type TargetSpec } from '@/data/hire-spec';
+import { DISPUTE_WINDOW_SECONDS } from '@/data/first-party-agents';
 
 const PRICE = 10n ** 18n;
 const EXPLORER = 'https://testnet.bscscan.com/tx/';
 type Ev = { stage: string; [k: string]: unknown };
-type TxStep = { id: number; label: string; tx?: string; state: 'pending' | 'confirming' | 'done' | 'failed' };
+type TxStep = { id: number; label: string; tx?: string; state: 'waiting' | 'signing' | 'confirming' | 'done' | 'failed' };
+
+/**
+ * The five calls, seeded before the first prompt so a buyer at prompt 3 can see
+ * what is done, what is open, and what is left. They are numbered because the
+ * count is the friction: without it the only way to know how far along you are
+ * is to count wallet prompts yourself.
+ */
+const HIRE_STEPS = [
+  '1/5  Approve 1 $U',
+  '2/5  Create job',
+  '3/5  Register dispute policy',
+  '4/5  Set budget',
+  '5/5  Fund escrow (1 $U)',
+] as const;
 type Funded = { jobId: string; agentId: number; expiredAt: number; expired: boolean };
 
 export interface WalletHireProps {
@@ -132,11 +147,20 @@ export function WalletHire({ agentId, agentName, priceLabel, mode, initialTarget
   }, [address, agentId, jobId]);
 
   const stepId = useRef(0);
-  const push = (label: string): number => { const id = stepId.current++; setSteps((p) => [...p, { id, label, state: 'pending' }]); return id; };
+  const push = (label: string): number => { const id = stepId.current++; setSteps((p) => [...p, { id, label, state: 'waiting' }]); return id; };
+  /** Seed the five up front. Ids are the array index, so sendStep marks in
+   *  place; stepId continues past them for ad-hoc rows like the reclaim. */
+  const seedSteps = () => {
+    stepId.current = HIRE_STEPS.length;
+    setSteps(HIRE_STEPS.map((label, id) => ({ id, label, state: 'waiting' as const })));
+  };
   const mark = (id: number, patch: Partial<TxStep>) => setSteps((p) => p.map((s) => (s.id === id ? { ...s, ...patch } : s)));
 
   async function sendStep(label: string, fn: () => Promise<`0x${string}`>): Promise<void> {
-    const i = push(label);
+    // A seeded row is marked in place; anything else (the reclaim) still appends.
+    const seeded = (HIRE_STEPS as readonly string[]).indexOf(label);
+    const i = seeded >= 0 ? seeded : push(label);
+    mark(i, { state: 'signing' });
     try {
       const tx = await fn();
       mark(i, { tx, state: 'confirming' });
@@ -145,7 +169,9 @@ export function WalletHire({ agentId, agentName, priceLabel, mode, initialTarget
     } catch (e) {
       const rejected = /reject|denied|4001/i.test(String((e as Error).message));
       mark(i, { state: 'failed' });
-      throw new Error(rejected ? `${label} was rejected in your wallet — nothing further was sent` : `${label} failed: ${String((e as Error).message).slice(0, 90)}`);
+      // The step number belongs in the indicator, not in a sentence.
+      const name = label.replace(/^\d\/\d\s+/, '');
+      throw new Error(rejected ? `${name} was rejected in your wallet — nothing further was sent` : `${name} failed: ${String((e as Error).message).slice(0, 90)}`);
     }
   }
 
@@ -182,7 +208,7 @@ export function WalletHire({ agentId, agentName, priceLabel, mode, initialTarget
     if (running || doneRef.current || !pub || !address) return;
     const check = validateTarget(agentId, target);
     if (!check.ok) { setTargetError(check.error); return; }
-    setRunning(true); setFatal(null); setSteps([]); setEvents([]); setJobId(null);
+    setRunning(true); setFatal(null); seedSteps(); setEvents([]); setJobId(null);
     try {
       // last word before any signature: the server checks the target on chain
       const vr = await fetch('/api/agent-work', { method: 'POST', headers: { 'content-type': 'application/json' },
@@ -194,14 +220,14 @@ export function WalletHire({ agentId, agentName, priceLabel, mode, initialTarget
         return;
       }
       // stage 1: approve
-      await sendStep('Approve 1 $U', () => writeContractAsync({
+      await sendStep(HIRE_STEPS[0], () => writeContractAsync({
         address: U_TOKEN, abi: ERC20_APPROVE_ABI, functionName: 'approve', args: [ERC8183.commerce, PRICE], chainId: bscTestnet97.id }));
       // stage 2: create (createJob + registerJob + setBudget)
       const nonce = crypto.randomUUID();
       const description = JSON.stringify({ wallet: true, agentId, target: check.value, nonce, at: Date.now() });
       const counter = (await pub.readContract({ address: ERC8183.commerce, abi: COMMERCE_ABI, functionName: 'jobCounter' })) as bigint;
       let expected = counter + 1n;
-      await sendStep('Create job', () => writeContractAsync({
+      await sendStep(HIRE_STEPS[1], () => writeContractAsync({
         address: ERC8183.commerce, abi: COMMERCE_ABI, functionName: 'createJob',
         args: [ERC8183.registryProvider, ERC8183.router, BigInt(Math.floor(Date.now() / 1000) + 3600), description, ERC8183.router], chainId: bscTestnet97.id }));
       // confirm which id is ours (jobId race): match the nonce
@@ -216,12 +242,12 @@ export function WalletHire({ agentId, agentName, priceLabel, mode, initialTarget
       if (!found) throw new Error('could not locate the created job on chain — nothing was funded; it is safe to retry');
       expected = found;
       setJobId(String(expected));
-      await sendStep('Register policy', () => writeContractAsync({
+      await sendStep(HIRE_STEPS[2], () => writeContractAsync({
         address: ERC8183.router, abi: ROUTER_ABI, functionName: 'registerJob', args: [expected, ERC8183.policy], chainId: bscTestnet97.id }));
-      await sendStep('Set budget', () => writeContractAsync({
+      await sendStep(HIRE_STEPS[3], () => writeContractAsync({
         address: ERC8183.commerce, abi: COMMERCE_ABI, functionName: 'setBudget', args: [expected, PRICE, '0x'], chainId: bscTestnet97.id }));
       // stage 3: fund
-      await sendStep('Fund escrow (1 $U)', () => writeContractAsync({
+      await sendStep(HIRE_STEPS[4], () => writeContractAsync({
         address: ERC8183.commerce, abi: COMMERCE_ABI, functionName: 'fund', args: [expected, PRICE, '0x'], chainId: bscTestnet97.id }));
       f.refetch();
       // agent side
@@ -404,13 +430,13 @@ export function WalletHire({ agentId, agentName, priceLabel, mode, initialTarget
           </div>
 
           <p className="prose-sm prose-muted" style={{ marginTop: 18, fontSize: 13 }}>
-          Your wallet will be asked to sign five transactions in order: approve 1 $U to the escrow
-          contract, create the job with your target written into it, register the optimistic policy,
-          set the budget, and fund the escrow. When the fund transaction lands, the agent reads live
-          BNB Smart Chain mainnet state, submits its deliverable through a session key that can call
-          nothing but <code className="data">submit</code>, and the hash is recomputed in your
-          browser against the chain. Escrow releases to the agent after the 900-second dispute
-          window and settles automatically.
+          Five signatures — one per call to the escrow contract, because your wallet signs one at
+          a time.
+          </p>
+          <p className="prose-sm prose-muted" style={{ marginTop: 10 }}>
+          Once the escrow is funded the agent reads live BNB Chain state, submits its work, and the
+          hash is recomputed in your browser. Escrow settles automatically after the{' '}
+          {DISPUTE_WINDOW_SECONDS}-second dispute window.
           </p>
 
 
@@ -462,10 +488,13 @@ export function WalletHire({ agentId, agentName, priceLabel, mode, initialTarget
           <div style={{ marginTop: 16, display: 'grid', gap: 8 }}>
           {steps.map((s) => (
           <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span className="data" style={{ width: 14, color: s.state === 'done' ? 'var(--live)' : s.state === 'failed' ? 'var(--danger)' : 'var(--text-faint)' }}>
+          <span className="data" style={{ width: 14, color: s.state === 'done' ? 'var(--live)' : s.state === 'failed' ? 'var(--danger)' : s.state === 'waiting' ? 'var(--text-faint)' : 'var(--text)' }}>
           {s.state === 'done' ? '✓' : s.state === 'failed' ? '✕' : '·'}
           </span>
-          <span className="data" style={{ color: s.state === 'failed' ? 'var(--danger)' : 'var(--text)' }}>{s.label}</span>
+          {/* A row not yet reached stays --text-faint, so the open one reads as
+              the current position rather than one of five identical lines. */}
+          <span className="data" style={{ color: s.state === 'failed' ? 'var(--danger)' : s.state === 'waiting' ? 'var(--text-faint)' : 'var(--text)' }}>{s.label}</span>
+          {s.state === 'signing' && <span className="meta">sign in your wallet…</span>}
           {s.state === 'confirming' && <span className="meta">confirming…</span>}
           {s.tx && <a className="meta" style={{ color: 'var(--live-dim)' }} href={EXPLORER + s.tx} target="_blank" rel="noreferrer">tx ↗</a>}
           </div>
