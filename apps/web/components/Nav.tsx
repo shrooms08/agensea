@@ -1,5 +1,6 @@
 'use client';
 /** Nav with a visible hover state and an indicated active route. */
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const LINKS = [
@@ -16,9 +17,9 @@ export function Nav() {
       {LINKS.map(([href, label]) => {
         const active = path === href || path.startsWith(href + '/');
         return (
-          <a key={href} href={href} className="label navlink" data-active={active} aria-current={active ? 'page' : undefined}>
+          <Link key={href} href={href} className="label navlink" data-active={active} aria-current={active ? 'page' : undefined}>
             {label}
-          </a>
+          </Link>
         );
       })}
     </nav>

@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { Metadata } from 'next';
 import { Space_Grotesk, JetBrains_Mono } from 'next/font/google';
 import { Mark, Wordmark } from '@/components/Logo';
@@ -61,10 +62,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <WalletProvider>
         <header className="site-header">
           <div className="container" style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px 32px' }}>
-            <a href="/" className="brand" aria-label="AgenSea home">
+            <Link href="/" className="brand" aria-label="AgenSea home">
               <Mark size={22} />
               <Wordmark height={18} />
-            </a>
+            </Link>
             <Nav />
             <WalletButton />
           </div>

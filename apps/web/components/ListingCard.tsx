@@ -3,6 +3,7 @@
  * badge, a status chip stating it is not hireable here, and a dashed border so
  * it never reads as one of ours at a glance.
  */
+import Link from 'next/link';
 import { CAT_TOKEN, CAT_LABEL } from '@/components/CategoryChip';
 import type { CategorySlug } from '@/data/first-party-agents';
 import type { Listing } from '@/lib/server/listings';
@@ -10,7 +11,7 @@ import type { Listing } from '@/lib/server/listings';
 export function ListingCard({ l }: { l: Listing }) {
   const slug = l.category as CategorySlug | null;
   return (
-    <a href={`/listing/${l.agent_id}`} className="listing-card">
+    <Link href={`/listing/${l.agent_id}`} className="listing-card">
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
         {slug && (
           <span className="label" style={{ fontSize: 10, color: CAT_TOKEN[slug], display: 'inline-flex', alignItems: 'center', gap: 8 }}>
@@ -30,6 +31,6 @@ export function ListingCard({ l }: { l: Listing }) {
           {l.price_u !== null ? `${Number(l.price_u)} $U` : 'price not set'} →
         </span>
       </div>
-    </a>
+    </Link>
   );
 }

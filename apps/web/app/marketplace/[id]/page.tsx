@@ -4,6 +4,7 @@
  * Distinct namespace from /agents/[id] (registry, mainnet 56) on purpose: the
  * numeric ids collide across chains and merging them would misrepresent both.
  */
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { FIRST_PARTY_AGENTS, byId, CHAIN, ERC8183, DISPUTE_WINDOW_SECONDS, AGENTS_WALLET } from '@/data/first-party-agents';
 import { DELIVERS, TARGETS } from '@/data/hire-spec';
@@ -89,7 +90,7 @@ export default async function FirstPartyAgent({ params }: { params: Promise<{ id
                   {agent.mainnetAgentId} ↗
                 </a>
                 <span style={{ color: 'var(--text-faint)' }}> · </span>
-                <a href={`/agents/${agent.mainnetAgentId}`} style={{ color: 'var(--live-dim)' }}>registry →</a>
+                <Link href={`/agents/${agent.mainnetAgentId}`} style={{ color: 'var(--live-dim)' }}>registry →</Link>
               </div>
             </div>
           )}

@@ -9,6 +9,7 @@
  * third-party registry agents matched ONLY by their explicit self-declared
  * category key (see getRegistryAgentsForCategory for how that was decided).
  */
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { bySlug, CATEGORY_SLUGS, type CategorySlug, CHAIN } from '@/data/first-party-agents';
 import { CategoryChip, FirstPartyBadge, CAT_TOKEN, CAT_LABEL } from '@/components/CategoryChip';
@@ -144,19 +145,19 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
             is the h1, not a chip. */}
         <nav className="cat-switch" aria-label="Other categories">
           {CATEGORY_SLUGS.filter((s) => s !== slug).map((s) => (
-            <a key={s} href={`/category/${s}`} className="cat-switch-chip" style={{ color: CAT_TOKEN[s] }}>
+            <Link key={s} href={`/category/${s}`} className="cat-switch-chip" style={{ color: CAT_TOKEN[s] }}>
               <span style={{ width: 7, height: 7, background: CAT_TOKEN[s], display: 'inline-block' }} />
               {CAT_LABEL[s]}
-            </a>
+            </Link>
           ))}
-          <a href="/marketplace" className="cat-switch-back">All hireable agents →</a>
+          <Link href="/marketplace" className="cat-switch-back">All hireable agents →</Link>
         </nav>
         <p className="prose prose-muted" style={{ marginTop: 14 }}>{ABOUT[slug]}</p>
       </section>
 
       <section className="sec sec-rule">
         <h2 style={{ font: "500 20px/1.2 var(--display)" }}>Hireable now</h2>
-        <a href={`/marketplace/${agent.agentId}`} className="card-lg" style={{ display: 'block', marginTop: 16, border: '1px solid var(--border-strong)' }}>
+        <Link href={`/marketplace/${agent.agentId}`} className="card-lg" style={{ display: 'block', marginTop: 16, border: '1px solid var(--border-strong)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div style={{ font: "500 16px/1.25 var(--display)" }}>{agent.name}</div>
             <FirstPartyBadge />
@@ -170,7 +171,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
               </div>
             ))}
           </div>
-        </a>
+        </Link>
       </section>
 
       <section className="sec sec-rule">
@@ -198,7 +199,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
           </p>
           <div className="grid-panel cols-2" style={{ marginTop: 16 }}>
             {registry.map((r) => (
-              <a key={r.agent_id} href={`/agents/${r.agent_id}`} className="card">
+              <Link key={r.agent_id} href={`/agents/${r.agent_id}`} className="card">
                 <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                   <span className="data" style={{ fontWeight: 500 }}>{r.name ?? `Agent #${r.agent_id}`}</span>
                   <span className="data" style={{ color: 'var(--text-muted)' }}>{int(r.client_count)} client{r.client_count === 1 ? '' : 's'}</span>
@@ -206,7 +207,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
                 <div className="meta" style={{ marginTop: 6 }}>
                   #{r.agent_id} · declares “{r.declared_category}” · {r.token_uri_host ?? 'inline metadata'}
                 </div>
-              </a>
+              </Link>
             ))}
           </div>
         </>)}
@@ -226,7 +227,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ slug:
 
       <section className="sec sec-rule" style={{ paddingBottom: 72 }}>
         <div style={{ width: 8, height: 8, background: CAT_TOKEN[slug], display: 'inline-block', marginRight: 10 }} />
-        <a href="/marketplace" className="prose-sm" style={{ color: 'var(--live)' }}>All hireable agents →</a>
+        <Link href="/marketplace" className="prose-sm" style={{ color: 'var(--live)' }}>All hireable agents →</Link>
       </section>
     </>
   );

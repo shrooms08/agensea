@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { ParticleCreature } from '@/components/ParticleCreature';
 
 export default function NotFound() {
@@ -9,9 +10,9 @@ export default function NotFound() {
         <p className="prose-sm prose-muted" style={{ margin: 0 }}>
           This page has never had a client.
         </p>
-        <a href="/" className="label" style={{ marginTop: 18, display: 'inline-block', color: 'var(--live)', border: '1px solid var(--border-strong)', padding: '8px 14px' }}>
+        <Link href="/" className="label" style={{ marginTop: 18, display: 'inline-block', color: 'var(--live)', border: '1px solid var(--border-strong)', padding: '8px 14px' }}>
           Back to the registry
-        </a>
+        </Link>
       </div>
     </section>
   );

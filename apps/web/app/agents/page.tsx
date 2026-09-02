@@ -10,6 +10,7 @@
  * ISR, not dynamic: no searchParams, so this stays a static render that keeps
  * serving from the CDN while Supabase is paused (free plan).
  */
+import Link from 'next/link';
 import { getLiveAgents, getRegistryStats, getEnrichmentNames, getFleetShare } from '@/lib/queries';
 import { Stat } from '@/components/Stat';
 import { AgentJump } from '@/components/AgentJump';
@@ -99,7 +100,7 @@ export default async function Agents() {
             const own = a.metadata_name?.trim() || null;
             const name = own ?? recovered.get(a.agent_id) ?? null;
             return (
-              <a key={a.agent_id} href={`/agents/${a.agent_id}`} className="agent-table-row">
+              <Link key={a.agent_id} href={`/agents/${a.agent_id}`} className="agent-table-row">
                 <span className="data">#{a.agent_id}</span>
                 <span className="data" style={{ color: `var(${livenessToken(a.client_count)})` }}>{int(a.client_count)}</span>
                 <span className="data">{a.feedback_count ? int(a.feedback_count) : '0'}</span>
@@ -107,7 +108,7 @@ export default async function Agents() {
                   {name ?? 'unnamed'}
                 </span>
                 <span className="data" style={{ color: 'var(--text-muted)' }}>{shortAddr(a.owner)}</span>
-              </a>
+              </Link>
             );
           })}
         </div>
