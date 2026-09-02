@@ -470,18 +470,37 @@ blocker goes away and this is worth revisiting. Until then the sequential path
 stays: it has completed a full wallet hire on chain, including recovery from a
 stuck FUNDED job.
 
-## Verified contracts (chain 97)
+## Verified contracts
 
-| Contract | Address | Bytecode |
-|---|---|---|
-| KeyStore | `0x6b8361C29d05D498b1a12B54A37310f94171E94A` | 8,756 bytes |
-| KeyStoreController | `0xb530D1971f5453F3359518343F05D0AedFfF7e12` | 3,609 bytes |
-| $U faucet | `0x86e9197CC0F76E4e4aaa7082180945196bBAb5D3` | 1,402 bytes |
-| $U token | `0xc70b8741B8B07A6d61E54fd4B20f22Fa648E5565` | — |
-| Multicall3 | `0xcA11bde05977b3631167028862bE2a173976CA11` | 3,808 bytes |
+Re-checked with `eth_getCode` on 2 Sep 2026, at the addresses the code actually
+uses, on the chain it uses them on.
 
-Every address here was verified with `cast code` against chain 97. Never take a
-contract address from documentation without checking it has bytecode.
+| Contract | Chain | Address | Bytecode | Implementation |
+|---|---|---|---|---|
+| IdentityRegistry | 56 | `0x8004a169fb4a3325136eb29fa0ceb6d2e539a432` | 130 bytes — proxy | `0x7274e874ca62410a93bd8bf61c69d8045e399c02` · 14,474 bytes |
+| ReputationRegistry | 56 | `0x8004baa17c55a88189ae136b182e5fda19de9b63` | 130 bytes — proxy | `0x16e0fa7f7c56b9a767e34b192b51f921be31da34` · 10,491 bytes |
+| Multicall3 | 56 | `0xcA11bde05977b3631167028862bE2a173976CA11` | 3,808 bytes | — |
+| ERC-8183 commerce kernel | 97 | `0xa206c0517B6371C6638CD9e4a42Cc9f02A33B0DE` | 130 bytes — proxy | `0x153783ddbdf5233c591965f04644b1df2d1a7815` · 10,892 bytes |
+| EvaluatorRouter | 97 | `0xD7d36D66d2F1B608A0F943f722D27e3744f66F25` | 130 bytes — proxy | `0x40c0254610d92f1eb9c2d7d5d2114bc4c99d935e` · 6,685 bytes |
+| OptimisticPolicy | 97 | `0xd6a4217588F6B1F5657a92A3e94E6422aD771cEA` | 4,413 bytes | — |
+| KeyStore | 97 | `0x6b8361C29d05D498b1a12B54A37310f94171E94A` | 8,756 bytes | — |
+| KeyStoreController | 97 | `0xb530D1971f5453F3359518343F05D0AedFfF7e12` | 3,609 bytes | — |
+| $U token | 97 | `0xc70B8741B8B07A6d61E54fd4B20f22Fa648E5565` | 2,007 bytes | — |
+| $U faucet | 97 | `0x86e9197CC0F76E4e4aaa7082180945196bBAb5D3` | 1,402 bytes | — |
+
+**Five of them return exactly 130 bytes — the ERC-1967 proxy stub.** The earlier
+version of this table said only that every address "was verified with `cast
+code`", directly under a warning never to take an address from documentation
+without checking it has bytecode. Both halves were true and the pair was
+misleading: a 130-byte answer proves a proxy is deployed at that address, not
+that the logic you are about to call is behind it. The implementation column
+resolves each proxy's ERC-1967 implementation slot and sizes what is actually
+there.
+
+Same shape as footgun 8: a check that passes without testing the property it
+asserts. "It has bytecode" is not "it has the code you think"; the follow-through
+is reading the implementation slot, and the failure mode of skipping it is
+believing you verified something you did not.
 
 The faucet pays **10 $U per address per 30 minutes**. A second `requestTokens()`
 inside that window reverts with empty revert data (`0x`), which surfaces from
