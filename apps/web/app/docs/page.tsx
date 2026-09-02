@@ -55,7 +55,7 @@ const STACK = [
   { layer: 'evaluation', chain: 97, what: 'EvaluatorRouter. Binds a job to its policy; the relay path settles through it.',
     addr: '0xD7d36D66d2F1B608A0F943f722D27e3744f66F25', bytes: '130 bytes',
     impl: '0x40c0254610d92f1eb9c2d7d5d2114bc4c99d935e', implBytes: '6,685 bytes' },
-  { layer: 'policy', chain: 97, what: 'OptimisticPolicy — the 900-second dispute window. The whitelisted address, not the one the Altana SDK exports.',
+  { layer: 'policy', chain: 97, what: 'OptimisticPolicy — the 900-second dispute window. The whitelisted address; Altana SDK 0.8.0, which we are on, exports a different one that reverts.',
     addr: '0xd6a4217588F6B1F5657a92A3e94E6422aD771cEA', bytes: '4,413 bytes', impl: null, implBytes: null },
   { layer: 'session keys', chain: 97, what: 'Altana KeyStore. Registers a session key once; authority is then read from the account itself.',
     addr: '0x6b8361C29d05D498b1a12B54A37310f94171E94A', bytes: '8,756 bytes', impl: null, implBytes: null },

@@ -114,13 +114,28 @@ in-browser path are in [/docs](https://agensea-navy.vercel.app/docs#how-to-verif
 
 ## Upstream issues filed
 
-Authored by `shrooms08` (GitHub shows the authorship):
+Authored by `shrooms08` (GitHub shows the authorship). **Three of the four are
+now fixed upstream** — #57, #58 and #59 — and all three shipped in
+`@altananetwork/sdk` **0.9.0**, published 2 Sep 2026. Each PR verified our
+report against chain or re-ran our repro before writing code.
 
 - [altana-sdk #57](https://github.com/altananetwork/altana-sdk/issues/57) —
-  `waitForCalls` hangs for the full 240 s timeout on unmapped relay status 300
+  `waitForCalls` hangs for the full 240 s timeout on unmapped relay status 300.
+  **Fixed upstream in [#66](https://github.com/altananetwork/altana-sdk/pull/66)**,
+  merged 2 Sep 2026: relay statuses are classified by EIP-5792 band, so a
+  rejection fails in ~355 ms with `statusCode` attached instead of returning a
+  wrong `PENDING` after four minutes. The PR replayed our bundle (still
+  `{status: 300, receipts: []}` days later) and confirmed our raised-cap retry
+  on chain at block 127877832.
 - [altana-sdk #58](https://github.com/altananetwork/altana-sdk/issues/58) —
   docs say to persist the `Session` object verbatim, but `JSON.stringify` drops
-  `signDigest` and keeps `_privateKey`
+  `signDigest` and keeps `_privateKey`.
+  **Fixed upstream in [#67](https://github.com/altananetwork/altana-sdk/pull/67)**,
+  merged 2 Sep 2026: `serializeSession` / `deserializeSession` helpers,
+  `_privateKey` made non-enumerable so no spread or stringify can capture it,
+  and the advice rewritten in all eight places. Running our repro also turned up
+  a third failure we had not reported — `JSON.stringify` *throws* on any session
+  carrying a spend cap, because the limits are bigints.
 - [altana-sdk #59](https://github.com/altananetwork/altana-sdk/issues/59) —
   no ERC-8183 seller path: the SDK could hire and settle but not submit a
   deliverable. **Filed; fixed upstream in
@@ -133,10 +148,8 @@ Authored by `shrooms08` (GitHub shows the authorship):
   confirmation that the `submit(uint256,bytes32,bytes)` selector works, and
   credits the cross-language hash trap we reported — which it found in its own
   demo script: a hand-rolled canonicaliser missing the `\uXXXX` escaping,
-  hashing a report containing an em dash. It is not yet in a published release —
-  npm latest is still 0.8.0 (18 Aug), and the change sits under `[Unreleased]`
-  on `staging` — so our path is still the only one available to anyone on a
-  release, and we have not migrated.
+  hashing a report containing an em dash. It shipped in 0.9.0 on 2 Sep; we are
+  on `^0.8.0` and have not migrated, six days from submission.
 - [bnb-chain/bnbagent-sdk #82](https://github.com/bnb-chain/bnbagent-sdk/issues/82) —
   jobId race: provider + status cannot identify your own job, so a losing racer
   can submit a valid-hash deliverable for the wrong task (the hire route guards
@@ -147,7 +160,9 @@ Confirmed on chain, not authored by us:
 - [altana-sdk #53](https://github.com/altananetwork/altana-sdk/issues/53)
   (filed by an altana-sdk maintainer) — `ERC8183_ADDRESSES[97].policy` is not
   whitelisted on the EvaluatorRouter. We verified the failure independently via
-  `router.policyWhitelist()` reads; see footgun 4 below.
+  `router.policyWhitelist()` reads; see footgun 4 below. Closed 1 Sep 2026, and
+  0.9.0 ships the whitelisted address — verified by unpacking the published
+  tarball: `0xd6a42175…` is present and the broken `0x4F4678D4…` is gone.
 
 ## Repository layout
 
@@ -257,8 +272,15 @@ Covered above under `ALTANA_CHAIN`. Unset or misspelled selects chain 56.
 
 Covered above. A cap below the relay fee makes a session unusable even for a
 call that transfers no value, and the bundle is accepted then never mined.
-Upstream: [altana-sdk#57](https://github.com/altananetwork/altana-sdk/issues/57)
-also covers how that failure is surfaced (a 240 s hang on relay status 300).
+
+**The surfacing is fixed upstream**, in
+[altana-sdk#66](https://github.com/altananetwork/altana-sdk/pull/66) (merged
+2 Sep 2026, shipped in 0.9.0): relay statuses are classified by EIP-5792 band,
+so a rejection now fails in about 355 ms with `statusCode: 300` attached instead
+of a 240-second hang ending in a wrong `PENDING`. **On 0.8.0 you still get the
+hang.** The sizing rule is unchanged either way — the cap must cover the relay
+fee, and 0.9.0 adds a `grantSession` warning saying so, because a fast, correct
+error still leaves you with a session that cannot transact.
 
 ### 3. `grantSession` silently generates an ephemeral session signer
 
@@ -278,7 +300,21 @@ JSON.parse(JSON.stringify(signer))
 ```
 
 So the naive persist writes the secret to disk *and* loses the capability.
-Upstream: [altana-sdk#58](https://github.com/altananetwork/altana-sdk/issues/58).
+
+**Fixed upstream** in
+[altana-sdk#67](https://github.com/altananetwork/altana-sdk/pull/67) (merged
+2 Sep 2026, shipped in 0.9.0): there are now `serializeSession` /
+`deserializeSession` helpers, `_privateKey` is non-enumerable so no stringify or
+spread can capture it, and `grantSession` warns when called without a
+`sessionSigner` — the exact combination that stranded us. **On 0.8.0 every word
+above still applies.** Re-running our repro upstream also found a third failure
+we had not reported: `JSON.stringify` *throws* on any session carrying a spend
+cap, because the limits are bigints — so the documented advice failed three
+ways, not two.
+
+The habit below is worth keeping regardless of version: supplying your own
+signer means the key's lifetime is a decision you made, not a side effect of
+whether a helper happened to persist it.
 
 **Always supply and persist your own session signer:**
 
@@ -317,9 +353,14 @@ own `policyWhitelist()` read, the operator manifest in
 `bnb-chain/bnbagent-sdk/networks/addresses.py`, and upstream issue
 [#53](https://github.com/altananetwork/altana-sdk/issues/53).
 
+**Fixed upstream: 0.9.0 ships the correct address.** Unpacking the published
+tarball, `0xd6a42175…` is what it exports and `0x4F4678D4…` is gone. **On 0.8.0
+the broken address is still what you get**, which is why the override below
+exists and why it is written as a no-op once upstream is right.
+
 ```
-router.policyWhitelist(0x4F4678D4…) = false     <- what the SDK exports
-router.policyWhitelist(0xd6a42175…) = true
+router.policyWhitelist(0x4F4678D4…) = false     <- what 0.8.0 exports
+router.policyWhitelist(0xd6a42175…) = true      <- what 0.9.0 exports
 ```
 
 `src/erc8183/addresses.ts` reads the struct from the SDK, overrides `.policy`,
