@@ -31,11 +31,27 @@ import { COMMERCE_ABI, ROUTER_ABI, ERC20_APPROVE_ABI, ERC8183 } from '@/lib/wall
 import { HirePreflight, useWalletFunding } from '@/components/HirePreflight';
 import { GRID_POOLS, MEASURED_GAS, validateTarget, type DeliversRow, type TargetSpec } from '@/data/hire-spec';
 import { DISPUTE_WINDOW_SECONDS } from '@/data/first-party-agents';
+import { receiptByHash } from '@/lib/wallet/receipt';
+
+/** Truncate without cutting a hash in half: break at whitespace, not mid-token. */
+function clip(s: string, max: number): string {
+  if (s.length <= max) return s;
+  const cut = s.slice(0, max);
+  const sp = cut.lastIndexOf(' ');
+  return (sp > max * 0.6 ? cut.slice(0, sp) : cut) + '…';
+}
 
 const PRICE = 10n ** 18n;
 const EXPLORER = 'https://testnet.bscscan.com/tx/';
 type Ev = { stage: string; [k: string]: unknown };
-type TxStep = { id: number; label: string; tx?: string; state: 'waiting' | 'signing' | 'confirming' | 'done' | 'failed' };
+type TxStep = {
+  id: number; label: string; tx?: string;
+  /** 'unconfirmed' is NOT a failure. It means every endpoint we can reach is
+   *  unable to tell us whether the transaction landed — the same distinction
+   *  VerifyDeliverable draws between UNREACHABLE and mismatch, so that a
+   *  transport problem never masquerades as a verdict. */
+  state: 'waiting' | 'signing' | 'confirming' | 'done' | 'failed' | 'unconfirmed';
+};
 
 /**
  * The five calls, seeded before the first prompt so a buyer at prompt 3 can see
@@ -161,17 +177,41 @@ export function WalletHire({ agentId, agentName, priceLabel, mode, initialTarget
     const seeded = (HIRE_STEPS as readonly string[]).indexOf(label);
     const i = seeded >= 0 ? seeded : push(label);
     mark(i, { state: 'signing' });
+    let tx: `0x${string}` | undefined;
     try {
-      const tx = await fn();
+      tx = await fn();
       mark(i, { tx, state: 'confirming' });
       await pub!.waitForTransactionReceipt({ hash: tx, timeout: 90_000 });
       mark(i, { state: 'done' });
     } catch (e) {
-      const rejected = /reject|denied|4001/i.test(String((e as Error).message));
-      mark(i, { state: 'failed' });
+      const msg = String((e as Error).message);
+      const rejected = /reject|denied|4001/i.test(msg);
       // The step number belongs in the indicator, not in a sentence.
       const name = label.replace(/^\d\/\d\s+/, '');
-      throw new Error(rejected ? `${name} was rejected in your wallet — nothing further was sent` : `${name} failed: ${String((e as Error).message).slice(0, 90)}`);
+      if (rejected) {
+        mark(i, { state: 'failed' });
+        throw new Error(`${name} was rejected in your wallet — nothing further was sent`);
+      }
+
+      // TIMED OUT WAITING is not the same as FAILED. We poll one endpoint while
+      // the wallet broadcasts through its own; ours lagging says nothing about
+      // the transaction. Ask the fallback endpoints directly, by hash.
+      const timedOut = /timed out|timeout/i.test(msg) && !!tx;
+      if (timedOut) {
+        const look = await receiptByHash(tx!);
+        if (look.kind === 'mined' && look.success) { mark(i, { state: 'done' }); return; }
+        if (look.kind === 'mined') {
+          mark(i, { state: 'failed' });
+          throw new Error(`${name} reverted on chain — nothing further was sent`);
+        }
+        // Absent or unreachable: we do not know. Say so, and say what to do.
+        mark(i, { state: 'unconfirmed' });
+        throw new Error(`${name} — could not confirm within 90 seconds; your transaction may have landed. Open the tx to check, then reload to resume.`);
+      }
+
+      mark(i, { state: 'failed' });
+      // Truncate at a word boundary so a hash is never cut mid-string.
+      throw new Error(`${name} failed: ${clip(msg, 140)}`);
     }
   }
 
@@ -488,14 +528,17 @@ export function WalletHire({ agentId, agentName, priceLabel, mode, initialTarget
           <div style={{ marginTop: 16, display: 'grid', gap: 8 }}>
           {steps.map((s) => (
           <div key={s.id} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span className="data" style={{ width: 14, color: s.state === 'done' ? 'var(--live)' : s.state === 'failed' ? 'var(--danger)' : s.state === 'waiting' ? 'var(--text-faint)' : 'var(--text)' }}>
-          {s.state === 'done' ? '✓' : s.state === 'failed' ? '✕' : '·'}
+          {/* '!' in --warn for unconfirmed: distinct from the '✕' of a real
+              failure, matching VerifyDeliverable's UNREACHABLE treatment. */}
+          <span className="data" style={{ width: 14, color: s.state === 'done' ? 'var(--live)' : s.state === 'failed' ? 'var(--danger)' : s.state === 'unconfirmed' ? 'var(--warn)' : s.state === 'waiting' ? 'var(--text-faint)' : 'var(--text)' }}>
+          {s.state === 'done' ? '✓' : s.state === 'failed' ? '✕' : s.state === 'unconfirmed' ? '!' : '·'}
           </span>
           {/* A row not yet reached stays --text-faint, so the open one reads as
               the current position rather than one of five identical lines. */}
-          <span className="data" style={{ color: s.state === 'failed' ? 'var(--danger)' : s.state === 'waiting' ? 'var(--text-faint)' : 'var(--text)' }}>{s.label}</span>
+          <span className="data" style={{ color: s.state === 'failed' ? 'var(--danger)' : s.state === 'unconfirmed' ? 'var(--warn)' : s.state === 'waiting' ? 'var(--text-faint)' : 'var(--text)' }}>{s.label}</span>
           {s.state === 'signing' && <span className="meta">sign in your wallet…</span>}
           {s.state === 'confirming' && <span className="meta">confirming…</span>}
+          {s.state === 'unconfirmed' && <span className="meta" style={{ color: 'var(--warn)' }}>could not confirm</span>}
           {s.tx && <a className="meta" style={{ color: 'var(--live-dim)' }} href={EXPLORER + s.tx} target="_blank" rel="noreferrer">tx ↗</a>}
           </div>
           ))}
@@ -544,11 +587,16 @@ export function WalletHire({ agentId, agentName, priceLabel, mode, initialTarget
           </div>
           )}
 
-          {fatal && (
-          <div className="hd-enter" style={{ marginTop: 12, padding: '10px 14px', background: 'var(--surface-raised)', boxShadow: 'inset 2px 0 0 var(--danger)' }}>
-          <span className="data" style={{ color: 'var(--danger)' }}>{fatal}</span>
+          {fatal && (() => {
+          // An unconfirmed step is not a failure; the panel must not shout red.
+          const unsure = steps.some((s) => s.state === 'unconfirmed');
+          const tone = unsure ? 'var(--warn)' : 'var(--danger)';
+          return (
+          <div className="hd-enter" style={{ marginTop: 12, padding: '10px 14px', background: 'var(--surface-raised)', boxShadow: `inset 2px 0 0 ${tone}` }}>
+          <span className="data" style={{ color: tone }}>{fatal}</span>
           </div>
-          )}
+          );
+          })()}
           {jobId && <div className="meta" style={{ marginTop: 12 }}>job {jobId}</div>}
         </section>
         {sponsored}

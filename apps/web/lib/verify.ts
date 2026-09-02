@@ -69,7 +69,9 @@ export type VerifyState =
    *  chain, so we do not know whether it matches. */
   | { kind: 'unreachable'; detail: string };
 
-const RPCS = [
+/** Browser-side endpoints, tried in order. Shared with the hire flow's receipt
+ *  fallback so both walk the same list. */
+export const RPCS = [
   'https://bsc-testnet-rpc.publicnode.com',
   'https://data-seed-prebsc-1-s1.bnbchain.org:8545',
 ];
