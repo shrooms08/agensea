@@ -212,7 +212,7 @@ export default async function Docs() {
         <section className="sec sec-rule">
           <H id="trust" n={3}>Trust properties</H>
           <p className="prose prose-muted">
-            Five things that hold because of how the code is written, not because we say so. Each
+            Six things that hold because of how the code is written, not because we say so. Each
             names the file or contract that enforces it, so you can check rather than believe.
           </p>
           <div className="docs-block">
@@ -250,11 +250,21 @@ export default async function Docs() {
               </span></div>
             <div className="docs-block-row"><span className="docs-block-k">a listing cannot outlive its owner</span>
               <span className="docs-block-v">
-                Every listing surface re-reads <Code>ownerOf(agentId)</Code> from the
-                IdentityRegistry as it renders and drops any row whose stored owner no longer
-                matches. A forged row inserted directly into our table is inert: it renders
-                nowhere, because the chain is asked every time.{' '}
-                <Code>lib/server/listings.ts</Code>.
+                Every listing surface reads <Code>ownerOf(agentId)</Code> from the
+                IdentityRegistry and drops any row whose stored owner no longer matches, so a
+                forged row inserted directly into our table is inert — it renders nowhere,
+                because the chain decides, not us. The check runs <strong>every time the page is
+                rebuilt</strong>, not on every request: these pages are statically rendered and
+                revalidated every six hours, so a listing can outlive a transfer by at most that
+                long. <Code>lib/server/listings.ts</Code>.
+              </span></div>
+            <div className="docs-block-row"><span className="docs-block-k">permitting is not displaying</span>
+              <span className="docs-block-v">
+                Authorising a claim is a separate path and reads <strong>uncached</strong>, every
+                time. Deciding what to display may use a six-hour-old answer; deciding what to
+                permit may not, so <Code>ownerOfOnChain</Code> takes freshness as a parameter and
+                the uncached read is the default — a caller has to ask for the cached one.{' '}
+                <Code>lib/server/claim.ts</Code>.
               </span></div>
           </div>
         </section>
