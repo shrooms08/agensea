@@ -758,3 +758,9 @@ header nav .navlink[data-active='true']::after {
   }
   .hire-confirm-bar .hire-cta { margin-top: 0; }
 }
+
+/* /docs: the third-party execution path — a numbered spec inside a section. */
+.docs-h3 { font: 500 15px/1.3 var(--display); color: var(--text); margin: 26px 0 10px; }
+.docs-steps { margin: 14px 0 0; padding-left: 22px; display: grid; gap: 18px; }
+.docs-steps > li { font: 400 14px/1.65 var(--display); color: var(--text-muted); }
+.docs-steps > li strong { color: var(--text); font-weight: 500; }

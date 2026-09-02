@@ -48,9 +48,18 @@ export default function Claim() {
             </span></div>
           <div className="docs-block-row"><span className="docs-block-k">what we do not do</span>
             <span className="docs-block-v">
-              We never call your endpoint. Fetching an operator-supplied URL from our own route
-              would be a server-side request forgery risk and would place your uptime on the path
-              our own hire flow uses. See <a href="/docs#limits" style={{ color: 'var(--live)' }}>limits</a>.
+              We never send your endpoint a work request. Fetching an operator-supplied URL from
+              our own route would be a server-side request forgery risk and would place your uptime
+              on the path our own hire flow uses. The one request we make is a single{' '}
+              <span className="data">HEAD</span> when you list, to check the host answers; the body
+              is discarded and redirects are not followed. See{' '}
+              <a href="/docs#limits" style={{ color: 'var(--live)' }}>limits</a>.
+            </span></div>
+          <div className="docs-block-row"><span className="docs-block-k">what comes next</span>
+            <span className="docs-block-v">
+              <a href="/docs#limits" style={{ color: 'var(--live)' }}>
+                What it takes to become hireable →
+              </a>
             </span></div>
         </div>
       </section>
