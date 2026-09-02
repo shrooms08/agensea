@@ -426,6 +426,50 @@ If a hash depends on an encoding choice, a test set with no non-ASCII cases
 cannot tell you the encoding is right. Add a case that fails under the wrong
 rule, or you have not tested it.
 
+## Considered and declined
+
+### EIP-5792 batching — blocked upstream, not deferred
+
+We looked at `wallet_sendCalls` to collapse the five hire transactions
+(approve, createJob, registerJob, setBudget, fund) into one signature. The
+tooling is not the obstacle: wagmi 3.7.7 already exports `useSendCalls`,
+`useCapabilities`, `useCallsStatus` and `useWaitForCallsStatus`.
+
+**The blocker is that ERC-8183 has no caller-scoped or deterministic job id.**
+Three of the five calls take a `jobId` that does not exist until `createJob`
+lands. We read `jobCounter()` for a guess, send `createJob`, then walk candidate
+ids matching our unique description nonce and the buyer's address to learn which
+id is actually ours — the guard against the race in
+[bnbagent-sdk #82](https://github.com/bnb-chain/bnbagent-sdk/issues/82), where
+provider and status cannot identify your own job. A batch has to be built before
+any of it executes, so it would have to assume `counter + 1` is ours. That is
+precisely the assumption the guard exists to defeat: lose the race inside an
+atomic batch and the whole hire reverts; lose it inside a non-atomic batch and
+the budget and funds bind to somebody else's job.
+
+The cost side is not compelling either, so this is not a close call waiting on
+time:
+
+- **A judge would be asked to change their account type mid-hire.** MetaMask
+  reports `atomic: { status: "ready" }` for a plain EOA, which means it prompts
+  the user to upgrade to a MetaMask smart account (EIP-7702) before it will
+  batch. BNB Smart Chain Testnet is on its supported list, so this is the
+  behaviour a judge would actually meet.
+- **The gas saving is ~13%.** Measured from job 844: 626,231 gas across the five
+  transactions; batching saves roughly four base transaction costs, about 84,000
+  gas. At testnet gas prices that is noise.
+- **The five-stage indicator collapses.** `wallet_sendCalls` returns one batch
+  id and `wallet_getCallsStatus` reports batch-level status; EIP-5792 does not
+  guarantee one receipt per call, so under atomic execution there is nothing to
+  drive per-step progress. On a partial failure (status `600`) you learn that
+  something landed, not which — you would re-derive it by reading `getJob` and
+  matching the nonce, which is the code the batch was supposed to replace.
+
+If the kernel ever exposes a job id the caller can compute in advance, the
+blocker goes away and this is worth revisiting. Until then the sequential path
+stays: it has completed a full wallet hire on chain, including recovery from a
+stuck FUNDED job.
+
 ## Verified contracts (chain 97)
 
 | Contract | Address | Bytecode |
