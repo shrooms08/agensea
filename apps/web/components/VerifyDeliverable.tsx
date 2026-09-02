@@ -93,21 +93,37 @@ python3 -c "import json,sys;print(json.dumps(json.load(sys.stdin),sort_keys=True
             </div>
           )}
 
-          {(state.kind === 'match' || state.kind === 'mismatch') && (
-            <div style={{ marginTop: 12, display: 'grid', gap: 8 }}>
-              {[['computed in your browser', state.computed], ['stored on chain', state.onChain]].map(([k, v]) => (
-                <div key={k}>
-                  <div style={{ ...MONO9, color: 'var(--text-faint)' }}>{k}</div>
-                  <div style={{ font: "400 11px/1.4 var(--mono)", color: 'var(--text)', wordBreak: 'break-all', marginTop: 4 }}>{v}</div>
-                </div>
-              ))}
-              {state.kind === 'match' && (
-                <div style={{ font: "400 10px/1.4 var(--mono)", color: 'var(--text-faint)' }}>
-                  read from {state.block} · chain 97
-                </div>
-              )}
-            </div>
-          )}
+          {/* On a MATCH the verdict is the result and the hashes are the
+              working, so they collapse — closed by default.
+
+              A MISMATCH NEVER COLLAPSES. That is the one state where a reader
+              needs the two hashes in front of them without another click, so it
+              renders the same block bare. Same markup either way; only the
+              wrapper differs. */}
+          {(state.kind === 'match' || state.kind === 'mismatch') && (() => {
+            const hashes = (
+              <div style={{ marginTop: 12, display: 'grid', gap: 8 }}>
+                {[['computed in your browser', state.computed], ['stored on chain', state.onChain]].map(([k, v]) => (
+                  <div key={k}>
+                    <div style={{ ...MONO9, color: 'var(--text-faint)' }}>{k}</div>
+                    <div style={{ font: "400 11px/1.4 var(--mono)", color: 'var(--text)', wordBreak: 'break-all', marginTop: 4 }}>{v}</div>
+                  </div>
+                ))}
+                {state.kind === 'match' && (
+                  <div style={{ font: "400 10px/1.4 var(--mono)", color: 'var(--text-faint)' }}>
+                    read from {state.block} · chain 97
+                  </div>
+                )}
+              </div>
+            );
+            if (state.kind === 'mismatch') return hashes;
+            return (
+              <details style={{ marginTop: 10 }}>
+                <summary style={{ ...MONO9, color: 'var(--text-muted)', cursor: 'pointer' }}>Show the hashes</summary>
+                {hashes}
+              </details>
+            );
+          })()}
 
         </div>
       )}
