@@ -43,14 +43,29 @@ export function issueNonce(agentId: number) {
   return { nonce, exp, mac: mac(nonce, exp, agentId), message: claimMessage(nonce, exp, agentId) };
 }
 
-/** ownerOf(agentId) read live from the registry. null when the token does not
- *  exist (the call reverts) or the RPC cannot be reached — the caller must
- *  treat null as "cannot prove", never as "allowed". */
-export async function ownerOfOnChain(agentId: number): Promise<string | null> {
+/**
+ * ownerOf(agentId) read from the registry. null when the token does not exist
+ * (the call reverts) or the RPC cannot be reached — the caller must treat null
+ * as "cannot prove", never as "allowed".
+ *
+ * FRESHNESS IS A PARAMETER, AND THE SAFE VALUE IS THE DEFAULT. Authorising a
+ * claim must never be decided on a cached answer, so this stays no-store unless
+ * a caller explicitly asks otherwise. Rendering a listing is the one case that
+ * may use a cached read: it decides what to DISPLAY, not what to permit, and an
+ * uncached fetch here opts every page that lists an agent out of static
+ * rendering. See lib/server/listings.ts.
+ */
+export async function ownerOfOnChain(
+  agentId: number,
+  opts: { revalidate?: number } = {},
+): Promise<string | null> {
   try {
     const data = OWNER_OF + BigInt(agentId).toString(16).padStart(64, '0');
     const res = await fetch(MAINNET_RPC, {
-      method: 'POST', headers: { 'content-type': 'application/json' }, cache: 'no-store',
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      ...(opts.revalidate === undefined
+        ? { cache: 'no-store' as const }
+        : { next: { revalidate: opts.revalidate } }),
       signal: AbortSignal.timeout(12_000),
       body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_call', params: [{ to: IDENTITY_56, data }, 'latest'] }),
     });
