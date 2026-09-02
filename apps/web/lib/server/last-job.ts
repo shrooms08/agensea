@@ -41,9 +41,20 @@ export interface LastJob {
   measuredAt: string;   // ISO, time of the chain read
 }
 
+/** Six hours: the strip is a footer, and the keepalive revalidates on that
+ *  cadence anyway. Kept in one place so the RPC read and the row read agree. */
+const FOOTER_REVALIDATE = 21_600;
+
 async function latestJobId(): Promise<number> {
+  // NOT no-store. This runs in SiteFooter, which the ROOT LAYOUT renders, so an
+  // uncached fetch here opted EVERY route out of static rendering — twelve
+  // revalidate declarations were inert and every page paid a server render. The
+  // default ('auto no cache') participates in the prerender instead: the value
+  // is read when a route is built or revalidated, not per request. The strip is
+  // a footer; six-hour staleness is invisible, and the keepalive revalidates.
   const r = await fetch(BNB_TESTNET.publicRpcUrl, {
-    method: 'POST', headers: { 'content-type': 'application/json' }, cache: 'no-store',
+    method: 'POST', headers: { 'content-type': 'application/json' },
+    next: { revalidate: FOOTER_REVALIDATE },
     body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_call',
       params: [{ to: ERC8183.commerce, data: JOB_COUNTER_SELECTOR }, 'latest'] }),
   });
@@ -68,8 +79,11 @@ async function scan(): Promise<LastJob | null> {
     }
 
     // Demo hire: verify against the persisted manifest, or skip.
+    // Explicit revalidate: sbSelect defaults to 60s, and because this runs in the
+    // root layout a lower value drags EVERY route's interval down with it — the
+    // build reported 1m for the whole site until this was set.
     const { rows } = await sbSelect<{ agent_id: number; manifest: DeliverableManifest }>(
-      'demo_deliverables', { query: `select=agent_id,manifest&job_id=eq.${id}`, range: [0, 0] });
+      'demo_deliverables', { query: `select=agent_id,manifest&job_id=eq.${id}`, range: [0, 0], revalidate: FOOTER_REVALIDATE });
     const row = rows[0];
     if (!row) continue;
     if (manifestHash(row.manifest).toLowerCase() !== chainJob.deliverable.toLowerCase()) continue;

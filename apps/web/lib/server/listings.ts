@@ -24,10 +24,21 @@ export interface Listing {
 
 const SELECT = 'select=agent_id,owner,name,description,category,delivers,input_schema,endpoint_url,price_u,status,claimed_at,listed_at';
 
-/** Drop any listing whose stored owner is not the current on-chain owner. */
+/**
+ * Drop any listing whose stored owner is not the current on-chain owner.
+ *
+ * The read is CACHED for the render path. A forged or stale row still cannot
+ * appear — the chain is still asked — but it is asked when the page is built
+ * rather than on every request, so listing a page does not force it out of
+ * static rendering. The keepalive revalidates every six hours, which bounds how
+ * long a listing can outlive a transfer. Authorising a claim is a different
+ * question and still uses the uncached default: see lib/server/claim.ts.
+ */
+const OWNER_RECHECK_SECONDS = 21_600;   // 6h, matching the keepalive's revalidate
+
 async function keepOwnerVerified(rows: Listing[]): Promise<Listing[]> {
   const checked = await Promise.all(rows.map(async (r) => {
-    const onChain = await ownerOfOnChain(r.agent_id);
+    const onChain = await ownerOfOnChain(r.agent_id, { revalidate: OWNER_RECHECK_SECONDS });
     return onChain && onChain === r.owner.toLowerCase() ? r : null;
   }));
   return checked.filter((r): r is Listing => r !== null);
