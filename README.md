@@ -116,8 +116,28 @@ in-browser path are in [/docs](https://agensea-navy.vercel.app/docs#how-to-verif
 
 Authored by `shrooms08` (GitHub shows the authorship). **Three of the four are
 now fixed upstream** — #57, #58 and #59 — and all three shipped in
-`@altananetwork/sdk` **0.9.0**, published 2 Sep 2026. Each PR verified our
-report against chain or re-ran our repro before writing code.
+`@altananetwork/sdk` **0.9.0**, published 2 Sep 2026.
+
+**Two of the three merges cite our own on-chain transactions as their
+verification.** [#66](https://github.com/altananetwork/altana-sdk/pull/66)
+confirmed our raised-cap retry at **block 127877832** before writing code, and
+replayed our bundle to show it still returned `{status: 300, receipts: []}` days
+later — permanently terminal, not pending.
+[#68](https://github.com/altananetwork/altana-sdk/pull/68) cites our `submit`
+through generic `execute` at **block 127889442** as its evidence that the
+`submit(uint256,bytes32,bytes)` selector works in the deployed kernel.
+
+Both blocks are on chain 97, and both were re-read here against the seed node
+rather than taken from the PRs: 127877832 is timestamped 29 Aug 08:17:55 UTC and
+we filed #57 at 08:21:37 — under four minutes later. 127889442 is 09:44:59 and
+#59 was filed at 09:46:39, a hundred seconds after. Each transaction is the one
+that produced the report it is cited in.
+
+[#67](https://github.com/altananetwork/altana-sdk/pull/67) took the third route:
+it ran our repro and found a failure mode **we had not reported** —
+`JSON.stringify` *throws* on any session carrying a spend cap, because the
+limits are bigints. So the documented "persist the Session verbatim" advice
+failed three ways, not the two we described.
 
 - [altana-sdk #57](https://github.com/altananetwork/altana-sdk/issues/57) —
   `waitForCalls` hangs for the full 240 s timeout on unmapped relay status 300.
