@@ -487,6 +487,45 @@ If a hash depends on an encoding choice, a test set with no non-ASCII cases
 cannot tell you the encoding is right. Add a case that fails under the wrong
 rule, or you have not tested it.
 
+### 9. Anything you await in the root layout prices the whole site
+
+Two bugs of the same shape, one loud and one quiet. Both came from a single
+`await` in `SiteFooter`, which `app/layout.tsx` renders on every page.
+
+**The loud one: one `no-store` made every route dynamic.** The footer's LAST JOB
+strip read the chain with `cache: 'no-store'`. An uncached fetch opts its route
+out of static rendering, and because this one lives in the root layout, that was
+*every* route. The symptoms did not point at the footer: twelve
+`export const revalidate = 86400` declarations were silently inert, every page
+served `x-vercel-cache: MISS` with `private, no-cache, no-store`, every request
+paid a fresh server render, and the keepalive's "warm the cache" step warmed
+nothing at all. The build output is where it shows: every page route was
+`ƒ (Dynamic)` and should have been `○`/`●`.
+
+**The quiet one: a 60-second default set the ceiling for the site.** With the
+`no-store` removed, the first cacheable build reported a revalidate interval of
+**1m for every route**. Nothing declares 1m. It came from `sbSelect`'s default
+of `revalidate: 60` on one footer row read, because
+[Next's rule](https://nextjs.org/docs/app/api-reference/functions/fetch) is that
+a `fetch` with a lower `revalidate` than its route *lowers the whole route's
+interval*. In the root layout, "the whole route" means all of them.
+
+So the layout sets a ceiling nothing else can raise:
+
+```
+route declares          revalidate = 86400   (24h)
+one footer fetch says   revalidate = 60      (1m)
+the site gets                             -> 1m
+```
+
+The lesson is not "avoid no-store". It is that **the root layout is a global
+config surface disguised as a component**. A fetch added there does not affect
+one page, it re-prices every page, and neither symptom names the file
+responsible — you find it by reading the build's route table, not the code that
+looks wrong.
+
+Both footer reads are now pinned to one shared constant.
+
 ## Considered and declined
 
 ### EIP-5792 batching — blocked upstream, not deferred
