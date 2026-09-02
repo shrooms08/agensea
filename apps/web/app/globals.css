@@ -764,3 +764,23 @@ header nav .navlink[data-active='true']::after {
 .docs-steps { margin: 14px 0 0; padding-left: 22px; display: grid; gap: 18px; }
 .docs-steps > li { font: 400 14px/1.65 var(--display); color: var(--text-muted); }
 .docs-steps > li strong { color: var(--text); font-weight: 500; }
+
+/* /docs: persona paths and the stack table. */
+.docs-paths { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 14px; }
+.docs-path { display: block; border: 1px solid var(--border); background: var(--surface); padding: 16px 18px; }
+.docs-path:hover { border-color: var(--border-strong); }
+.docs-path-k { font: 500 14px/1.3 var(--display); color: var(--text); }
+.docs-path p { font: 400 13px/1.6 var(--display); color: var(--text-muted); margin: 8px 0 10px; }
+.docs-path-go { font: 400 10px/1.4 var(--mono); color: var(--live); }
+.docs-scroll { overflow-x: auto; margin-top: 16px; }
+.docs-table { border-collapse: collapse; width: 100%; min-width: 640px; }
+.docs-table th { text-align: left; font: 500 9px/1 var(--mono); letter-spacing: .12em;
+  text-transform: uppercase; color: var(--text-faint); padding: 0 16px 10px 0; border-bottom: 1px solid var(--border); }
+.docs-table td { vertical-align: top; padding: 14px 16px 14px 0; border-bottom: 1px solid var(--border);
+  font: 400 13px/1.6 var(--display); color: var(--text-muted); }
+.docs-table tr:last-child td { border-bottom: none; }
+/* the layer cell: .label carries overflow-wrap:anywhere globally, which breaks
+   REPUTATION into "REPUTATI ON". Give it room and let it wrap on the space. */
+.docs-table td:first-child { width: 116px; min-width: 116px; }
+.docs-table td:first-child .label { overflow-wrap: normal; word-break: normal; }
+@media (max-width: 900px) { .docs-paths { grid-template-columns: 1fr; } }
