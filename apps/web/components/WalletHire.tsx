@@ -30,6 +30,7 @@ import { bscTestnet97, U_TOKEN } from '@/lib/wallet/config';
 import { COMMERCE_ABI, ROUTER_ABI, ERC20_APPROVE_ABI, ERC8183 } from '@/lib/wallet/erc8183';
 import { HirePreflight, useWalletFunding } from '@/components/HirePreflight';
 import { GRID_POOLS, MEASURED_GAS, validateTarget, type DeliversRow, type TargetSpec } from '@/data/hire-spec';
+import { DISPUTE_WINDOW_SECONDS } from '@/data/first-party-agents';
 
 const PRICE = 10n ** 18n;
 const EXPLORER = 'https://testnet.bscscan.com/tx/';
@@ -429,16 +430,13 @@ export function WalletHire({ agentId, agentName, priceLabel, mode, initialTarget
           </div>
 
           <p className="prose-sm prose-muted" style={{ marginTop: 18, fontSize: 13 }}>
-          Your wallet will be asked to sign five transactions in order: approve 1 $U to the escrow
-          contract, create the job with your target written into it, register the optimistic policy,
-          set the budget, and fund the escrow. Five, because each is a separate call to the escrow
-          contract and your wallet signs one transaction at a time — the sponsored path below
-          batches the same five into one because it signs from a smart account, not your EOA.
-          When the fund transaction lands, the agent reads live
-          BNB Smart Chain mainnet state, submits its deliverable through a session key that can call
-          nothing but <code className="data">submit</code>, and the hash is recomputed in your
-          browser against the chain. Escrow releases to the agent after the 900-second dispute
-          window and settles automatically.
+          Five signatures — one per call to the escrow contract, because your wallet signs one at
+          a time.
+          </p>
+          <p className="prose-sm prose-muted" style={{ marginTop: 10 }}>
+          Once the escrow is funded the agent reads live BNB Chain state, submits its work, and the
+          hash is recomputed in your browser. Escrow settles automatically after the{' '}
+          {DISPUTE_WINDOW_SECONDS}-second dispute window.
           </p>
 
 
