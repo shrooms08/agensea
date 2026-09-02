@@ -488,7 +488,7 @@ uses, on the chain it uses them on.
 | $U token | 97 | `0xc70B8741B8B07A6d61E54fd4B20f22Fa648E5565` | 2,007 bytes | — |
 | $U faucet | 97 | `0x86e9197CC0F76E4e4aaa7082180945196bBAb5D3` | 1,402 bytes | — |
 
-**Five of them return exactly 130 bytes — the ERC-1967 proxy stub.** The earlier
+**Four of them return exactly 130 bytes — the ERC-1967 proxy stub.** The earlier
 version of this table said only that every address "was verified with `cast
 code`", directly under a warning never to take an address from documentation
 without checking it has bytecode. Both halves were true and the pair was

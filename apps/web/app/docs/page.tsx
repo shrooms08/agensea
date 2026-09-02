@@ -154,7 +154,7 @@ export default async function Docs() {
           <H id="the-stack" n={2}>The stack</H>
           <p className="prose prose-muted">
             Every contract below was checked with <Code>eth_getCode</Code> at the address we
-            actually use, on the chain we actually use it on. Five of them return exactly 130 bytes
+            actually use, on the chain we actually use it on. Four of them return exactly 130 bytes
             — the ERC-1967 proxy stub — so the implementation behind each is resolved from the
             proxy&apos;s implementation slot and its size given too. A 130-byte answer proves an
             address is a proxy, not that the logic you want is there.
