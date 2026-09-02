@@ -10,6 +10,7 @@
  * an SSRF and an availability risk on the exact path judges use.
  */
 import { createHash } from 'node:crypto';
+import { lookup } from 'node:dns/promises';
 import { verifyClaimProof } from '@/lib/server/claim';
 
 export const runtime = 'nodejs';
@@ -18,14 +19,70 @@ export const maxDuration = 60;
 
 const CATEGORIES = new Set(['health-factor-monitoring', 'rebalancing', 'grid-trading', 'yield-optimisation']);
 
-/** https only, and it must resolve. We do a HEAD with a short timeout purely to
- *  check the host answers — never a work request, and its body is discarded. */
+/**
+ * Is a RESOLVED address one we must never reach out to? Checked on the address,
+ * not the hostname: `169.254.169.254.nip.io` is a perfectly public name that
+ * resolves to the cloud metadata endpoint, and a literal pattern match on the
+ * hostname does not stop it.
+ */
+function isBlockedAddress(ip: string, family: number): boolean {
+  if (family === 6) {
+    const v6 = ip.toLowerCase();
+    // IPv4-mapped (::ffff:10.0.0.1) — unwrap and judge as v4.
+    const mapped = v6.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
+    if (mapped) return isBlockedAddress(mapped[1]!, 4);
+    if (v6 === '::' || v6 === '::1') return true;              // unspecified, loopback
+    if (/^f[cd]/.test(v6)) return true;                        // fc00::/7 unique local
+    if (/^fe[89ab]/.test(v6)) return true;                     // fe80::/10 link-local
+    return false;
+  }
+  const p = ip.split('.').map(Number);
+  if (p.length !== 4 || p.some((n) => !Number.isInteger(n) || n < 0 || n > 255)) return true;
+  const [a, b] = p as [number, number, number, number];
+  if (a === 0) return true;                                    // 0.0.0.0/8
+  if (a === 10) return true;                                   // 10/8
+  if (a === 127) return true;                                  // loopback
+  if (a === 169 && b === 254) return true;                     // 169.254/16 — CLOUD METADATA
+  if (a === 172 && b >= 16 && b <= 31) return true;            // 172.16/12
+  if (a === 192 && b === 168) return true;                     // 192.168/16
+  if (a === 100 && b >= 64 && b <= 127) return true;           // 100.64/10 CGNAT
+  if (a === 192 && b === 0) return true;                        // 192.0.0/24, 192.0.2/24
+  if (a === 198 && (b === 18 || b === 19)) return true;         // 198.18/15 benchmark
+  if (a >= 224) return true;                                    // multicast + reserved
+  return false;
+}
+
+/** https only, and it must resolve to a public address. We do a HEAD with a
+ *  short timeout purely to check the host answers — never a work request, and
+ *  its body is discarded.
+ *
+ *  TWO GATES, deliberately. The literal pattern is the cheap first pass and
+ *  still runs when DNS is unavailable; the resolution check is the one that
+ *  actually holds, because the hostname tells you nothing about where it points.
+ *  Resolution failing is a refusal, not a pass — we do not reach out to a host
+ *  we could not judge.
+ *
+ *  Not covered: DNS rebinding between this lookup and the fetch below. Closing
+ *  that needs the connection pinned to the resolved address; the exposure here
+ *  is one HEAD whose body is discarded, and it is recorded on /docs. */
 async function endpointResolves(url: string): Promise<{ ok: true } | { ok: false; why: string }> {
   let u: URL;
   try { u = new URL(url); } catch { return { ok: false, why: 'that is not a valid URL' }; }
   if (u.protocol !== 'https:') return { ok: false, why: 'the endpoint must be https' };
   if (/^(localhost|127\.|10\.|192\.168\.|169\.254\.|\[?::1)/i.test(u.hostname)) {
     return { ok: false, why: 'that host is not reachable from the public internet' };
+  }
+  let addrs: { address: string; family: number }[];
+  try {
+    addrs = await lookup(u.hostname, { all: true });
+  } catch {
+    return { ok: false, why: 'that hostname does not resolve' };
+  }
+  if (addrs.length === 0) return { ok: false, why: 'that hostname does not resolve' };
+  // EVERY answer must be public: one private record is enough to reach it.
+  const bad = addrs.find((a) => isBlockedAddress(a.address, a.family));
+  if (bad) {
+    return { ok: false, why: `that hostname resolves to ${bad.address}, which is not a public address` };
   }
   try {
     await fetch(u.toString(), { method: 'HEAD', redirect: 'manual', signal: AbortSignal.timeout(6_000) });

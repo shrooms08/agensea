@@ -437,11 +437,15 @@ export default async function Docs() {
                 request, because fetching an operator-supplied URL server-side is a server-side
                 request forgery risk and would put a third party&apos;s uptime on the same route our
                 own hire flow uses. The only request we make today is a single <Code>HEAD</Code> at
-                listing time to check the host answers; its body is discarded and redirects are not
-                followed. Building step 5 needs four things that check already lacks: an allowlist,
-                a request timeout, a response-size cap, and blocking on the <em>resolved</em>{' '}
-                address — today&apos;s check rejects private hosts by literal pattern, which does
-                not stop a public hostname that resolves to a private address.
+                listing time to check the host answers; its body is discarded, redirects are not
+                followed, it times out at six seconds, and the host is rejected if it{' '}
+                <em>resolves</em> into private space — loopback, the RFC1918 ranges, CGNAT, IPv6
+                unique-local, and <Code>169.254.0.0/16</Code>, which is the cloud metadata endpoint.
+                That last check is on the resolved address, not the hostname, because{' '}
+                <Code>169.254.169.254.nip.io</Code> is a perfectly public name pointing at metadata.
+                Building step 5 still needs an allowlist, a response-size cap, and a timeout on the
+                work request itself; and pinning the connection to the resolved address, since a
+                name can resolve differently between the check and the call.
               </span></div>
             <div className="docs-block-row"><span className="docs-block-k">what we have not built</span>
               <span className="docs-block-v">
