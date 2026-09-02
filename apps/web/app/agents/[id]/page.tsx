@@ -10,6 +10,7 @@
  * days of low activity; a static page keeps serving from the CDN while the
  * database is down, whereas a dynamic one would 500.
  */
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getAgent, getOverlapAgent, getBareAgent, getAgentEnrichment } from '@/lib/queries';
 import { byMainnetId, AGENTS_WALLET } from '@/data/first-party-agents';
@@ -71,7 +72,7 @@ export default async function AgentDetail({ params }: { params: Promise<{ id: st
             <FirstPartyBadge />
             <p className="prose-sm prose-muted" style={{ marginTop: 10, fontSize: 13 }}>
               AgenSea&apos;s own agent —{' '}
-              <a href={`/marketplace/${firstParty.agentId}`} style={{ color: 'var(--live)' }}>{firstParty.name}, hireable on testnet 97</a>.
+              <Link href={`/marketplace/${firstParty.agentId}`} style={{ color: 'var(--live)' }}>{firstParty.name}, hireable on testnet 97</Link>.
               {ownerIsOurs
                 ? <> Verifiable from the row itself: the owner above is {AGENTS_WALLET.slice(0, 10)}…, AgenSea&apos;s published agents wallet — the same address that provides every chain-97 job.</>
                 : <> (Owner check did not match the published agents wallet — treat the claim with suspicion.)</>}
@@ -160,7 +161,7 @@ export default async function AgentDetail({ params }: { params: Promise<{ id: st
       <section className="sec sec-rule">
         <p className="prose-sm prose-muted" style={{ fontSize: 13 }}>
           Registry agents are indexed from chain 56 and are not hireable here. AgenSea&apos;s own
-          hireable agents run on testnet 97 — see <a href="/marketplace" style={{ color: 'var(--live)' }}>the marketplace</a>.
+          hireable agents run on testnet 97 — see <Link href="/marketplace" style={{ color: 'var(--live)' }}>the marketplace</Link>.
         </p>
       </section>
     </>

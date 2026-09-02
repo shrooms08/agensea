@@ -2,6 +2,7 @@
  * Landing: five statistics, then four category cards.
  * Every count renders with its measured_at from registry_stats.
  */
+import Link from 'next/link';
 import { getRegistryStats, getFanoutCurve, getClientConcentration, getFleetShare } from '@/lib/queries';
 import { ParticleHero, MobileParticleHero } from '@/components/ParticleHero';
 import { Stat } from '@/components/Stat';
@@ -71,8 +72,8 @@ export default async function Home() {
             --live-dim fill with --bg text per the halation rule — never a full
             #39FF14 fill. */}
         <div className="cta-row">
-          <a href="/marketplace" className="cta-primary">Open marketplace →</a>
-          <a href="/agents" className="cta-secondary">Explore the registry</a>
+          <Link href="/marketplace" className="cta-primary">Open marketplace →</Link>
+          <Link href="/agents" className="cta-secondary">Explore the registry</Link>
         </div>
       </section>
 
@@ -111,12 +112,12 @@ export default async function Home() {
             fails the build here rather than silently missing a door. */}
         <div className="task-grid">
           {TASKS.map(({ task, slug }) => (
-            <a key={slug} href={`/category/${slug}`} className="task-link"
+            <Link key={slug} href={`/category/${slug}`} className="task-link"
                aria-label={`${task} — ${CAT_LABEL[slug]}`}>
               <span style={{ width: 8, height: 8, background: CAT_TOKEN[slug], flex: 'none' }} aria-hidden="true" />
               {task}
               <span className="task-link-arrow" aria-hidden="true">→</span>
-            </a>
+            </Link>
           ))}
         </div>
 
@@ -124,7 +125,7 @@ export default async function Home() {
           {CATEGORY_SLUGS.map((slug) => {
             const a = FIRST_PARTY_AGENTS.find((x) => x.slug === slug)!;
             return (
-              <a key={slug} href={`/category/${slug}`} className="card-lg cat-card" aria-label={`${CAT_LABEL[slug]} — ${a.name}`}>
+              <Link key={slug} href={`/category/${slug}`} className="card-lg cat-card" aria-label={`${CAT_LABEL[slug]} — ${a.name}`}>
                 {/* Category row: the coloured square stays; its name now sits beside it. */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
                   <span style={{ width: 8, height: 8, background: CAT_TOKEN[slug], flex: 'none' }} />
@@ -138,7 +139,7 @@ export default async function Home() {
                   </span>
                   <span className="cat-card-arrow" aria-hidden="true">→</span>
                 </div>
-              </a>
+              </Link>
             );
           })}
         </div>

@@ -3,6 +3,7 @@
  * it. Claimed and displayed only; execution through AgenSea is out of scope in
  * this build and the page says so before anyone starts.
  */
+import Link from 'next/link';
 import { ClaimFlow } from '@/components/ClaimFlow';
 
 export const metadata = { title: 'Claim your agent' };
@@ -53,13 +54,13 @@ export default function Claim() {
               on the path our own hire flow uses. The one request we make is a single{' '}
               <span className="data">HEAD</span> when you list, to check the host answers; the body
               is discarded and redirects are not followed. See{' '}
-              <a href="/docs#limits" style={{ color: 'var(--live)' }}>limits</a>.
+              <Link href="/docs#limits" style={{ color: 'var(--live)' }}>limits</Link>.
             </span></div>
           <div className="docs-block-row"><span className="docs-block-k">what comes next</span>
             <span className="docs-block-v">
-              <a href="/docs#limits" style={{ color: 'var(--live)' }}>
+              <Link href="/docs#limits" style={{ color: 'var(--live)' }}>
                 What it takes to become hireable →
-              </a>
+              </Link>
             </span></div>
         </div>
       </section>

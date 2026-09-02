@@ -15,6 +15,7 @@
  *
  * A row with nothing for an agent renders empty — never a dash, never "none".
  */
+import Link from 'next/link';
 import { FIRST_PARTY_AGENTS, CHAIN } from '@/data/first-party-agents';
 import { DELIVERS, TARGETS } from '@/data/hire-spec';
 import { CAT_LABEL, CAT_TOKEN } from '@/components/CategoryChip';
@@ -65,12 +66,12 @@ const ROWS: Row[] = [
     // Only agent 2012 is registered on chain 56. The others render EMPTY —
     // a dash or "none" would read as a measured absence rather than a blank.
     cell: (a) => a.mainnetAgentId
-      ? <a className="data" style={{ color: 'var(--live-dim)' }} href={`/agents/${a.mainnetAgentId}`}>{a.mainnetAgentId} →</a>
+      ? <Link className="data" style={{ color: 'var(--live-dim)' }} href={`/agents/${a.mainnetAgentId}`}>{a.mainnetAgentId} →</Link>
       : null,
   },
   {
     label: '',
-    cell: (a) => <a href={`/marketplace/${a.agentId}`} className="cmp-hire">Hire →</a>,
+    cell: (a) => <Link href={`/marketplace/${a.agentId}`} className="cmp-hire">Hire →</Link>,
   },
 ];
 
@@ -101,7 +102,7 @@ export default function Compare() {
                 <th scope="col" className="cmp-rowhead cmp-corner"><span className="sr-only">Attribute</span></th>
                 {FIRST_PARTY_AGENTS.map((a) => (
                   <th key={a.agentId} scope="col" className="cmp-agent">
-                    <a href={`/marketplace/${a.agentId}`}>{a.name}</a>
+                    <Link href={`/marketplace/${a.agentId}`}>{a.name}</Link>
                     <span className="meta">#{a.agentId}</span>
                   </th>
                 ))}

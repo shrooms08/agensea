@@ -10,6 +10,7 @@
  * The signature authorises nothing on chain: it is a plain personal_sign, and
  * the message says so.
  */
+import Link from 'next/link';
 import { useAccount, useConnect, useSignMessage } from 'wagmi';
 import { useEffect, useState } from 'react';
 import { CAT_LABEL } from '@/components/CategoryChip';
@@ -128,7 +129,7 @@ export function ClaimFlow() {
           Agent {chosen} is listed. It appears on the marketplace and its category page, marked as
           not yet hireable through AgenSea.
         </p>
-        <a href={done} className="wallet-connect" style={{ display: 'inline-block', marginTop: 14 }}>View the listing →</a>
+        <Link href={done} className="wallet-connect" style={{ display: 'inline-block', marginTop: 14 }}>View the listing →</Link>
       </div>
     );
   }
@@ -199,7 +200,7 @@ export function ClaimFlow() {
             </a>
           </p>
           <p className="prose-sm prose-muted" style={{ fontSize: 13, marginTop: 10 }}>
-            <a href="/docs#how-we-measure" style={{ color: 'var(--live)' }}>How we measure the registry →</a>
+            <Link href="/docs#how-we-measure" style={{ color: 'var(--live)' }}>How we measure the registry →</Link>
           </p>
         </div>
       )}

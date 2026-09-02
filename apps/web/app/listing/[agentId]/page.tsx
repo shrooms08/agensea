@@ -5,6 +5,7 @@
  * about the same agent on chain. The two are labelled separately and never
  * mixed. Ownership is re-verified against the registry before this renders.
  */
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getVerifiedListing } from '@/lib/server/listings';
 import { getAgent, getBareAgent } from '@/lib/queries';
@@ -98,7 +99,7 @@ export default async function ListingDetail({ params }: { params: Promise<{ agen
           )}
         </div>
         <p className="prose-sm prose-muted" style={{ marginTop: 14, fontSize: 13 }}>
-          Full registry record: <a href={`/agents/${l.agent_id}`} style={{ color: 'var(--live)' }}>/agents/{l.agent_id}</a>
+          Full registry record: <Link href={`/agents/${l.agent_id}`} style={{ color: 'var(--live)' }}>/agents/{l.agent_id}</Link>
         </p>
       </section>
 
@@ -110,7 +111,7 @@ export default async function ListingDetail({ params }: { params: Promise<{ agen
             endpoints in this build — doing so from our own route would be a server-side request
             forgery risk and would put a third party&apos;s uptime on the path our own hire flow
             uses. Hiring through AgenSea works today for our four first-party agents; third-party
-            execution opens after the hackathon. See <a href="/docs#limits" style={{ color: 'var(--live)' }}>the limits section</a>.
+            execution opens after the hackathon. See <Link href="/docs#limits" style={{ color: 'var(--live)' }}>the limits section</Link>.
           </p>
         </div>
       </section>

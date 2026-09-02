@@ -8,6 +8,7 @@
  *     only, no motion. On the landing page the creature layer (z-index -1)
  *     stays behind all of this.
  */
+import Link from 'next/link';
 import { Mark, Wordmark } from '@/components/Logo';
 import { ERC8183, CHAIN } from '@/data/first-party-agents';
 import { readLastJob } from '@/lib/server/last-job';
@@ -25,7 +26,7 @@ export async function SiteFooter() {
               <span className="label" style={{ fontSize: 9 }}>last job</span>
               <span className="data">{last.jobId}</span>
               <span className="lastjob-sep">·</span>
-              <a href={`/marketplace/${last.agentId}`} className="data" style={{ color: 'var(--text)' }}>{last.agentName}</a>
+              <Link href={`/marketplace/${last.agentId}`} className="data" style={{ color: 'var(--text)' }}>{last.agentName}</Link>
               <span className="lastjob-sep">·</span>
               {last.demo ? (
                 <span className="data" style={{ color: 'var(--text-muted)' }}>demo hire</span>
@@ -41,7 +42,7 @@ export async function SiteFooter() {
                 </>
               )}
               <span className="lastjob-sep">·</span>
-              <a href={`/marketplace/${last.agentId}`} className="label" style={{ color: 'var(--verified)', fontSize: 9 }}>verify →</a>
+              <Link href={`/marketplace/${last.agentId}`} className="label" style={{ color: 'var(--verified)', fontSize: 9 }}>verify →</Link>
               <span className="meta" style={{ marginLeft: 'auto', color: 'var(--text-muted)' }}>{measuredOn(last.measuredAt)}</span>
             </>
           ) : (
@@ -50,16 +51,16 @@ export async function SiteFooter() {
         </div>
 
         <div className="footer-row">
-          <a href="/" className="brand" aria-label="AgenSea home">
+          <Link href="/" className="brand" aria-label="AgenSea home">
             <Mark size={18} />
             <Wordmark height={15} />
-          </a>
+          </Link>
           <nav className="footer-nav">
-            <a href="/marketplace">Marketplace</a>
-            <a href="/agents">Registry</a>
-            <a href="/bazaar">Bazaar</a>
-            <a href="/docs">Docs</a>
-            <a href="/claim">List your agent</a>
+            <Link href="/marketplace">Marketplace</Link>
+            <Link href="/agents">Registry</Link>
+            <Link href="/bazaar">Bazaar</Link>
+            <Link href="/docs">Docs</Link>
+            <Link href="/claim">List your agent</Link>
             <a href="https://github.com/shrooms08/agensea" target="_blank" rel="noreferrer">GitHub</a>
             <a href="https://x.com/shroomsgotsol" target="_blank" rel="noreferrer">X</a>
           </nav>

@@ -7,6 +7,7 @@
  * browser receives is the aggregate, not the ~978 rows.
  * (row count tracks registry_stats.bazaar_resources — 978 as of 29 Aug 2026)
  */
+import Link from 'next/link';
 import { getBazaarResources, getPayees, getRegistryStats, getAllOverlapAgents, hostOf } from '@/lib/queries';
 import { Stat } from '@/components/Stat';
 import { int, pct, shortAddr, measuredOn } from '@/lib/format';
@@ -93,7 +94,7 @@ export default async function Bazaar() {
             surfaces are almost entirely disjoint.
           </p>
           {overlaps.map((o) => (
-            <a key={o.agent_id} href={`/agents/${o.agent_id}`}
+            <Link key={o.agent_id} href={`/agents/${o.agent_id}`}
                className="card-lg" style={{ display: 'block', marginTop: 16, border: '1px solid var(--border-strong)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                 <div style={{ font: "500 15px/1 var(--display)", color: 'var(--text)' }}>Agent #{o.agent_id}</div>
@@ -109,7 +110,7 @@ export default async function Bazaar() {
                   </div>
                 ))}
               </div>
-            </a>
+            </Link>
           ))}
         </section>
       )}

@@ -22,6 +22,7 @@
  * and offer Resume (agent-work) or, past expiry, Reclaim (claimRefund from
  * their wallet). A judge's escrow must never sit silently stuck.
  */
+import Link from 'next/link';
 import { useAccount, useConnect, useWriteContract, usePublicClient } from 'wagmi';
 import { formatEther, keccak256, stringToHex } from 'viem';
 import { useEffect, useRef, useState } from 'react';
@@ -326,10 +327,10 @@ export function WalletHire({ agentId, agentName, priceLabel, mode, initialTarget
         <div className="rail-price">{priceLabel}<span>per hire</span></div>
         {isConnected ? (
           targetReady ? (
-            <a href={hireHref} className="hire-cta"
+            <Link href={hireHref} className="hire-cta"
                style={{ background: 'var(--live-dim)', color: 'var(--bg)', display: 'block', textAlign: 'center' }}>
               Hire — escrow {priceLabel}
-            </a>
+            </Link>
           ) : (
             <button className="hire-cta" disabled
               style={{ background: 'var(--surface-raised)', color: 'var(--text-faint)', cursor: 'not-allowed' }}>
@@ -363,9 +364,9 @@ export function WalletHire({ agentId, agentName, priceLabel, mode, initialTarget
     return (
       <>
         <section className="sec-lead">
-          <a href={`/marketplace/${agentId}`} className="label" style={{ fontSize: 9, color: 'var(--text-muted)' }}>
+          <Link href={`/marketplace/${agentId}`} className="label" style={{ fontSize: 9, color: 'var(--text-muted)' }}>
             ← {agentName}
-          </a>
+          </Link>
           <h1 style={{ font: "500 30px/1.15 var(--display)", marginTop: 14 }}>Hire {agentName}</h1>
           <div className="hire-target">
             <div className="label" style={{ fontSize: 9 }}>{targetSpec.label}</div>

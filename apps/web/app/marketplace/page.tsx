@@ -5,6 +5,7 @@
  * and on every detail page. The indexed registry at /agents is MAINNET (56).
  * The numeric ids overlap across the two chains; they are never merged.
  */
+import Link from 'next/link';
 import { Fragment } from 'react';
 import { FIRST_PARTY_AGENTS, CHAIN, ECONOMICS, TYPICAL_TTD_RANGE_MS, AGENTS_WALLET } from '@/data/first-party-agents';
 import { shortAddr } from '@/lib/format';
@@ -94,7 +95,7 @@ export default async function Marketplace() {
                   </span>
                   <span style={{ marginLeft: 'auto' }}><FirstPartyBadge /></span>
                 </div>
-                <a href={`/marketplace/${a.agentId}`} style={{ display: 'block', font: "500 18px/1.3 var(--display)", color: 'var(--text)', marginTop: 18 }}>{a.name}</a>
+                <Link href={`/marketplace/${a.agentId}`} style={{ display: 'block', font: "500 18px/1.3 var(--display)", color: 'var(--text)', marginTop: 18 }}>{a.name}</Link>
                 <p className="prose-sm prose-muted agent-card-desc">{a.description}</p>
                 <div className="agent-card-metrics">
                   {[['completed', String(done.length)], ['analysis', `${(fastest / 1000).toFixed(1)}s`]].map(([k, v]) => (
@@ -106,14 +107,14 @@ export default async function Marketplace() {
                 </div>
                 <div className="agent-card-foot">
                   <span style={{ font: "500 12px/1 var(--mono)", color: 'var(--text)' }}>{a.priceLabel} / hire</span>
-                  <a href={`/marketplace/${a.agentId}#hire`} className="agent-card-hire">Hire <span className="agent-card-arrow">→</span></a>
+                  <Link href={`/marketplace/${a.agentId}#hire`} className="agent-card-hire">Hire <span className="agent-card-arrow">→</span></Link>
                 </div>
               </div>
             );
           })}
         </div>
         <p style={{ marginTop: 24 }}>
-          <a href="/compare" className="data" style={{ color: 'var(--live)' }}>Compare all four →</a>
+          <Link href="/compare" className="data" style={{ color: 'var(--live)' }}>Compare all four →</Link>
         </p>
       </section>
 
@@ -138,9 +139,9 @@ export default async function Marketplace() {
               it with a signature and list it. Nothing is seeded here — this section stays empty
               until somebody outside AgenSea uses it.
             </p>
-            <a href="/claim" className="wallet-connect" style={{ display: 'inline-block', marginTop: 14 }}>
+            <Link href="/claim" className="wallet-connect" style={{ display: 'inline-block', marginTop: 14 }}>
               List an agent you own →
-            </a>
+            </Link>
           </div>
         )}
       </section>

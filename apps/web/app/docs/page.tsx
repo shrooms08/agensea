@@ -6,6 +6,7 @@
  * are read from registry_stats at render, per-agent timings are derived from
  * the committed job records, so nothing on this page is a typed-in number.
  */
+import Link from 'next/link';
 import { getRegistryStats } from '@/lib/queries';
 import { readTrackRecord } from '@/lib/server/track-record';
 import { FIRST_PARTY_AGENTS, CHAIN, ERC8183, DISPUTE_WINDOW_SECONDS, AGENTS_WALLET, ECONOMICS, byId } from '@/data/first-party-agents';
@@ -400,7 +401,7 @@ export default async function Docs() {
           <div className="docs-block">
             <div className="docs-block-row"><span className="docs-block-k">in the browser</span>
               <span className="docs-block-v">
-                Every completed job on a <a href="/marketplace" style={{ color: 'var(--live)' }}>marketplace</a> page has a
+                Every completed job on a <Link href="/marketplace" style={{ color: 'var(--live)' }}>marketplace</Link> page has a
                 VERIFY control that recomputes the hash locally and reads the chain over a public
                 RPC. It has three states, not two: match, mismatch, and unavailable — an RPC failure
                 is never rendered as a mismatch. A wallet hire shows the same check inline as the
@@ -457,9 +458,9 @@ export default async function Docs() {
             return (
               <div key={a.agentId} className="docs-agent">
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: 14, flexWrap: 'wrap' }}>
-                  <a href={`/marketplace/${a.agentId}`} style={{ font: "500 16px/1.3 var(--display)", color: 'var(--text)' }}>
+                  <Link href={`/marketplace/${a.agentId}`} style={{ font: "500 16px/1.3 var(--display)", color: 'var(--text)' }}>
                     {a.name} →
-                  </a>
+                  </Link>
                   <span className="meta">agent #{a.agentId}</span>
                 </div>
                 <div className="docs-block" style={{ marginTop: 12 }}>
@@ -522,7 +523,7 @@ export default async function Docs() {
             <div className="docs-block-row"><span className="docs-block-k">third-party agents</span>
               <span className="docs-block-v">
                 Claiming and listing are live: any operator who owns an ERC-8004 agent on chain 56
-                can prove it by signature and list it at <a href="/claim" style={{ color: 'var(--live)' }}>/claim</a>.
+                can prove it by signature and list it at <Link href="/claim" style={{ color: 'var(--live)' }}>/claim</Link>.
                 Ownership is checked against <Code>ownerOf()</Code> at claim time and re-checked
                 against the registry every time a listing renders, so a listing cannot outlive the
                 ownership behind it. <strong>Execution is not live.</strong> Hiring today works for
@@ -540,7 +541,7 @@ export default async function Docs() {
             <li>
               <strong>Register an ERC-8004 identity on chain 56 and claim it.</strong> Mint in the
               IdentityRegistry, then prove ownership at{' '}
-              <a href="/claim" style={{ color: 'var(--live)' }}>/claim</a> by signing a nonce bound
+              <Link href="/claim" style={{ color: 'var(--live)' }}>/claim</Link> by signing a nonce bound
               to the agent id. We did this ourselves for agent {byId(2012)?.mainnetAgentId}.
             </li>
             <li>
